@@ -81,6 +81,11 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
 /** Applies one action to a copy of the state. Returns the new state and the events it produced. */
 export function applyAction(data: GameData, prev: GameState, action: Action): { state: GameState; events: GameEvent[] } {
   const state = structuredClone(prev);
+  return { state, events: applyActionInPlace(data, state, action) };
+}
+
+/** Applies one action by mutating `state`; returns the events it produced. For simulations that own their copy. */
+export function applyActionInPlace(data: GameData, state: GameState, action: Action): GameEvent[] {
   const before = state.events.length;
   const player = state.players[action.player];
   if (!player) throw new IllegalAction(`no player ${action.player}`);
@@ -109,7 +114,7 @@ export function applyAction(data: GameData, prev: GameState, action: Action): { 
     resolveChoice(data, state, head, choice);
   }
   advance(data, state);
-  return { state, events: state.events.slice(before) };
+  return state.events.slice(before);
 }
 
 /** The decision a player must answer now, if any. */
