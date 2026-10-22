@@ -1,0 +1,1 @@
+{ "rules": { "crisis": { "limitedPerGame": { "cards": ["steal_best_card", "hostile_takeover"], "max": 1 } } } }

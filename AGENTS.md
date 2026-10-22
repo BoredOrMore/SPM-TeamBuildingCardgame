@@ -8,7 +8,8 @@ Head Hunter: The Card Game, a team-building card game for a Software Project Man
 npm install
 npm test            # unit tests + full random games
 npm run typecheck
-npm run simulate -- --players 4 --matchup mirror --games 10000 --out results/mirror-4p.jsonl  # balance run (mirror|archetypes|skill)
+npm run simulate -- --players 4 --matchup mirror --games 10000 --out results/mirror-4p.jsonl  # balance run (mirror|archetypes|skill|denial|planning)
+npm run simulate -- --players 4 --matchup mirror --games 10000 --out results/e3/mirror-4p.jsonl --variant sim/variants/e3-refactor-discard.json  # same run with a rule variant
 npm run analyze -- --dir results/baseline --out results/baseline/report.md  # metrics vs thresholds, flags
 ```
 
