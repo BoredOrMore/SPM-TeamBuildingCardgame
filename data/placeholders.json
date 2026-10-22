@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "0.1.0",
+  "note": "Values used now are marked 'current'. All items are pending a team decision. Source: balance plan doc https://claude.ai/artifact/H5KZ8brbgj6Ju86Ekq1BL5",
+  "items": [
+    { "id": "P1", "topic": "Crisis deck size", "current": "45 cards (sum of per-card counts in report)", "alternatives": ["38 cards as in report heading (remove 7)"], "status": "pending" },
+    { "id": "P2", "topic": "Meta card effects", "current": "Dream Team V3 meta deck effects", "alternatives": ["team writes new effects"], "status": "pending" },
+    { "id": "P3", "topic": "Active Meta cards per game", "current": 3, "alternatives": [4], "status": "pending" },
+    { "id": "P4", "topic": "Small Team Advantage slot baseline", "current": "number of turns in the game (10 or 8)", "alternatives": ["always 10"], "status": "pending" },
+    { "id": "P5", "topic": "Burnout discard", "current": "player chooses 1 role card", "alternatives": ["random"], "status": "pending" },
+    { "id": "P6", "topic": "Poaching resolution", "current": "player with Senior and most team cards steals 1 from chosen opponent team; ties random", "alternatives": ["every Senior holder steals"], "status": "pending" },
+    { "id": "P7", "topic": "Headhunt swap zone", "current": "own team <-> opponent team, owner picks both", "alternatives": ["swap with opponent hand"], "status": "pending" },
+    { "id": "P8", "topic": "Action/Defense/Boost timing", "current": "Headhunt, Phone Screen, Refactor, NDA on reveal; Tech Debt Payoff, Upskill, Employee of the Month at scoring", "alternatives": ["hold actions for later use"], "status": "pending" },
+    { "id": "P9", "topic": "NDA protection scope", "current": "1 card chosen on reveal, protected from steal, swap and discard for the whole game", "alternatives": ["single use"], "status": "pending" },
+    { "id": "P10", "topic": "Tech Debt Payoff scope", "current": "cancels 1 of Technical Debt, Merge Conflict, Scope Creep for owner only", "alternatives": ["cancels for everyone"], "status": "pending" },
+    { "id": "P11", "topic": "Discard pile for Funding Round", "current": "cards discarded by Burnout, Layoff, Refactor, Pivot or Persevere; empty = nothing", "alternatives": ["take from remaining main deck"], "status": "pending" },
+    { "id": "P12", "topic": "Deadline Crunch end-of-game", "current": "pick 2 for 1 turn; game ends when hands are empty", "alternatives": ["draw extra from main deck to keep turn count"], "status": "pending" },
+    { "id": "P13", "topic": "Pivot player selection", "current": "highest and lowest score", "alternatives": ["opposite seats", "drawer chooses"], "status": "pending" },
+    { "id": "P14", "topic": "Mid-game score for leader/last place/best card", "current": "full scoring on current team; ties include all tied players", "alternatives": ["rough estimate as in V3"], "status": "pending" },
+    { "id": "P15", "topic": "Viral Success ties", "current": "all tied for most Designers get +2", "alternatives": ["all tied get +1"], "status": "pending" },
+    { "id": "P16", "topic": "Employee of the Month stacking and ties", "current": "stacks; owner chooses among tied roles", "alternatives": ["does not stack"], "status": "pending" },
+    { "id": "P17", "topic": "Merger Offer flow", "current": "drawer proposes 1:1 trade within 60 s; bot accepts if own score not lower", "alternatives": ["multi-card negotiation"], "status": "pending" },
+    { "id": "P18", "topic": "Pivot or Persevere draw source", "current": "remaining main deck after dealing", "alternatives": ["discard pile"], "status": "pending" },
+    { "id": "P19", "topic": "Upskill vs PM multiplier order", "current": "Upskill added after multiplier: (7 x 2) + 3 = 17", "alternatives": ["(7 + 3) x 2 = 20"], "status": "pending" },
+    { "id": "P20", "topic": "Product Launch with Unicorn Hype", "current": "both stack", "alternatives": ["take the higher one"], "status": "pending" },
+    { "id": "P21", "topic": "Balance criteria", "current": {
+        "seatWinRateMaxDeviationPp": 3,
+        "strategyWinRateMaxAboveFairPp": 10,
+        "cardDraftedWinRateFlagPp": 5,
+        "smartVsRandomMinWinRate": 0.6,
+        "closeGameMarginPoints": 5,
+        "closeGameMinShare": 0.4,
+        "comebackRateRange": [0.1, 0.25],
+        "metaContributionRange": [0.1, 0.3],
+        "crisisWinnerChangeMaxShare": 0.3,
+        "gamesPerConfiguration": 10000
+      }, "alternatives": ["team sets thresholds"], "status": "pending" },
+    { "id": "P22", "topic": "Engine language and stack", "current": null, "alternatives": ["decide with the web app plan"], "status": "pending" }
+  ]
+}

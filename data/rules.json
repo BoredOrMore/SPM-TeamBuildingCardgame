@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "0.1.0",
+  "players": { "min": 3, "max": 4 },
+  "setup": {
+    "decks": ["main", "crisis", "meta"],
+    "shuffleEachDeck": true,
+    "activeMetaCount": 3,
+    "unusedMeta": "out_of_game",
+    "handSize": { "3": 10, "4": 8 },
+    "firstPlayer": "random",
+    "placeholders": ["P3"]
+  },
+  "turns": {
+    "count": { "3": 10, "4": 8 },
+    "picksPerTurn": 1,
+    "reveal": "simultaneous",
+    "resolveOnReveal": ["action", "defense:on_reveal"],
+    "passDirection": {
+      "odd": "left_clockwise",
+      "even": "right_counterclockwise"
+    },
+    "steps": [
+      "look_at_hand",
+      "choose_one_card",
+      "place_face_down",
+      "wait_for_all",
+      "reveal_together",
+      "resolve_on_reveal_cards",
+      "add_to_team",
+      "pass_hand",
+      "advance_tracker",
+      "check_crisis"
+    ]
+  },
+  "crisis": {
+    "afterTurns": [2, 4, 6],
+    "cardsPerPhase": 1,
+    "drawnBy": "random_player",
+    "persistentCardsStayVisible": true,
+    "nonPersistentGoTo": "crisis_discard",
+    "midGameScore": "full_scoring_on_current_team",
+    "midGameScoreTies": "all_tied_players",
+    "placeholders": ["P14"]
+  },
+  "discardPile": {
+    "sources": ["burnout", "layoff", "refactor", "pivot_or_persevere"],
+    "usedBy": ["funding_round"],
+    "placeholders": ["P11"]
+  },
+  "scoring": {
+    "order": [
+      { "step": 1, "id": "pair_qa_with_bug" },
+      { "step": 2, "id": "role_cards", "cards": ["junior_dev", "senior_dev", "designer"] },
+      { "step": 3, "id": "event_cards", "cards": ["coffee", "freelance", "investors"] },
+      { "step": 4, "id": "boost_and_defense", "cards": ["upskill", "employee_of_the_month", "tech_debt_payoff"] },
+      { "step": 5, "id": "meta_bonuses" },
+      { "step": 6, "id": "crisis_bonuses_and_penalties" },
+      { "step": 7, "id": "total" }
+    ],
+    "roleGroupsForCompleteTeam": ["developer", "project_manager", "designer", "qa"],
+    "tieBreak": ["most_role_cards", "shared_victory"]
+  },
+  "testCases": [
+    { "name": "3 Junior + 1 PM", "team": { "junior_dev": 3, "project_manager": 1 }, "expect": { "junior_dev": 14 } },
+    { "name": "3 Junior + 2 PM conflict", "team": { "junior_dev": 3, "project_manager": 2 }, "expect": { "junior_dev": 0 } },
+    { "name": "2 QA + 3 Bug", "team": { "qa_tester": 2, "bug": 3 }, "expect": { "qa_and_bug": -3 } },
+    { "name": "Upskill on 3 Junior", "team": { "junior_dev": 3, "upskill": 1 }, "choices": { "upskill": "junior_dev" }, "expect": { "junior_dev": 10 } },
+    { "name": "Employee of the Month on 3 Designer", "team": { "designer": 3, "employee_of_the_month": 1 }, "expect": { "designer": 15 } }
+  ]
+}
