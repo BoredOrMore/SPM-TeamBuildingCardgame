@@ -166,3 +166,9 @@ export interface GameState {
 export type Action =
   | { type: 'pick'; player: number; cards: string[] }
   | { type: 'choose'; player: number; decisionId: number; option: number };
+
+/** A player controlled by code. `act` is called only when `seat` must act. */
+export interface Bot {
+  readonly name: string;
+  act(data: GameData, state: GameState, seat: number): Action;
+}
