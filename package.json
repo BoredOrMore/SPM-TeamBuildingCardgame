@@ -1,0 +1,17 @@
+{
+  "name": "head-hunter-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Rule engine for Head Hunter: The Card Game, shared by the balance simulator and the web app",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}
