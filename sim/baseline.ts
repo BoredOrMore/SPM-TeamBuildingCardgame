@@ -36,24 +36,36 @@ function seats(players: number, make: (seat: number) => Bot): Bot[] {
   return Array.from({ length: players }, (_, i) => make(i));
 }
 
-/** Plays game `g` and returns its record: setup, picks, crises, totals at the start of each turn and the final scores. */
+/**
+ * Plays game `g` and returns its record: setup, picks, crises (with every total just before
+ * each one), totals at the start of each turn and the final scores.
+ */
 function playRecorded(data: GameData, bots: Bot[], g: number) {
   const seed = BASE_SEED + g;
   const state = createGame(data, { players: bots.length, seed });
   const totalsByTurn: number[][] = [];
+  const totalsBeforeCrisis: number[][] = [];
   for (let steps = 0; state.stage !== 'ended'; steps++) {
     if (steps >= MAX_STEPS) throw new Error(`game ${g} did not finish`);
     if (state.stage === 'pick' && totalsByTurn.length < state.turn) totalsByTurn.push(currentScores(data, state).map((s) => s.total));
     const seat = actingSeat(state);
-    applyActionInPlace(data, state, bots[seat]!.act(data, state, seat));
+    const action = bots[seat]!.act(data, state, seat);
+    // On a crisis turn, replay the action on a copy whose rules skip this crisis to see the totals just before it.
+    const turn = state.turn;
+    const copy = data.rules.crisis.afterTurns.includes(turn) ? structuredClone({ ...state, events: [] }) : undefined;
+    applyActionInPlace(data, state, action);
+    if (copy && state.turn !== turn) {
+      applyActionInPlace(withoutCrisisAfter(data, turn), copy, action);
+      totalsBeforeCrisis.push(currentScores(data, copy).map((s) => s.total));
+    }
   }
   const picks: string[][] = bots.map(() => []);
-  const crises: Array<{ turn: number; id: string }> = [];
+  const crises: Array<{ turn: number; id: string; totalsBefore: number[] }> = [];
   for (const e of state.events) {
     if (e.type === 'cards_revealed') {
       for (const r of e.cards as Array<{ player: number; cards: Array<{ id: string }> }>) picks[r.player]!.push(...r.cards.map((c) => c.id));
     }
-    if (e.type === 'crisis_drawn') crises.push({ turn: e.turn, id: (e.card as { id: string }).id });
+    if (e.type === 'crisis_drawn') crises.push({ turn: e.turn, id: (e.card as { id: string }).id, totalsBefore: totalsBeforeCrisis[crises.length]! });
   }
   return {
     game: g,
@@ -69,6 +81,11 @@ function playRecorded(data: GameData, bots: Bot[], g: number) {
     scores: state.result!.scores.map((s) => ({ total: s.total, lines: s.lines.map((l) => [l.label, l.points]) })),
     winners: state.result!.winners,
   };
+}
+
+/** The same game data with no Crisis drawn after `turn`. */
+function withoutCrisisAfter(data: GameData, turn: number): GameData {
+  return { ...data, rules: { ...data.rules, crisis: { afterTurns: data.rules.crisis.afterTurns.filter((t) => t !== turn) } } };
 }
 
 /** Reads a JSON file from data/ (the build runs from dist/sim/). */
