@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "simulate": "tsc -p tsconfig.json && node dist/sim/baseline.js"
   },
   "devDependencies": {
     "@types/node": "22.15.3",
