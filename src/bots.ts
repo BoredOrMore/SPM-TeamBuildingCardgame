@@ -6,7 +6,7 @@ import type { Action, Bot, CardInstance, Choice, GameData, GameState } from './t
 
 /** Safety stop for a game loop; a real game takes far fewer steps. */
 const MAX_STEPS = 10_000;
-/** Extra points an archetype adds to its favoured cards when picking. */
+/** Default extra points an archetype adds to its favoured cards when picking. */
 const FAVOR_BONUS = 2;
 /** Points a Greedy bot gives an NDA on top of its score change, for the protection it brings. */
 const NDA_VALUE = 1;
@@ -68,32 +68,46 @@ function randomAction(state: GameState, seat: number, holder: { rng: number }): 
 
 // ---------------------------------------------------------------- greedy
 
-/** Level 2: takes the card that raises its own score most; decides by the best score margin one step ahead. */
-export function greedyBot(seed: number, archetype: Archetype = 'balanced'): Bot {
+/** How a Greedy bot values a pick beyond its own score change. */
+interface PickStyle {
+  favored: string[];
+  favorBonus: number;
+  /** Weight of the most any opponent would gain from the card (hate-drafting). */
+  denial: number;
+}
+
+/** Plain Greedy picking, used inside Monte Carlo search. */
+const PLAIN: PickStyle = { favored: [], favorBonus: 0, denial: 0 };
+
+/**
+ * Level 2: takes the card that raises its own score most; decides by the best score margin one step ahead.
+ * `favorBonus` changes how strongly an archetype prefers its cards; `denial` > 0 also values taking cards opponents want.
+ */
+export function greedyBot(seed: number, archetype: Archetype = 'balanced', opts: { favorBonus?: number; denial?: number } = {}): Bot {
   const holder = { rng: seed >>> 0 };
-  const favored = FAVORED[archetype];
+  const style: PickStyle = { favored: FAVORED[archetype], favorBonus: opts.favorBonus ?? FAVOR_BONUS, denial: opts.denial ?? 0 };
   return {
-    name: archetype === 'balanced' ? 'greedy' : `greedy_${archetype}`,
+    name: `${archetype === 'balanced' ? 'greedy' : `greedy_${archetype}`}${style.denial > 0 ? '_denial' : ''}`,
     act(data, state, seat) {
       const decision = currentDecision(state);
       if (decision) {
         const values = optionValues(data, state, seat, holder);
         return { type: 'choose', player: seat, decisionId: decision.id, option: values.indexOf(Math.max(...values)) };
       }
-      return { type: 'pick', player: seat, cards: greedyPick(data, state, seat, favored) };
+      return { type: 'pick', player: seat, cards: greedyPick(data, state, seat, style) };
     },
   };
 }
 
 /** The cards a Greedy bot picks this turn, chosen one at a time. */
-function greedyPick(data: GameData, state: GameState, seat: number, favored: string[]): string[] {
+function greedyPick(data: GameData, state: GameState, seat: number, style: PickStyle): string[] {
   const me = state.players[seat]!;
   const need = Math.min(state.picksRequired, me.hand.length);
   const team = me.team.slice();
   const left = me.hand.slice();
   const out: string[] = [];
   while (out.length < need) {
-    const best = rankCards(data, state, seat, left, team, favored)[0]!;
+    const best = rankCards(data, state, seat, left, team, style)[0]!;
     out.push(best.uid);
     left.splice(left.indexOf(best), 1);
     if (data.byId.get(best.id)!.type !== 'action') team.push(best);
@@ -102,9 +116,23 @@ function greedyPick(data: GameData, state: GameState, seat: number, favored: str
 }
 
 /** `cards` sorted from most to least valuable for `seat` with the given team. */
-function rankCards(data: GameData, state: GameState, seat: number, cards: CardInstance[], team: CardInstance[], favored: string[]): CardInstance[] {
-  const value = new Map(cards.map((c) => [c.uid, cardValue(data, state, seat, c, team) + (favored.includes(c.id) ? FAVOR_BONUS : 0)]));
+function rankCards(data: GameData, state: GameState, seat: number, cards: CardInstance[], team: CardInstance[], style: PickStyle): CardInstance[] {
+  const value = new Map(
+    cards.map((c) => [
+      c.uid,
+      cardValue(data, state, seat, c, team) + (style.favored.includes(c.id) ? style.favorBonus : 0) + (style.denial > 0 ? style.denial * denialValue(data, state, seat, c) : 0),
+    ]),
+  );
   return cards.slice().sort((a, b) => value.get(b.uid)! - value.get(a.uid)!);
+}
+
+/** The most any opponent's score would rise if `card` joined their team (0 for Action cards). */
+function denialValue(data: GameData, state: GameState, seat: number, card: CardInstance): number {
+  if (data.byId.get(card.id)!.type === 'action') return 0;
+  return Math.max(
+    0,
+    ...state.players.filter((p) => p.seat !== seat).map((p) => scoreWith(data, state, p.seat, [...p.team, card], seat) - scoreWith(data, state, p.seat, p.team, seat)),
+  );
 }
 
 /** Score change for `seat` if `card` were played now with `team`. */
@@ -140,10 +168,14 @@ function refactored(team: CardInstance[], mode: 'bug_to_qa' | 'juniors_to_senior
   return [...team.filter((c) => !removed.has(c)), { uid: 'refactored', id: addId }];
 }
 
-/** Final score `seat` would have with `team` and everyone else's current team, without play bonuses. */
-function scoreWith(data: GameData, state: GameState, seat: number, team: CardInstance[]): number {
+/**
+ * Final score `seat` would have with `team` and everyone else's current team, without play bonuses.
+ * Private Meta [P37] counts only when `viewer` is `seat`, since nobody else can see it.
+ */
+function scoreWith(data: GameData, state: GameState, seat: number, team: CardInstance[], viewer = seat): number {
   const teams = state.players.map((p) => (p.seat === seat ? team : p.team));
-  return scorePlayer({ data, teams, seat, activeMeta: state.activeMeta, visibleCrisis: state.visibleCrisis, bonuses: [], totalTurns: state.totalTurns }).total;
+  const activeMeta = viewer === seat ? [...state.activeMeta, ...state.players[seat]!.privateMeta] : state.activeMeta;
+  return scorePlayer({ data, teams, seat, activeMeta, visibleCrisis: state.visibleCrisis, bonuses: [], totalTurns: state.totalTurns }).total;
 }
 
 /**
@@ -157,7 +189,7 @@ function optionValues(data: GameData, state: GameState, seat: number, holder: { 
   if (decision.kind === 'refactor') {
     return decision.options!.map((o) => scoreWith(data, state, seat, refactored(me.team, (o as Extract<Choice, { kind: 'refactor' }>).mode)));
   }
-  const world = determinize(state, seat, holder);
+  const world = determinize(data, state, seat, holder);
   return decision.options!.map((_, option) => {
     const sim = structuredClone(world);
     applyActionInPlace(data, sim, { type: 'choose', player: seat, decisionId: decision.id, option });
@@ -187,7 +219,7 @@ export function monteCarloBot(seed: number): Bot {
     act(data, state, seat) {
       const candidates = candidateActions(data, state, seat, holder);
       if (candidates.length === 1) return candidates[0]!;
-      const worlds = Array.from({ length: ROLLOUTS }, () => ({ state: determinize(state, seat, holder), rng: randomInt(holder, 2 ** 32) }));
+      const worlds = Array.from({ length: ROLLOUTS }, () => ({ state: determinize(data, state, seat, holder), rng: randomInt(holder, 2 ** 32) }));
       let best = candidates[0]!;
       let bestValue = -Infinity;
       for (const action of candidates) {
@@ -219,10 +251,10 @@ function candidateActions(data: GameData, state: GameState, seat: number, holder
   const me = state.players[seat]!;
   const seen = new Set<string>();
   // Identical cards are interchangeable, so one of each id is enough.
-  const ranked = rankCards(data, state, seat, me.hand, me.team, []).filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
+  const ranked = rankCards(data, state, seat, me.hand, me.team, PLAIN).filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
   const need = Math.min(state.picksRequired, me.hand.length);
   if (need === 1) return ranked.map((c) => ({ type: 'pick', player: seat, cards: [c.uid] }));
-  if (ranked.length < need) return [{ type: 'pick', player: seat, cards: greedyPick(data, state, seat, []) }];
+  if (ranked.length < need) return [{ type: 'pick', player: seat, cards: greedyPick(data, state, seat, PLAIN) }];
   const pool = ranked.slice(0, PAIR_POOL);
   const pairs: Action[] = [];
   pool.forEach((a, i) => pool.slice(i + 1).forEach((b) => pairs.push({ type: 'pick', player: seat, cards: [a.uid, b.uid] })));
@@ -234,7 +266,7 @@ function playOut(data: GameData, state: GameState, seat: number, holder: { rng: 
   for (let steps = 0; state.stage !== 'ended'; steps++) {
     if (steps >= MAX_STEPS) throw new Error('rollout did not finish');
     const actor = actingSeat(state);
-    const action: Action = currentDecision(state) ? randomAction(state, actor, holder) : { type: 'pick', player: actor, cards: greedyPick(data, state, actor, []) };
+    const action: Action = currentDecision(state) ? randomAction(state, actor, holder) : { type: 'pick', player: actor, cards: greedyPick(data, state, actor, PLAIN) };
     applyActionInPlace(data, state, action);
   }
   const { winners } = state.result!;
@@ -244,10 +276,10 @@ function playOut(data: GameData, state: GameState, seat: number, holder: { rng: 
 
 /**
  * A copy of `state` with everything `seat` cannot see re-dealt at random: other hands
- * (pooled with the undealt deck), their unrevealed picks, the Crisis deck order and the
- * game's random seed. The event log is dropped to keep copies cheap.
+ * (pooled with the undealt deck), their unrevealed picks, their private Meta [P37], the Crisis
+ * deck order below any previewed card [P36] and the game's random seed. The event log is dropped to keep copies cheap.
  */
-export function determinize(state: GameState, seat: number, holder: { rng: number }): GameState {
+export function determinize(data: GameData, state: GameState, seat: number, holder: { rng: number }): GameState {
   const sim = structuredClone({ ...state, events: [] });
   const others = sim.players.filter((p) => p.seat !== seat);
   const pool = shuffle(holder, [...others.flatMap((p) => p.hand), ...sim.mainRemaining]);
@@ -256,7 +288,14 @@ export function determinize(state: GameState, seat: number, holder: { rng: numbe
     p.picked = null;
   }
   sim.mainRemaining = pool;
-  sim.crisisDeck = shuffle(holder, sim.crisisDeck);
+  if (others.some((p) => p.privateMeta.length)) {
+    const metaPool = shuffle(holder, [...others.flatMap((p) => p.privateMeta), ...sim.unusedMeta]);
+    for (const p of others) p.privateMeta = metaPool.splice(0, p.privateMeta.length);
+    sim.unusedMeta = metaPool;
+  }
+  // A previewed Crisis [P36] is public, so it stays on top.
+  const previewed = data.rules.crisis.previewNext && data.rules.crisis.afterTurns.includes(sim.turn) ? sim.crisisDeck.slice(0, 1) : [];
+  sim.crisisDeck = [...previewed, ...shuffle(holder, sim.crisisDeck.slice(previewed.length))];
   sim.rng = Math.floor(nextRandom(holder) * 2 ** 32);
   return sim;
 }

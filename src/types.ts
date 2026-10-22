@@ -39,9 +39,10 @@ export interface CardsFile {
 export interface RulesFile {
   schemaVersion: string;
   players: { min: number; max: number };
-  setup: { activeMetaCount: number; handSize: Record<string, number> };
+  setup: { activeMetaCount: number; privateMetaPerPlayer: number; handSize: Record<string, number> };
   turns: { count: Record<string, number> };
-  crisis: { afterTurns: number[] };
+  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean };
+  scoring: { metaMultiplier: number };
   testCases: Array<{
     name: string;
     team: Record<string, number>;
@@ -77,6 +78,8 @@ export interface PlayerState {
   /** uids chosen this turn, null until submitted */
   picked: string[] | null;
   revealed: CardInstance[];
+  /** Meta card ids only this player sees and scores [P37] */
+  privateMeta: string[];
 }
 
 export type DecisionKind =
@@ -156,6 +159,8 @@ export interface GameState {
   crisisDiscard: CardInstance[];
   visibleCrisis: CardInstance[];
   activeMeta: string[];
+  /** Meta card ids out of play; hidden from everyone */
+  unusedMeta: string[];
   queue: Decision[];
   nextDecisionId: number;
   rng: number;

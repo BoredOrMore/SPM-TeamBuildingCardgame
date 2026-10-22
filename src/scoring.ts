@@ -164,7 +164,9 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
 
   // Step 5: Meta bonuses.
   for (const id of input.activeMeta) {
-    const points = metaPoints(id, effectOf(data, id), input, effective, groups);
+    const raw = metaPoints(id, effectOf(data, id), input, effective, groups);
+    // Only bonuses are scaled [P35]; fractions round down [P32].
+    const points = raw > 0 ? Math.floor(raw * data.rules.scoring.metaMultiplier) : raw;
     add(`Meta: ${data.byId.get(id)?.name ?? id}`, points);
   }
 

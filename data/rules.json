@@ -5,10 +5,11 @@
     "decks": ["main", "crisis", "meta"],
     "shuffleEachDeck": true,
     "activeMetaCount": 3,
+    "privateMetaPerPlayer": 0,
     "unusedMeta": "out_of_game",
     "handSize": { "3": 10, "4": 8 },
     "firstPlayer": "random",
-    "placeholders": ["P3"]
+    "placeholders": ["P3", "P37"]
   },
   "turns": {
     "count": { "3": 10, "4": 8 },
@@ -40,7 +41,9 @@
     "nonPersistentGoTo": "crisis_discard",
     "midGameScore": "full_scoring_on_current_team",
     "midGameScoreTies": "all_tied_players",
-    "placeholders": ["P14"]
+    "limitedPerGame": { "cards": [], "max": 0 },
+    "previewNext": false,
+    "placeholders": ["P14", "P34", "P36"]
   },
   "discardPile": {
     "sources": ["burnout", "layoff", "refactor", "pivot_or_persevere"],
@@ -58,7 +61,9 @@
       { "step": 7, "id": "total" }
     ],
     "roleGroupsForCompleteTeam": ["developer", "project_manager", "designer", "qa"],
-    "tieBreak": ["most_role_cards", "shared_victory"]
+    "tieBreak": ["most_role_cards", "shared_victory"],
+    "metaMultiplier": 1,
+    "placeholders": ["P35"]
   },
   "testCases": [
     { "name": "3 Junior + 1 PM", "team": { "junior_dev": 3, "project_manager": 1 }, "expect": { "junior_dev": 14 } },

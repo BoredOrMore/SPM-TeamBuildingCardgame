@@ -259,7 +259,8 @@
       "topic": "Where Refactor's new QA/Senior comes from",
       "current": "undealt main deck; if none left, that mode is unavailable",
       "alternatives": [
-        "created from nothing"
+        "created from nothing",
+        "undealt main deck, else the discard pile (balance experiment)"
       ],
       "status": "pending"
     },
@@ -306,6 +307,51 @@
       "alternatives": [
         "round to nearest",
         "keep halves"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P33",
+      "topic": "Minimum lead before catch-up Crisis cards act (Steal Best Card, Hostile Takeover, Underdog Bonus)",
+      "current": "0 points (always act, as in the report)",
+      "alternatives": [
+        "act only when leader minus last place is at least X points (balance experiment)"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P34",
+      "topic": "Crisis cards limited per game",
+      "current": "no limit (as in the report)",
+      "alternatives": [
+        "at most N of a set of swing cards per game; extra draws go to the bottom of the Crisis deck (balance experiment)"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P35",
+      "topic": "Meta bonus multiplier",
+      "current": "x1 (as in the report)",
+      "alternatives": [
+        "scale positive Meta points down, rounded down (balance experiment)"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P36",
+      "topic": "Show the next Crisis card one turn before it is drawn",
+      "current": "no (as in the report)",
+      "alternatives": [
+        "turn it face up at the start of each Crisis turn (balance experiment, like Slay the Spire enemy intents)"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P37",
+      "topic": "Private goals",
+      "current": "none (as in the report)",
+      "alternatives": [
+        "deal each player N unused Meta cards face down; they score only for their owner (balance experiment)"
       ],
       "status": "pending"
     }

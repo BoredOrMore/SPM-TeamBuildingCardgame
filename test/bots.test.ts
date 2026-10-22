@@ -36,7 +36,7 @@ describe('runGame', () => {
 describe('determinize', () => {
   it('re-deals only what the seat cannot see', () => {
     const state: GameState = createGame(data, { players: 4, seed: 9 });
-    const sim = determinize(state, 1, { rng: 42 });
+    const sim = determinize(data, state, 1, { rng: 42 });
     expect(sim.players[1]!.hand).toEqual(state.players[1]!.hand);
     const hidden = (s: GameState) => ids([...s.players.filter((p) => p.seat !== 1).flatMap((p) => p.hand), ...s.mainRemaining]);
     expect(hidden(sim)).toEqual(hidden(state));

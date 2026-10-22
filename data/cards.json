@@ -134,9 +134,10 @@
             { "remove": { "bug": 1 }, "add": { "qa_tester": 1 } },
             { "remove": { "junior_dev": 2 }, "add": { "senior_dev": 1 } }
           ],
-          "removedCardsGoTo": "discard"
+          "removedCardsGoTo": "discard",
+          "addFrom": ["main_deck"]
         },
-        "placeholders": ["P8", "P11"]
+        "placeholders": ["P8", "P11", "P27"]
       },
       {
         "id": "nda",
@@ -265,8 +266,8 @@
         "quantity": 3,
         "text": "Last place player gains +3 points.",
         "persistent": true,
-        "effect": { "kind": "bonus_to_last_place", "points": 3, "evaluatedWhen": "on_draw", "ties": "all_tied_players" },
-        "placeholders": ["P14"]
+        "effect": { "kind": "bonus_to_last_place", "points": 3, "evaluatedWhen": "on_draw", "ties": "all_tied_players", "minLead": 0 },
+        "placeholders": ["P14", "P33"]
       },
       {
         "id": "scope_creep",
@@ -282,8 +283,8 @@
         "quantity": 2,
         "text": "Richest player gives 2 cards to poorest player.",
         "persistent": false,
-        "effect": { "kind": "transfer", "from": "highest_score", "to": "lowest_score", "count": 2, "chooser": "giver" },
-        "placeholders": ["P14"]
+        "effect": { "kind": "transfer", "from": "highest_score", "to": "lowest_score", "count": 2, "chooser": "giver", "minLead": 0 },
+        "placeholders": ["P14", "P33"]
       },
       {
         "id": "steal_best_card",
@@ -291,8 +292,8 @@
         "quantity": 2,
         "text": "Last place steals leader's best card.",
         "persistent": false,
-        "effect": { "kind": "steal", "from": "highest_score", "to": "lowest_score", "count": 1, "chooser": "receiver" },
-        "placeholders": ["P14"]
+        "effect": { "kind": "steal", "from": "highest_score", "to": "lowest_score", "count": 1, "chooser": "receiver", "minLead": 0 },
+        "placeholders": ["P14", "P33"]
       },
       {
         "id": "unicorn_hype",

@@ -38,16 +38,16 @@ export function score(
   });
 }
 
-/** Plays a whole game with uniformly random legal moves. */
-export function playRandomGame(players: number, seed: number): GameState {
-  let state = createGame(data, { players, seed });
+/** Plays a whole game with uniformly random legal moves, with the real data unless `gameData` is given. */
+export function playRandomGame(players: number, seed: number, gameData: GameData = data): GameState {
+  let state = createGame(gameData, { players, seed });
   const policy = { rng: seed ^ 0x9e3779b9 };
   for (let steps = 0; steps < 10_000; steps++) {
     if (state.stage === 'ended') return state;
     const decision = currentDecision(state);
     if (decision) {
       const option = Math.floor(nextRandom(policy) * decision.options!.length);
-      state = applyAction(data, state, { type: 'choose', player: decision.player, decisionId: decision.id, option }).state;
+      state = applyAction(gameData, state, { type: 'choose', player: decision.player, decisionId: decision.id, option }).state;
       continue;
     }
     const p = state.players.find((x) => !x.picked)!;
@@ -55,7 +55,7 @@ export function playRandomGame(players: number, seed: number): GameState {
     const hand = p.hand.slice();
     const cards: string[] = [];
     while (cards.length < need) cards.push(hand.splice(Math.floor(nextRandom(policy) * hand.length), 1)[0]!.uid);
-    state = applyAction(data, state, { type: 'pick', player: p.seat, cards }).state;
+    state = applyAction(gameData, state, { type: 'pick', player: p.seat, cards }).state;
   }
   throw new Error('game did not finish');
 }

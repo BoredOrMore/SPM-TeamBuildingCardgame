@@ -2,6 +2,7 @@ import { pickRandom, randomInt, shuffle } from './rng.js';
 import { countCards, scorePlayer, winners } from './scoring.js';
 import type {
   Action,
+  CardDef,
   CardInstance,
   Choice,
   Decision,
@@ -51,8 +52,11 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
       bonuses: [],
       picked: null,
       revealed: [],
+      privateMeta: [],
     });
   }
+  const active = meta.splice(0, data.rules.setup.activeMetaCount);
+  for (const p of players) p.privateMeta = meta.splice(0, data.rules.setup.privateMetaPerPlayer).map((c) => c.id); // [P37]
   const state: GameState = {
     playerCount: opts.players,
     totalTurns: data.rules.turns.count[opts.players]!,
@@ -67,7 +71,8 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
     crisisDeck,
     crisisDiscard: [],
     visibleCrisis: [],
-    activeMeta: meta.slice(0, data.rules.setup.activeMetaCount).map((c) => c.id),
+    activeMeta: active.map((c) => c.id),
+    unusedMeta: meta.map((c) => c.id),
     queue: [],
     nextDecisionId: 1,
     rng: holder.rng,
@@ -75,6 +80,8 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
   };
   state.firstPlayer = randomInt(state, opts.players);
   emit(state, { type: 'game_started', players: opts.players, activeMeta: state.activeMeta, firstPlayer: state.firstPlayer });
+  for (const p of players) if (p.privateMeta.length) emit(state, { type: 'private_meta_dealt', player: p.seat, meta: p.privateMeta, visibleTo: [p.seat] });
+  previewCrisis(data, state);
   return state;
 }
 
@@ -130,7 +137,7 @@ export function currentScores(data: GameData, state: GameState): ScoreResult[] {
       data,
       teams,
       seat: p.seat,
-      activeMeta: state.activeMeta,
+      activeMeta: [...state.activeMeta, ...p.privateMeta],
       visibleCrisis: state.visibleCrisis,
       bonuses: p.bonuses,
       totalTurns: state.totalTurns,
@@ -204,7 +211,7 @@ function advance(data: GameData, state: GameState): void {
         continue;
       case 'crisis':
         if (state.players.every((p) => p.hand.length === 0)) endGame(data, state);
-        else startTurn(state);
+        else startTurn(data, state);
         continue;
       default:
         return;
@@ -247,11 +254,18 @@ function endTurn(data: GameData, state: GameState): void {
 }
 
 /** Opens the pick phase of a new turn. */
-function startTurn(state: GameState): void {
+function startTurn(data: GameData, state: GameState): void {
   state.picksRequired = state.crunchNextTurn ? 2 : 1;
   state.crunchNextTurn = false;
   state.stage = 'pick';
   emit(state, { type: 'turn_started', picksRequired: state.picksRequired });
+  previewCrisis(data, state);
+}
+
+/** On a turn that ends with a Crisis, shows everyone the card that will be drawn [P36]. */
+function previewCrisis(data: GameData, state: GameState): void {
+  if (!data.rules.crisis.previewNext || !data.rules.crisis.afterTurns.includes(state.turn)) return;
+  emit(state, { type: 'crisis_previewed', card: { ...nextCrisis(data, state) } });
 }
 
 /** Final scoring and winners. */
@@ -266,10 +280,7 @@ function endGame(data: GameData, state: GameState): void {
 
 /** Draws one Crisis card and applies or queues its effect. */
 function drawCrisis(data: GameData, state: GameState): void {
-  if (state.crisisDeck.length === 0) {
-    state.crisisDeck = shuffle(state, state.crisisDiscard);
-    state.crisisDiscard = [];
-  }
+  nextCrisis(data, state);
   const card = state.crisisDeck.shift()!;
   const drawer = pickRandom(state, seatOrder(state));
   const def = data.byId.get(card.id)!;
@@ -316,6 +327,7 @@ function drawCrisis(data: GameData, state: GameState): void {
       state.crunchNextTurn = true;
       break;
     case 'underdog_bonus': {
+      if (!leadReached(data, state, def)) break;
       const scores = currentScores(data, state);
       const low = Math.min(...scores.map((s) => s.total));
       const points = def.effect!.points as number;
@@ -326,11 +338,13 @@ function drawCrisis(data: GameData, state: GameState): void {
       break;
     }
     case 'hostile_takeover': {
+      if (!leadReached(data, state, def)) break;
       const [hi, lo] = leaderAndLast(data, state);
       if (hi !== lo) enqueue(state, hi, 'hostile_takeover', card.id, { proposer: lo });
       break;
     }
     case 'steal_best_card': {
+      if (!leadReached(data, state, def)) break;
       const [hi, lo] = leaderAndLast(data, state);
       if (hi !== lo) enqueue(state, lo, 'steal_best_card', card.id, { proposer: hi });
       break;
@@ -341,6 +355,33 @@ function drawCrisis(data: GameData, state: GameState): void {
     default:
       break; // scoring-time cards (Technical Debt, Scope Creep, ...) only stay visible
   }
+}
+
+/**
+ * The Crisis card that will be drawn next, left on top of the deck. Cards whose per-game
+ * limit is used up [P34] move to the bottom first, so a preview always matches the draw.
+ */
+function nextCrisis(data: GameData, state: GameState): CardInstance {
+  if (state.crisisDeck.length === 0) {
+    state.crisisDeck = shuffle(state, state.crisisDiscard);
+    state.crisisDiscard = [];
+  }
+  const { cards, max } = data.rules.crisis.limitedPerGame;
+  const drawn = [...state.visibleCrisis, ...state.crisisDiscard].filter((c) => cards.includes(c.id)).length;
+  for (let tries = 0; tries < state.crisisDeck.length; tries++) {
+    const card = state.crisisDeck[0]!;
+    if (!cards.includes(card.id) || drawn < max) return card;
+    state.crisisDeck.push(state.crisisDeck.shift()!);
+  }
+  throw new Error('every Crisis card left is over its per-game limit');
+}
+
+/** Whether the leader is far enough ahead of last place for a catch-up Crisis to act [P33]. */
+function leadReached(data: GameData, state: GameState, def: CardDef): boolean {
+  const totals = currentScores(data, state).map((s) => s.total);
+  const ok = Math.max(...totals) - Math.min(...totals) >= (def.effect!.minLead as number);
+  if (!ok) emit(state, { type: 'no_effect', decision: def.id, source: def.id, reason: 'lead_below_minimum' });
+  return ok;
 }
 
 /**
@@ -398,11 +439,11 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     case 'phone_screen':
       return opponents(state, d.player).map((o) => ({ kind: 'phone_screen' as const, opponent: o.seat }));
     case 'refactor': {
-      // The new card comes from the undealt main deck [P27].
+      // The new card comes from the undealt main deck, or the discard pile if the data allows it [P27].
       const c = countCards(me.team);
       const out: Choice[] = [];
-      if ((c.get('bug') ?? 0) > 0 && state.mainRemaining.some((x) => x.id === 'qa_tester')) out.push({ kind: 'refactor', mode: 'bug_to_qa' });
-      if ((c.get('junior_dev') ?? 0) >= 2 && state.mainRemaining.some((x) => x.id === 'senior_dev')) out.push({ kind: 'refactor', mode: 'juniors_to_senior' });
+      if ((c.get('bug') ?? 0) > 0 && refactorSource(data, state, 'qa_tester')) out.push({ kind: 'refactor', mode: 'bug_to_qa' });
+      if ((c.get('junior_dev') ?? 0) >= 2 && refactorSource(data, state, 'senior_dev')) out.push({ kind: 'refactor', mode: 'juniors_to_senior' });
       return out;
     }
     case 'nda':
@@ -414,7 +455,8 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     case 'hostile_takeover': {
       const to = d.context!.proposer!;
       const pool = unprotected(me);
-      return dedupeCombos(combinations(pool, Math.min(2, pool.length))).map((uids) => ({ kind: 'give' as const, to, uids }));
+      const count = data.byId.get('hostile_takeover')!.effect!.count as number;
+      return dedupeCombos(combinations(pool, Math.min(count, pool.length))).map((uids) => ({ kind: 'give' as const, to, uids }));
     }
     case 'steal_best_card': {
       const from = state.players[d.context!.proposer!]!;
@@ -468,11 +510,16 @@ function moveToDiscard(state: GameState, p: PlayerState, uid: string, reason: st
   emit(state, { type: 'card_discarded', player: p.seat, card: { ...card }, reason });
 }
 
-/** Takes a card (optionally of a given id) from the undealt main deck. */
-function drawFromMain(state: GameState, id?: string): CardInstance | undefined {
-  const i = id ? state.mainRemaining.findIndex((c) => c.id === id) : 0;
-  if (i < 0 || i >= state.mainRemaining.length) return undefined;
-  return state.mainRemaining.splice(i, 1)[0];
+/** The first pile in Refactor's `addFrom` order that holds a card with `id` [P27]. */
+function refactorSource(data: GameData, state: GameState, id: string): CardInstance[] | undefined {
+  const piles = { main_deck: state.mainRemaining, discard: state.discard };
+  const order = data.byId.get('refactor')!.effect!.addFrom as Array<keyof typeof piles>;
+  return order.map((name) => piles[name]).find((pile) => pile.some((c) => c.id === id));
+}
+
+/** Takes the top card of the undealt main deck. */
+function drawFromMain(state: GameState): CardInstance | undefined {
+  return state.mainRemaining.shift();
 }
 
 /** Applies the chosen option of a decision. */
@@ -502,7 +549,8 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
         const card = me.team.find((c) => c.id === removeId)!;
         moveToDiscard(state, me, card.uid, 'refactor');
       }
-      const added = drawFromMain(state, addId)!;
+      const pile = refactorSource(data, state, addId)!;
+      const added = pile.splice(pile.findIndex((x) => x.id === addId), 1)[0]!;
       me.team.push(added);
       emit(state, { type: 'card_gained', player: me.seat, card: { ...added }, reason: 'refactor' });
       break;
