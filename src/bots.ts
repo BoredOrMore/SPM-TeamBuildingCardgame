@@ -22,7 +22,7 @@ const MARGIN_TIEBREAK = 0.001;
 export type Archetype = 'balanced' | 'junior' | 'senior' | 'designer' | 'qa';
 
 /** Card ids each archetype prefers (restricted play, Jaffe et al. 2012). */
-const FAVORED: Record<Archetype, string[]> = {
+export const FAVORED: Record<Archetype, string[]> = {
   balanced: [],
   junior: ['junior_dev', 'project_manager'],
   senior: ['senior_dev'],

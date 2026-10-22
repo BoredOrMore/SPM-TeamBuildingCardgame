@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "simulate": "tsc -p tsconfig.json && node dist/sim/baseline.js"
+    "simulate": "tsc -p tsconfig.json && node dist/sim/baseline.js",
+    "analyze": "tsc -p tsconfig.json && node dist/sim/analyze.js"
   },
   "devDependencies": {
     "@types/node": "22.15.3",
