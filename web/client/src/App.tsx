@@ -313,6 +313,82 @@ function choiceCards(c: Choice): string[] {
   }
 }
 
+/** How an option that moves several cards is picked one card at a time: a prompt per card, in order, or one prompt for a set. */
+function pickPlan(view: GameView, c: Choice): { uids: string[]; prompts: string[]; ordered: boolean } | undefined {
+  const who = (seat: number) => view.players[seat]?.name ?? `Seat ${seat + 1}`;
+  switch (c.kind) {
+    case 'headhunt':
+      return { uids: [c.give, c.take], prompts: ['Pick a card from your team to give', 'Pick a card to take'], ordered: true };
+    case 'merger_offer':
+      return { uids: [c.give, c.take], prompts: ['Pick a card from your team to offer', `Pick a card you want in return`], ordered: true };
+    case 'give':
+      return { uids: c.uids, prompts: [`Pick ${c.uids.length} ${c.uids.length === 1 ? 'card' : 'cards'} to give to ${who(c.to)}`], ordered: false };
+    case 'pivot':
+      return c.discard.length ? { uids: c.discard, prompts: [`Pivot: pick ${c.discard.length} ${c.discard.length === 1 ? 'card' : 'cards'} to discard`], ordered: false } : undefined;
+    default:
+      return undefined;
+  }
+}
+
+/** The seat a card would be taken from in an option, so the picker can say whose card it is. */
+function takenFrom(c: Choice): number | undefined {
+  if (c.kind === 'headhunt') return c.opponent;
+  if (c.kind === 'merger_offer') return c.target;
+  return undefined;
+}
+
+/**
+ * Picks a multi-card option one card at a time instead of listing every combination: ordered options
+ * (give one, take one) go step by step, set options (give 2) toggle cards. Confirm sends the matching option.
+ */
+function CardPicker({ view, options, onChoose }: { view: GameView; options: Choice[]; onChoose: (option: number) => void }) {
+  const [picked, setPicked] = useState<string[]>([]);
+  const plans = options.map((o, i) => ({ i, o, plan: pickPlan(view, o) })).filter((p) => p.plan) as Array<{ i: number; o: Choice; plan: NonNullable<ReturnType<typeof pickPlan>> }>;
+  const ordered = plans[0]!.plan.ordered;
+  const size = plans[0]!.plan.uids.length;
+  const sameSet = (a: string[], b: string[]) => a.map((u) => idOfUid(view, u)).sort().join() === b.map((u) => idOfUid(view, u)).sort().join(); // two Juniors are the same pick
+  const match = picked.length === size ? plans.find((p) => (ordered ? p.plan.uids.every((u, k) => u === picked[k]) : sameSet(p.plan.uids, picked))) : undefined;
+  // ordered: the cards that can come next after the picks so far; set: every card any option uses
+  const live = ordered ? plans.filter((p) => picked.every((u, k) => p.plan.uids[k] === u)) : plans;
+  const tiles: Array<{ uid: string; owner?: number }> = [];
+  for (const p of live) {
+    const uids = ordered ? (picked.length < size ? [p.plan.uids[picked.length]!] : []) : p.plan.uids;
+    for (const uid of uids) if (!tiles.some((t) => t.uid === uid)) tiles.push({ uid, owner: ordered && picked.length === 1 ? takenFrom(p.o) : undefined });
+  }
+  const prompt = ordered ? plans[0]!.plan.prompts[Math.min(picked.length, size - 1)]! : plans[0]!.plan.prompts[0]!;
+  const tap = (uid: string) => {
+    if (ordered) setPicked([...picked, uid]);
+    else setPicked(picked.includes(uid) ? picked.filter((u) => u !== uid) : picked.length < size ? [...picked, uid] : picked);
+  };
+  return (
+    <div className="card-picker">
+      <div className="picker-prompt">{match ? choiceLabel(view, match.o) : prompt}</div>
+      {!match || !ordered ? (
+        <div className="picker-tiles">
+          {tiles.map((t) => (
+            <button key={t.uid} className={`picker-tile ${picked.includes(t.uid) ? 'picked' : ''}`} aria-pressed={picked.includes(t.uid)} onClick={() => tap(t.uid)}>
+              <Card id={idOfUid(view, t.uid)} small />
+              {t.owner !== undefined && <span className="muted">{view.players[t.owner]?.name}</span>}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <span className="option-cards">
+          {picked.map((uid) => (
+            <Card key={uid} id={idOfUid(view, uid)} small />
+          ))}
+        </span>
+      )}
+      <div className="picker-actions">
+        {picked.length > 0 && <button onClick={() => setPicked(ordered ? picked.slice(0, -1) : [])}>{ordered ? 'Back' : 'Clear'}</button>}
+        <button className="primary" disabled={!match} onClick={() => match && onChoose(match.i)}>
+          Confirm
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Your decision as a sheet over the hand: the card that asks, then one tile per option. */
 function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision: DecisionView; onChoose: (option: number) => void }) {
   const [open, setOpen] = useState(true);
@@ -336,8 +412,11 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
               {view.players[decision.context?.proposer ?? -1]?.name ?? 'They'} offer: {choiceLabel(view, offer)}
             </div>
           )}
+          {decision.options!.some((o) => pickPlan(view, o)) && (
+            <CardPicker key={decision.id} view={view} options={decision.options!} onChoose={onChoose} />
+          )}
           <div className="sheet-options">
-            {decision.options!.map((o, i) => (
+            {decision.options!.map((o, i) => pickPlan(view, o) ? null : (
               <button key={i} className="option" onClick={() => onChoose(i)}>
                 {choiceCards(o).length > 0 && (
                   <span className="option-cards">
