@@ -150,7 +150,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 
 /* your decision, as a sheet over the hand */
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
+  position: fixed; left: 0; right: var(--rules-right, 0px); bottom: var(--rules-bottom, 0px); z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
   background: var(--panel); border-top: 3px solid var(--accent); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.2);
   padding: 0 16px calc(16px + env(safe-area-inset-bottom)); animation: sheet-up 220ms ease-out;
 }
@@ -277,7 +277,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 .drag-ghost { position: fixed; z-index: 20; pointer-events: none; transform: translate(-50%, -60%) rotate(-3deg) scale(1.05); filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.25)); }
 .drag-ghost .card { width: 100%; height: 100%; min-height: 0; }
 .preview {
-  position: fixed; inset: 0; z-index: 30; pointer-events: none; display: flex; flex-direction: column;
+  position: fixed; inset: 0 var(--rules-right, 0px) var(--rules-bottom, 0px) 0; z-index: 30; pointer-events: none; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 12px; background: rgb(43 42 51 / 0.45); padding: 16px;
 }
 .card.preview-card { width: 240px; }
@@ -316,9 +316,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 }
 
 /* event playback */
-.playback { position: fixed; inset: 0; z-index: 40; cursor: pointer; background: rgb(20 20 30 / 0.35); }
+.playback { position: fixed; inset: 0 var(--rules-right, 0px) var(--rules-bottom, 0px) 0; z-index: 40; cursor: pointer; background: rgb(20 20 30 / 0.35); }
 .spotlight {
-  position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 32px);
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 32px);
   display: flex; flex-direction: column; align-items: center; gap: 12px; animation: spot-in 200ms ease-out;
 }
 .spot-cards { display: flex; gap: 12px; justify-content: center; }
@@ -336,7 +336,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 @keyframes score-rise { from { opacity: 1; transform: translateY(6px); } 70% { opacity: 1; } to { opacity: 0; transform: translateY(-14px); } }
 .bonus-float { position: fixed; z-index: 42; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 800; color: #2e8b57; animation: bonus-up 1200ms ease-out forwards; }
 .app.playing .play { visibility: hidden; }
-.skip-hint { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #fff; }
+.skip-hint { position: absolute; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #fff; }
 .pulse { animation: pulse 900ms ease-in-out 1; box-shadow: 0 0 0 3px #e9a23b; }
 
 @keyframes spot-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
@@ -408,9 +408,22 @@ button.picker-tile.picked { border-color: var(--accent); }
   .topbar button.speed, .topbar .rules-button { padding: 4px 8px; }
   .topbar .sound-btn { min-width: 36px; min-height: 36px; padding: 4px; }
 }
-/* opened from the topbar, which keeps its own items on one line; the rules wrap and scroll only up and down */
-.rulebook-backdrop { position: fixed; inset: 0; z-index: 60; background: rgb(20 20 30 / 0.45); display: grid; place-items: center; padding: 12px; white-space: normal; font-weight: 400; }
-.rulebook { width: min(760px, 100%); min-width: 0; overflow-wrap: anywhere; max-height: calc(100dvh - 24px); display: flex; flex-direction: column; background: var(--panel); border-radius: 14px; box-shadow: 0 16px 48px rgb(0 0 0 / 0.35); overflow: hidden; }
+/* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.
+   The body makes room (--rules-right, --rules-bottom) and the fixed overlays stop at the panel's edge */
+body.rules-open { --rules-right: 380px; padding-right: var(--rules-right); }
+@media (max-width: 899px) {
+  body.rules-open { --rules-right: 0px; --rules-bottom: 50dvh; padding-bottom: var(--rules-bottom); }
+  /* the board scrolls above the panel instead of squeezing into half a phone */
+  body.rules-open .app.in-game { height: auto; overflow: visible; }
+}
+.rulebook {
+  position: fixed; z-index: 45; top: 0; right: 0; bottom: 0; width: var(--rules-right); min-width: 0;
+  display: flex; flex-direction: column; background: var(--panel); box-shadow: -8px 0 32px rgb(0 0 0 / 0.18);
+  overflow: hidden; overflow-wrap: anywhere; white-space: normal; font-weight: 400;
+}
+@media (max-width: 899px) {
+  .rulebook { top: auto; left: 0; width: auto; height: var(--rules-bottom); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 32px rgb(0 0 0 / 0.2); }
+}
 .rulebook header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 0; }
 .rulebook header h2 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 6px; }
 .rulebook .close { border: 0; background: none; font-size: 1.4rem; cursor: pointer; padding: 4px; }
@@ -419,8 +432,11 @@ button.picker-tile.picked { border-color: var(--accent); }
 .rule-body .rule-tabs { padding: 0 0 10px; }
 .rule-body { overflow-y: auto; overflow-x: hidden; padding: 0 16px 16px; line-height: 1.5; }
 .rule-body h3 { margin: 12px 0 4px; font-size: 1rem; }
-.rule-body ul, .rule-steps { padding-left: 20px; margin: 4px 0; }
-.rule-steps li, .rule-body ul li { margin-bottom: 6px; }
+/* one short rule per line, its icon in front */
+.rule-body .rules { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 8px; }
+.rule-body .rules .rule { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+.rule-body .rules .rule > i { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--line); font-size: 1rem; }
+.rule-body .rules .rule > span { padding-top: 3px; }
 .glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
 .card-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .card-gallery figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
