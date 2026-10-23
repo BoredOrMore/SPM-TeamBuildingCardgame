@@ -25,6 +25,8 @@ const CAUSED = new Set(['card_gained', 'card_stolen', 'card_given', 'cards_swapp
 const CAUSE_BOUNDARY = new Set(['cards_revealed', 'crisis_drawn', 'hands_passed', 'turn_started', 'round_started']);
 /** Decision kinds named differently from the card that asks them. */
 const DECISION_CARD: Record<string, string> = { merger_propose: 'merger_offer', merger_respond: 'merger_offer' };
+/** How many spotlight lengths a Crisis stays, so its card can turn over and be read. */
+const CRISIS_HOLD = 2;
 /** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
 const REVEAL_HOLD = 1.6;
 const SILENT = new Set(['card_picked', 'teams_updated', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
@@ -124,7 +126,7 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
       return { icon: 'ri-delete-bin-line', seats: [e.player as number], cards: [{ id: card!.id, to: zone('deck') }] };
     case 'crisis_drawn':
       // the top card of the Crisis pile turns over, then lands on the table
-      return { icon: 'ri-alarm-warning-line', seats: [], flip: true, cards: [{ id: card!.id, to: zone('crisis'), back: 'crisis' }] };
+      return { icon: 'ri-alarm-warning-line', seats: [], flip: true, hold: CRISIS_HOLD, cards: [{ id: card!.id, to: zone('crisis'), back: 'crisis' }] };
     case 'round_started':
       // this round's Meta cards turn over as the round begins
       return {
@@ -166,6 +168,11 @@ function seatName(view: GameView, seat: number): string {
   return seat === view.you ? 'You' : (view.players[seat]?.name ?? `Seat ${seat + 1}`);
 }
 
+/** Names joined for a sentence: "A", "A and B", "A, B and C". */
+function listNames(names: string[]): string {
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
 /** The card a decision belongs to: its kind is the card id, except for a few named in DECISION_CARD. */
 function cardOfDecision(kind: string): string {
   return DECISION_CARD[kind] ?? kind;
@@ -189,6 +196,8 @@ function causeOf(view: GameView, e: SeqEvent): string | undefined {
 /** Turns new events into spotlights, one per event and one per player for a reveal. */
 export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
   const steps: Step[] = [];
+  // players who each added a card for the same cause in a row, shown as one step (a Crisis that gives everyone a card)
+  let gains: { step: Step; players: number[] } | undefined;
   for (const e of events) {
     if (SILENT.has(e.type)) continue;
     if (e.type === 'cards_revealed') {
@@ -230,7 +239,17 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
     }
     const line = eventLine(view, e);
     if (!line) continue;
-    steps.push({ key: String(e.seq), line, sound: SOUND_OF[e.type], cause: CAUSED.has(e.type) ? causeOf(view, e) : undefined, ...stepFor(view, e) });
+    const cause = CAUSED.has(e.type) ? causeOf(view, e) : undefined;
+    if (e.type === 'card_gained' && gains && gains.step === steps[steps.length - 1] && gains.step.cause === cause) {
+      const more = stepFor(view, e);
+      gains.players.push(e.player as number);
+      gains.step.cards.push(...more.cards);
+      gains.step.seats.push(...more.seats);
+      gains.step.line = `${listNames(gains.players.map((seat) => seatName(view, seat)))} each added a card`;
+      continue;
+    }
+    steps.push({ key: String(e.seq), line, sound: SOUND_OF[e.type], cause, ...stepFor(view, e) });
+    gains = e.type === 'card_gained' && cause ? { step: steps[steps.length - 1]!, players: [e.player as number] } : undefined;
   }
   return steps;
 }
