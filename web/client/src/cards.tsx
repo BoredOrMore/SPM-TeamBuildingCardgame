@@ -188,6 +188,8 @@ function CardFace({ id, small, shield }: { id: string; small?: boolean; shield?:
  */
 export function Card(props: {
   id: string;
+  /** marks the element so animations can find where this card is */
+  uid?: string;
   selected?: boolean;
   dim?: boolean;
   small?: boolean;
@@ -229,6 +231,7 @@ export function Card(props: {
 
   return (
     <div
+      data-uid={props.uid}
       role={props.onClick ? 'button' : undefined}
       tabIndex={props.onClick ? 0 : undefined}
       className={classes}
@@ -267,6 +270,8 @@ export function Card(props: {
 /** The card id behind a uid anywhere on the table you can see. */
 export function idOfUid(view: GameView, uid: string): string {
   const all: CardInstance[] = [...view.hand, ...view.discard, ...view.visibleCrisis, ...view.players.flatMap((p) => [...p.team, ...p.revealed])];
+  // a played Action card leaves the table, but the reveal that showed it is still in the recent events
+  for (const e of view.events) if (e.type === 'cards_revealed') for (const r of e.cards as Array<{ cards: CardInstance[] }>) all.push(...r.cards);
   return all.find((c) => c.uid === uid)?.id ?? uid;
 }
 
@@ -332,16 +337,23 @@ export function choiceLabel(view: GameView, c: Choice): string {
 /** One line for the play log, or undefined for events not worth showing. */
 export function eventLine(view: GameView, e: GameEvent): string | undefined {
   const who = (seat: unknown) => (seat === view.you ? 'You' : (view.players[seat as number]?.name ?? '?'));
+  // the same person after a verb or preposition
+  const whom = (seat: unknown) => (seat === view.you ? 'you' : who(seat));
+  const plural = (n: unknown) => (n === 1 ? '1 card' : `${n} cards`);
   const card = (c: unknown) => cardName((c as CardInstance).id);
   switch (e.type) {
     case 'turn_started':
-      return `Turn ${e.turn} starts: pick ${e.picksRequired} card(s)`;
+      return `Turn ${e.turn}: pick ${plural(e.picksRequired)}`;
+    case 'cards_revealed':
+      return (e.cards as Array<{ player: number; cards: CardInstance[] }>)
+        .map((r) => `${who(r.player)} played ${r.cards.map(card).join(' + ')}`)
+        .join(' · ');
     case 'card_gained':
       return `${who(e.player)} added ${card(e.card)}`;
     case 'card_stolen':
-      return `${who(e.to)} took ${card(e.card)} from ${who(e.from)}`;
+      return `${who(e.to)} took ${card(e.card)} from ${whom(e.from)}`;
     case 'card_given':
-      return `${who(e.from)} gave ${card(e.card)} to ${who(e.to)}`;
+      return `${who(e.from)} gave ${card(e.card)} to ${whom(e.to)}`;
     case 'card_discarded':
       return `${who(e.player)} discarded ${card(e.card)}`;
     case 'card_protected':
@@ -349,7 +361,7 @@ export function eventLine(view: GameView, e: GameEvent): string | undefined {
     case 'cards_swapped': {
       const [a, b] = e.players as number[];
       const [x, y] = e.cards as CardInstance[];
-      return `${who(a)} swapped ${card(x)} for ${who(b)}’s ${card(y)}`;
+      return `${who(a)} swapped ${card(x)} for ${b === view.you ? 'your' : `${who(b)}’s`} ${card(y)}`;
     }
     case 'bonus_gained':
       return `${who(e.player)} gained ${e.points} point(s) from ${cardName(String(e.source))}`;
@@ -360,13 +372,13 @@ export function eventLine(view: GameView, e: GameEvent): string | undefined {
     case 'hands_passed':
       return `Everyone passed their hand ${e.direction}`;
     case 'hands_swapped':
-      return `${who((e.players as number[])[0])} and ${who((e.players as number[])[1])} swapped hands`;
+      return `${who((e.players as number[])[0])} and ${whom((e.players as number[])[1])} swapped hands`;
     case 'hand_revealed':
-      return `${who(e.player)}’s hand: ${(e.cards as CardInstance[]).map(card).join(', ')}`;
+      return `${e.player === view.you ? 'Your' : `${who(e.player)}’s`} hand: ${(e.cards as CardInstance[]).map(card).join(', ')}`;
     case 'private_meta_dealt':
       return `Your secret goal: ${(e.meta as string[]).map(cardName).join(', ')}`;
     case 'no_effect':
-      return `${cardName(String(e.source))} had no effect`;
+      return `${cardName(idOfUid(view, String(e.source)))} had no effect`;
     case 'game_ended':
       return 'Game over';
     default:

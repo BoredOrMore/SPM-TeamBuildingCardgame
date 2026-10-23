@@ -65,7 +65,8 @@ export interface GameView {
   decision?: DecisionView;
   /** your score if the game ended now, counting your private Meta */
   yourScore: ScoreResult;
-  events: GameEvent[];
+  /** recent events you may see; `seq` is the event's position in the whole game, so the client can tell which are new */
+  events: Array<GameEvent & { seq: number }>;
   result?: { scores: ScoreResult[]; winners: number[] };
 }
 
