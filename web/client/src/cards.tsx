@@ -139,7 +139,7 @@ export function CardText({ text }: { text: string }) {
 }
 
 /** How small a card's text may shrink, as a share of its normal size, and how much each try shrinks it. */
-const MIN_TEXT_SCALE = 0.55;
+const MIN_TEXT_SCALE = 0.3;
 const TEXT_SCALE_STEP = 0.05;
 
 /**
@@ -166,7 +166,13 @@ function useFitText() {
     fit();
     const watch = new ResizeObserver(fit);
     watch.observe(el);
-    return () => watch.disconnect();
+    // the icon font and web fonts change how much room the text takes once they load
+    let live = true;
+    void document.fonts.ready.then(() => live && fit());
+    return () => {
+      live = false;
+      watch.disconnect();
+    };
   }, []);
   return ref;
 }
