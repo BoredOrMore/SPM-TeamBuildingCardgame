@@ -191,8 +191,8 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
           <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={`passing ${view.passDirection}`} />
         </span>
         <span className="muted room">Room {view.code}</span>
-        <button className="speed" onClick={onToggleSpeed} title="Spotlight speed">
-          <i className="ri-speed-line" /> {speed === 'fast' ? 'Fast' : 'Normal'}
+        <button className="speed" onClick={onToggleSpeed} title={`Spotlight speed: ${speed === 'fast' ? 'Fast' : 'Normal'}`}>
+          <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? 'Fast' : 'Normal'}</span>
         </button>
         <span className="score" title={`${view.yourTotal} over all rounds, ${view.yourScore.total} this round`}>
           <i className="ri-trophy-line" /> {view.yourTotal}

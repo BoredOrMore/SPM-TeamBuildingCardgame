@@ -342,7 +342,12 @@ button.option:hover { border-color: var(--accent); }
 /* the rulebook: a book button anywhere, a panel over the screen with one tab per topic */
 .rules-button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 .home .rules-button, .lobby .rules-button { align-self: center; }
-@media (max-width: 600px) { .topbar .rules-button .label { display: none; } }
+@media (max-width: 600px) {
+  .topbar .rules-button .label, .topbar .speed .label { display: none; }
+  /* round, speed, score, rules and sound share one phone-width row */
+  .topbar { gap: 4px; font-size: 0.9rem; }
+  .topbar button.speed, .topbar .rules-button { padding: 4px 8px; }
+  .topbar .sound-btn { min-width: 36px; min-height: 36px; padding: 4px; }
 }
 /* opened from the topbar, which keeps its own items on one line; the rules wrap and scroll only up and down */
 .rulebook-backdrop { position: fixed; inset: 0; z-index: 60; background: rgb(20 20 30 / 0.45); display: grid; place-items: center; padding: 12px; white-space: normal; font-weight: 400; }
