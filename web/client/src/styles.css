@@ -82,11 +82,12 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 /* one screen during a game: the middle scrolls, your team and hand stay at the bottom */
 .app.in-game { height: 100dvh; padding: 8px 12px env(safe-area-inset-bottom); overflow: hidden; }
 .app.in-game .game { height: 100%; gap: 8px; }
-.app.in-game .goals { flex: none; flex-wrap: nowrap; overflow-x: auto; }
+/* nothing on the table is hidden: Crisis and Meta tiles share the row and wrap onto a new line when they run out of room */
+.app.in-game .goals { flex: none; flex-wrap: wrap; }
 .app.in-game .goals > * { flex: none; white-space: nowrap; }
 /* Crisis and Meta in play are tiles: square art, name and effect; hover or hold one for the full card */
 .app.in-game .goals { align-items: center; }
-.app.in-game .goals > .card { width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
+.app.in-game .goals > .card { flex: 1 1 200px; width: auto; max-width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
 .app.in-game .goals > .card .card-top { grid-row: 1 / 3; align-self: start; width: 64px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; }
 .app.in-game .goals > .card .card-art { height: 100%; aspect-ratio: 1; }
 .app.in-game .goals > .card .card-badge, .app.in-game .goals > .card .card-footer { display: none; }
@@ -98,17 +99,17 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 }
 .table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .my-team, .hand { flex: none; }
-/* every opponent board stays in full view: the middle never shrinks below them, and the open log scrolls inside itself */
-.app.in-game .table { flex: 1 0 auto; }
+/* nothing is cut off: your hand and team always show in full, and on a short screen the table above them
+   (Crisis, Meta, opponents, log) scrolls up and down inside its own area */
+.app.in-game .table { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.app.in-game .table > * { flex: none; }
 .app.in-game .log[open] { max-height: 30vh; overflow-y: auto; }
-/* on a short screen the hand gives way instead: the play zone stays, and the cards scroll to show the rest */
-.app.in-game .hand { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.app.in-game .hand { flex: none; display: flex; flex-direction: column; }
 .app.in-game .hand > * { flex: none; }
-.app.in-game .hand > .hand-cards { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 /* your team is one row, heading then chips, so the hand keeps its room */
 .app.in-game .my-team { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
 .app.in-game .my-team h2 { flex: none; margin: 0; }
-.app.in-game .my-team .mini-team { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+.app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
@@ -117,8 +118,9 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @keyframes hand-in-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
 @keyframes hand-in-left { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
 /* every card in the hand is the same size; neighbours overlap a little */
-.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; }
-.app.in-game .hand-cards .card { flex: none; width: 168px; min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
+.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; container-type: inline-size; }
+/* the whole hand fits the row: cards shrink below 168px when there are more of them than room (--n is the hand size) */
+.app.in-game .hand-cards .card { flex: none; width: min(168px, calc((100cqw + 20px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
 .app.in-game .hand-cards .card + .card { margin-left: -20px; }
 /* the next card covers this card's right edge, so its text stops short of it */
 .app.in-game .hand-cards .card .card-text { padding-right: 24px; }
@@ -135,12 +137,12 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @media (max-width: 600px) {
   /* a phone keeps every board on one screen: Crisis and Meta become small tiles (art, name, effect), each player one row */
   .app.in-game .game { gap: 6px; }
-  .app.in-game .goals > .card { width: 210px; grid-template-columns: 48px 1fr; gap: 2px 6px; }
+  .app.in-game .goals > .card { flex-basis: 150px; max-width: none; grid-template-columns: 48px 1fr; gap: 2px 6px; }
   .app.in-game .goals > .card .card-top { width: 48px; }
   .app.in-game .opponents { grid-template-columns: 1fr; gap: 6px; }
   .app.in-game .opponent, .app.in-game .my-team { display: flex; align-items: center; gap: 6px; padding: 6px 8px; }
   .app.in-game .opp-head, .app.in-game .my-team h2 { flex: none; flex-wrap: nowrap; margin: 0; }
-  .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+  .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
   .app.in-game .pile .card-back { width: 40px; }
   .app.in-game .now { padding: 6px 10px; }
   .app.in-game .hand { padding: 6px 8px; }

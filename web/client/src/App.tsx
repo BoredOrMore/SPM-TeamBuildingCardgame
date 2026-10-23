@@ -242,27 +242,26 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         {playing ? 'Showing what happened…' : nowLine(view)}
       </p>
 
-      <section className="goals" data-zone="crisis">
-        <span className="pile" data-zone="deck" title="Main deck">
-          <CardBack deck="main" />
-          <b className="pile-count">{view.mainRemaining}</b>
-        </span>
-        <span className="pile" title="Crisis deck">
-          <CardBack deck="crisis" />
-          <b className="pile-count">{view.crisisRemaining}</b>
-        </span>
-        {view.visibleCrisis.map((c) => (
-          <Card key={c.uid} id={c.id} />
-        ))}
-        {view.activeMeta.map((id) => (
-          <Card key={id} id={id} />
-        ))}
-        {view.privateMeta.map((id) => (
-          <Card key={id} id={id} />
-        ))}
-      </section>
-
       <div className="table">
+        <section className="goals" data-zone="crisis">
+          <span className="pile" data-zone="deck" title="Main deck">
+            <CardBack deck="main" />
+            <b className="pile-count">{view.mainRemaining}</b>
+          </span>
+          <span className="pile" title="Crisis deck">
+            <CardBack deck="crisis" />
+            <b className="pile-count">{view.crisisRemaining}</b>
+          </span>
+          {view.visibleCrisis.map((c) => (
+            <Card key={c.uid} id={c.id} />
+          ))}
+          {view.activeMeta.map((id) => (
+            <Card key={id} id={id} />
+          ))}
+          {view.privateMeta.map((id) => (
+            <Card key={id} id={id} />
+          ))}
+        </section>
         <section className="opponents">
           {view.players
             .filter((p) => p.seat !== view.you)
