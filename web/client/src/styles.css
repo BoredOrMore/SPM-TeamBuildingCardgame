@@ -305,7 +305,8 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 /* the reveal: every pick starts as a Main back and turns over, one seat after another */
 .flip-row { flex-wrap: wrap; max-width: min(92vw, 640px); }
-.flip-card { width: 96px; perspective: 800px; }
+/* four picks fit one row on a phone */
+.flip-card { width: min(96px, calc((92vw - 36px) / 4)); perspective: 800px; }
 .flip-owner { display: block; margin-top: 6px; text-align: center; color: #fff; font-weight: 600; font-size: 0.9rem; text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); }
 .flip-inner { position: relative; transform-style: preserve-3d; animation: flip var(--flip-ms) ease-in-out var(--flip-delay) both; }
 .flip-back, .flip-front { backface-visibility: hidden; }
