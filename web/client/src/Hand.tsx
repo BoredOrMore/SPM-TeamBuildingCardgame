@@ -21,6 +21,9 @@ interface Drag {
   held: boolean;
   /** moving with the pointer */
   dragging: boolean;
+  /** size of the card in the hand, so the dragged card keeps it */
+  width: number;
+  height: number;
   timer: number;
 }
 
@@ -139,6 +142,8 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       held: false,
       dragging: false,
       timer: 0,
+      width: e.currentTarget.getBoundingClientRect().width,
+      height: e.currentTarget.getBoundingClientRect().height,
     };
     d.timer = window.setTimeout(() => {
       const cur = dragRef.current;
@@ -204,7 +209,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
         </button>
       )}
       {dragging && (
-        <div className="drag-ghost" style={{ left: dragging.x, top: dragging.y }}>
+        <div className="drag-ghost" style={{ left: dragging.x, top: dragging.y, width: dragging.width, height: dragging.height }}>
           <Card id={dragging.id} />
         </div>
       )}

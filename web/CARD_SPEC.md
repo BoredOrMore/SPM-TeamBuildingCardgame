@@ -53,7 +53,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 
 | Size | Phone (≤ 600 px) | Wider | Shows |
 |---|---|---|---|
-| Full (spotlight, preview, hover) | 240 | 300 | everything |
+| Full (spotlight, preview, hover, rules gallery) | 240 | 300 | everything, always in the Figma card's shape (548 × 768): the art gives way to longer text, so every full card is the same size |
 | Hand | 108 | 168 | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same height and overlap a little |
 | Table (Crisis and Meta in play) | 210 | 250 | a tile: square art left, name and effect right, no badges or footer |
 | Team chip | 36 | 44 | round art face only, ring in frame color |
@@ -64,6 +64,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 
 - Hidden cards always show the back of their deck (Main, Crisis, Meta), never their type.
 - Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it. On touch, holding the card does the same.
+- A card being dragged keeps the size it has in the hand.
 
 ## Checklist
 
