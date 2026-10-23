@@ -5,7 +5,7 @@ import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
 import { PlaybackOverlay, stepsFor, usePlayback, type Step } from './Playback.js';
-import { Card, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
+import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 const NAME_KEY = 'hh_name';
@@ -155,6 +155,14 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
       </p>
 
       <section className="goals" data-zone="crisis">
+        <span className="pile" data-zone="deck" title="Main deck">
+          <CardBack deck="main" />
+          <b className="pile-count">{view.mainRemaining}</b>
+        </span>
+        <span className="pile" title="Crisis deck">
+          <CardBack deck="crisis" />
+          <b className="pile-count">{view.crisisRemaining}</b>
+        </span>
         {view.visibleCrisis.map((c) => (
           <Card key={c.uid} id={c.id} small />
         ))}
@@ -164,9 +172,6 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
         {view.privateMeta.map((id) => (
           <Card key={id} id={id} small />
         ))}
-        <span className="muted deck-count" data-zone="deck">
-          Deck {view.mainRemaining} · Crisis {view.crisisRemaining}
-        </span>
       </section>
 
       <div className="table">
@@ -178,9 +183,10 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
                 <div className="opp-head">
                   <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
                   {!p.connected && <span className="tag warn">offline</span>}
-                  <span className="muted">
-                    {' '}
-                    <i className="ri-stack-line" /> {p.handCount}
+                  <span className="opp-hand" title={`${p.handCount} cards in hand`}>
+                    {Array.from({ length: p.handCount }, (_, i) => (
+                      <CardBack key={i} deck="main" mini />
+                    ))}
                   </span>
                   {view.stage === 'pick' && <span className="tag">{p.hasPicked ? 'ready' : 'picking…'}</span>}
                 </div>
