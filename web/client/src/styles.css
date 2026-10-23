@@ -47,7 +47,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 
 /* table */
 .game { display: flex; flex-direction: column; gap: 12px; }
-.topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
+.topbar { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
 .topbar button.speed { padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 /* phones: the room code is in the lobby, the round and turn stay on one line */
 @media (max-width: 600px) { .topbar .room { display: none; } }
@@ -76,9 +76,13 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .now.yours { background: var(--accent); color: #fff; }
 .goals, .mini-team, .hand-cards { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .opponents { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
-.opponent, .my-team, .hand, .log { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.opponent, .my-team, .hand { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
 .opponent.acting { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .opp-head { margin-bottom: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+/* an opponent is one compact row: name, score, hand size, then the team */
+.app.in-game .opponent { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 6px 10px; }
+.app.in-game .opp-head { margin: 0; }
+.app.in-game .pile .card-back { width: 48px; }
 /* one screen during a game: the middle scrolls, your team and hand stay at the bottom */
 .app.in-game { height: 100dvh; padding: 8px 12px env(safe-area-inset-bottom); overflow: hidden; }
 .app.in-game .game { height: 100%; gap: 8px; }
@@ -99,11 +103,12 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 }
 .table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .my-team, .hand { flex: none; }
-/* nothing is cut off: your hand and team always show in full, and on a short screen the table above them
-   (Crisis, Meta, opponents, log) scrolls up and down inside its own area */
-.app.in-game .table { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-.app.in-game .table > * { flex: none; }
-.app.in-game .log[open] { max-height: 30vh; overflow-y: auto; }
+/* nothing is cut off and nothing scrolls: your hand and team always show in full, and on a short screen the table
+   above them (Crisis, Meta, opponents) shrinks to fit its area (--table-scale, set by the game); only below the
+   smallest scale does it scroll */
+.app.in-game .table { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.table-fit { display: flex; flex-direction: column; gap: 8px; width: calc(100% / var(--table-scale, 1)); transform: scale(var(--table-scale, 1)); transform-origin: top left; }
+.app.in-game .table-fit > * { flex: none; }
 .app.in-game .hand { flex: none; display: flex; flex-direction: column; }
 .app.in-game .hand > * { flex: none; }
 /* your team is one row, heading then chips, so the hand keeps its room */
@@ -119,8 +124,9 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @keyframes hand-in-left { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
 /* every card in the hand is the same size, 6px apart */
 .app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 12px 8px 8px; align-items: stretch; container-type: inline-size; }
-/* the whole hand fits the row side by side, never overlapping: cards shrink below 168px when there are more of them than room (--n is the hand size) */
-.app.in-game .hand-cards .card { flex: none; width: min(168px, calc((100cqw - 6px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; }
+/* the whole hand fits the row side by side, never overlapping: cards shrink below 168px when there are more of them than room
+   (--n is the hand size), and on a short screen so the table above keeps room */
+.app.in-game .hand-cards .card { flex: none; width: min(168px, 22dvh, calc((100cqw - 6px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; }
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
 @media (max-width: 600px) {
@@ -176,6 +182,15 @@ button.picker-tile.picked { border-color: var(--accent); }
 .log li { display: flex; gap: 6px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
 .log li i { color: var(--muted); }
 .log summary { cursor: pointer; font-weight: 600; }
+/* the log is a topbar button that opens a list under it */
+.topbar .log summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 0.8rem; }
+.topbar .log summary::-webkit-details-marker { display: none; }
+.topbar .log[open] summary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.log-body {
+  position: absolute; z-index: 35; top: calc(100% + 6px); right: 0; width: min(380px, calc(100vw - 24px)); max-height: 60dvh; overflow-y: auto;
+  padding: 0 12px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.18); white-space: normal; font-weight: 400;
+}
+@media (max-width: 1100px) { .topbar .log .label { display: none; } }
 
 /* card backs: hidden cards show only their deck */
 .card-back {
@@ -195,9 +210,8 @@ button.picker-tile.picked { border-color: var(--accent); }
 .back-stripe > span { flex: 1; }
 .pile { position: relative; display: inline-flex; margin-right: 8px; }
 .pile-count { position: absolute; right: -8px; bottom: 0; min-width: 20px; padding: 0 4px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 0.75rem; text-align: center; }
-.opp-hand { display: inline-flex; margin-left: 4px; }
-.opp-hand .card-back + .card-back { margin-left: -12px; }
-@media (min-width: 601px) { .opp-hand .card-back + .card-back { margin-left: -18px; } }
+.opp-hand { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
+.opp-hand-count { font-size: 0.8rem; }
 
 /* card faces */
 .card {
@@ -386,8 +400,8 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 /* sound settings */
 .sound { position: relative; }
-.sound.corner { position: fixed; top: 10px; right: 10px; z-index: 30; }
-.sound-btn { min-height: 40px; min-width: 40px; padding: 6px; border-radius: 999px; font-size: 1.15rem; line-height: 1; }
+.corner { position: fixed; top: 10px; right: 10px; z-index: 30; display: flex; gap: 6px; }
+.sound-btn, .fullscreen-button { min-height: 40px; min-width: 40px; padding: 6px; border-radius: 999px; font-size: 1.15rem; line-height: 1; }
 .sound-panel {
   position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: 220px;
   display: flex; flex-direction: column; gap: 10px; padding: 12px;
@@ -406,7 +420,8 @@ button.picker-tile.picked { border-color: var(--accent); }
   /* round, speed, score, rules and sound share one phone-width row */
   .topbar { gap: 4px; font-size: 0.9rem; }
   .topbar button.speed, .topbar .rules-button { padding: 4px 8px; }
-  .topbar .sound-btn { min-width: 36px; min-height: 36px; padding: 4px; }
+  .topbar .sound-btn, .topbar .fullscreen-button { min-width: 36px; min-height: 36px; padding: 4px; }
+  .topbar .log summary { min-height: 36px; padding: 4px 8px; }
 }
 /* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.
    The body makes room (--rules-right, --rules-bottom) and the fixed overlays stop at the panel's edge */
@@ -415,6 +430,7 @@ body.rules-open { --rules-right: 380px; padding-right: var(--rules-right); }
   body.rules-open { --rules-right: 0px; --rules-bottom: 50dvh; padding-bottom: var(--rules-bottom); }
   /* the board scrolls above the panel instead of squeezing into half a phone */
   body.rules-open .app.in-game { height: auto; overflow: visible; }
+  body.rules-open .app.in-game .table { overflow: visible; }
 }
 .rulebook {
   position: fixed; z-index: 45; top: 0; right: 0; bottom: 0; width: var(--rules-right); min-width: 0;
