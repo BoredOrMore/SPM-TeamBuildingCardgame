@@ -365,7 +365,7 @@
     {
       "id": "P39",
       "topic": "Cards whose text still needs a multiplier or an 'instead of' override",
-      "current": "6 cards reworded as fixed values with the same scores (PM row 2/6/14, Agile = 17, Bug = -5/-4, +3 per Investors); Unicorn Rush still overrides Unicorn Hype (keywords.json pendingSimplify)",
+      "current": "6 cards reworded as fixed values with the same scores (PM row 2/6/14, Agile = 17, Bug = -5/-4, +3 per Investors); Unicorn Rush is its own Meta: 3+ role types and no Bug +8, -2 per Coffee (Bored chose on 2026-10-23 that no card uses multipliers or overrides; +8 is a starting value to tune)",
       "alternatives": [
         "rewrite them with plain + and - bonuses (changes scoring; needs a new balance run)"
       ],

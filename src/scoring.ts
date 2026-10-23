@@ -171,12 +171,9 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   }
 
   // Step 6: Crisis bonuses and play-time bonuses.
-  const rush = metaEffect('unicorn_rush');
   if (crisisCount('unicorn_hype') > 0) {
     const base = effectOf(data, 'unicorn_hype');
-    const requires = rush ? (rush.requires as { roleGroups: number }) : (base.requires as { roleGroups: number });
-    const points = rush ? (rush.points as number) : (base.points as number);
-    if (groups >= requires.roleGroups && leftoverBug === 0) add('Unicorn Hype', points);
+    if (groups >= (base.requires as { roleGroups: number }).roleGroups && leftoverBug === 0) add('Unicorn Hype', base.points as number);
   }
   if (crisisCount('product_launch') > 0) {
     const tiers = effectOf(data, 'product_launch').tiers as Array<{ requires: { roleGroups: number; maxCount?: Record<string, number> }; points: number }>;
@@ -214,9 +211,11 @@ function metaPoints(id: string, eff: Effect, input: ScoringInput, c: Counts, gro
     case 'per_unused_slot':
       // Baseline = turns in this game [P4].
       return (eff.points as number) * Math.max(0, input.totalTurns - team.length);
-    case 'override_card_effect': {
-      const penalty = eff.penalty as { cardId: string; pointsEach: number } | undefined;
-      return penalty ? penalty.pointsEach * n(c, penalty.cardId) : 0;
+    case 'flat_if_with_penalty': {
+      // The bonus needs the condition and enough role types; the penalty always applies [P39].
+      const penalty = eff.penalty as { cardId: string; pointsEach: number };
+      const bonus = ok && groups >= (eff.requires as { roleGroups: number }).roleGroups ? (eff.points as number) : 0;
+      return bonus + penalty.pointsEach * n(c, penalty.cardId);
     }
     case 'override_multiplier':
     case 'override_points':

@@ -67,8 +67,10 @@ describe('crisis bonuses', () => {
     expect(score({ ...full, bug: 2 }, { crisis: ['unicorn_hype'] }).total).toBe(2 + 2 - 3);
   });
 
-  it('Unicorn Rush makes Unicorn Hype +20 with 3 roles and Coffee -2', () => {
-    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { crisis: ['unicorn_hype'], meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 3 + 1 + 20 - 2);
+  it('Unicorn Rush: +8 with 3 roles and no Bug, Coffee -2 always [P39]', () => {
+    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 3 + 1 + 8 - 2);
+    expect(score({ junior_dev: 1, designer: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 1 - 2);
+    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, bug: 2 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 - 3);
   });
 
   it('Viral Success: most Designers +2, others +1', () => {
