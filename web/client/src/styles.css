@@ -242,6 +242,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 /* a team member: a round face in the card type's frame colour */
 .card.chip { position: relative; width: 36px; height: 36px; min-height: 0; padding: 0; border-radius: 50%; overflow: visible; }
 .card.chip .card-art { aspect-ratio: 1; border-radius: 50%; object-position: 50% 20%; }
+.chip-type { position: absolute; left: -4px; top: -4px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1.5px solid var(--frame); color: var(--frame); font-size: 0.7rem; font-style: normal; }
 .chip-shield { position: absolute; right: -4px; bottom: -4px; font-size: 0.8rem; background: var(--panel); border-radius: 50%; }
 @media (min-width: 601px) { .card.chip { width: 44px; height: 44px; } }
 .card.small .card-name { font-size: 0.75rem; padding: 4px 8px; }

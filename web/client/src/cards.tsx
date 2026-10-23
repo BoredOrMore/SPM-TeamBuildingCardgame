@@ -341,6 +341,7 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
     return (
       <>
         <img className="card-art" src={art} alt={def?.name ?? id} draggable={false} />
+        {def && <i className={`chip-type ri-${badgeIcon(def)}-line`} aria-hidden />}
         {shield && <i className="chip-shield ri-shield-line" aria-label="protected" />}
       </>
     );
