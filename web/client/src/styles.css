@@ -19,6 +19,8 @@ button { font: inherit; color: inherit; }
 input { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); width: 100%; }
 
 .app { max-width: 960px; margin: 0 auto; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
+/* wide enough for a full hand of 7 at hand size */
+.app.in-game { max-width: 1120px; }
 .muted { color: var(--muted); font-weight: normal; }
 .row { display: flex; gap: 8px; }
 
@@ -80,14 +82,18 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
-.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; padding: 10px 4px 4px; align-items: flex-start; }
-.app.in-game .hand-cards .card { flex: none; width: 140px; min-height: 0; position: relative; }
+/* every card in the hand is the same size; neighbours overlap a little */
+.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; }
+.app.in-game .hand-cards .card { flex: none; width: 168px; min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
+.app.in-game .hand-cards .card + .card { margin-left: -20px; }
+/* the next card covers this card's right edge, so its text stops short of it */
+.app.in-game .hand-cards .card .card-text { padding-right: 24px; }
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
 @media (max-width: 600px) {
   /* a fanned hand: each card overlaps the one before it, the name stays readable */
-  .app.in-game .hand-cards .card { width: 96px; }
-  .app.in-game .hand-cards .card + .card { margin-left: -24px; }
+  .app.in-game .hand-cards .card { width: 108px; }
+  .app.in-game .hand-cards .card + .card { margin-left: -14px; }
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
