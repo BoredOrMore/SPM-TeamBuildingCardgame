@@ -68,6 +68,11 @@ export function CardBack({ deck, mini = false }: { deck: BackDeck; mini?: boolea
   );
 }
 
+/** Decks whose cards have art; the rest (rule card, turn tracker) are never shown as a card. */
+const hasArt = (deck: Deck) => deck !== 'support';
+/** Where a card's art lives, exported from Figma as `<card id>.webp`. */
+export const artUrl = (id: string) => `${import.meta.env.BASE_URL}cards/art/${id}.webp`;
+
 /** Display name of a card id. */
 export function cardName(id: string): string {
   return CARD_DEFS.get(id)?.name ?? id;
@@ -206,10 +211,21 @@ function CardPreview({ id }: { id: string }) {
 }
 
 /** Name bar and text of a card, without any behaviour. */
-function CardFace({ id, small, shield }: { id: string; small?: boolean; shield?: boolean }) {
+function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; chip?: boolean; shield?: boolean }) {
   const def = CARD_DEFS.get(id);
+  const art = def && hasArt(def.deck) ? artUrl(id) : undefined;
+  if (chip) {
+    if (!art) throw new Error(`No art for team chip ${id}`);
+    return (
+      <>
+        <img className="card-art" src={art} alt={def?.name ?? id} draggable={false} />
+        {shield && <i className="chip-shield ri-shield-line" aria-label="protected" />}
+      </>
+    );
+  }
   return (
     <>
+      {!small && art && <img className="card-art" src={art} alt="" draggable={false} />}
       <span className="card-name">
         {def?.name ?? id}
         {shield && <i className="ri-shield-line" aria-label="protected" />}
@@ -230,6 +246,8 @@ export function Card(props: {
   selected?: boolean;
   dim?: boolean;
   small?: boolean;
+  /** a round art face only, for team rows */
+  chip?: boolean;
   shield?: boolean;
   lifted?: boolean;
   onClick?: () => void;
@@ -242,7 +260,7 @@ export function Card(props: {
   useEffect(() => () => void (hovered.current && tooltip(undefined)), [tooltip]);
   const hold = useRef<{ timer: number; x: number; y: number; fired: boolean }>(undefined);
   const def = CARD_DEFS.get(props.id);
-  const classes = ['card', props.small && 'small', props.selected && 'selected', props.dim && 'dim', props.lifted && 'lifted', props.onClick && 'clickable']
+  const classes = ['card', props.small && 'small', props.chip && 'chip', props.selected && 'selected', props.dim && 'dim', props.lifted && 'lifted', props.onClick && 'clickable']
     .filter(Boolean)
     .join(' ');
 
@@ -299,7 +317,7 @@ export function Card(props: {
         }
       }}
     >
-      <CardFace id={props.id} small={props.small} shield={props.shield} />
+      <CardFace id={props.id} small={props.small} chip={props.chip} shield={props.shield} />
     </div>
   );
 }

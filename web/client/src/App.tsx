@@ -269,7 +269,7 @@ function TeamChips({ team, protectedUids, zone }: { team: CardInstance[]; protec
       {groups.length ? (
         groups.map((g) => (
           <span key={g.uid} className="team-chip">
-            <Card uid={g.uid} id={g.id} small shield={g.shield} />
+            <Card uid={g.uid} id={g.id} chip shield={g.shield} />
             {g.count > 1 && <b className="count">×{g.count}</b>}
           </span>
         ))
