@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
-import { PlaybackOverlay, usePlayback } from './Playback.js';
-import { Card, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, eventLine, idOfUid } from './cards.js';
+import { PlaybackOverlay, stepsFor, usePlayback, type Step } from './Playback.js';
+import { Card, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 const NAME_KEY = 'hh_name';
@@ -306,20 +306,31 @@ function nowLine(view: GameView): string {
   return waiting.length ? `Waiting for ${waiting.join(', ')} to pick` : 'Revealing…';
 }
 
-/** Recent public (and your private) events, newest first. */
+/** Recent public (and your private) events in one section per turn, newest turn first, one row per event. */
 function Log({ view }: { view: GameView }) {
-  const lines = view.events
-    .map((e) => eventLine(view, e))
-    .filter((l): l is string => !!l)
-    .reverse();
+  const turns: Array<{ title: string; steps: Step[] }> = [];
+  for (const e of view.events) {
+    if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? `Turn ${e.turn}` : 'Earlier', steps: [] });
+    turns[turns.length - 1]!.steps.push(...stepsFor(view, [e]));
+  }
   return (
     <details className="log">
       <summary>What happened</summary>
-      <ul>
-        {lines.slice(0, 12).map((l, i) => (
-          <li key={i}>{l}</li>
+      {turns
+        .filter((t) => t.steps.length)
+        .reverse()
+        .map((t) => (
+          <section key={t.title} className="log-turn">
+            <h3>{t.title}</h3>
+            <ul>
+              {t.steps.map((st) => (
+                <li key={st.key}>
+                  <i className={st.icon} /> {st.line}
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
     </details>
   );
 }

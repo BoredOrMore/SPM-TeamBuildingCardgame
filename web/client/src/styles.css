@@ -94,7 +94,10 @@ button.option:hover { border-color: var(--accent); }
 .option-cards { display: flex; gap: 6px; flex-wrap: wrap; }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .play { width: 100%; margin-top: 10px; }
-.log ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.85rem; color: var(--muted); }
+.log-turn h3 { margin: 10px 0 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.log ul { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; }
+.log li { display: flex; gap: 6px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
+.log li i { color: var(--muted); }
 .log summary { cursor: pointer; font-weight: 600; }
 
 /* card faces */
