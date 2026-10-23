@@ -2,9 +2,9 @@
 // a spotlight shows one card large with one line saying who did what, then the card flies to where it goes.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { CardInstance, GameEvent } from '../../../src/index.js';
+import type { CardInstance, GameEvent, ScoreResult } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
-import { Card, CardBack, eventLine, idOfUid, isAction } from './cards.js';
+import { Card, CardBack, eventLine, idOfUid, isAction, type BackDeck } from './cards.js';
 import { sfx, type Sfx } from './sound.js';
 
 /** Spotlight speeds a player can pick. */
@@ -47,8 +47,20 @@ interface SpotCard {
   id: string;
   /** zone (data-zone selector) the card flies to; none keeps it in place */
   to?: string;
-  /** on a flip step, the order of the seat that played it, which sets when it turns over */
+  /** on a flip step, its place in the order cards turn over: for a reveal, the order of the seat that played it */
   seatOrder?: number;
+  /** on a flip step, the deck back it starts as; Main unless set */
+  back?: BackDeck;
+}
+
+/** One row of the standings shown when a round ends. */
+interface Standing {
+  seat: number;
+  name: string;
+  /** points this round */
+  round: number;
+  /** points over every round so far */
+  total: number;
 }
 
 export interface Step {
@@ -63,6 +75,9 @@ export interface Step {
   sound?: Sfx;
   /** every card starts face down and turns over, as when the table reveals together */
   flip?: boolean;
+  /** the round's scores, shown until the player taps the button that says `goOn` */
+  standings?: Standing[];
+  goOn?: string;
 }
 
 const zone = (name: string) => `[data-zone="${name}"]`;
@@ -92,7 +107,27 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
     case 'card_discarded':
       return { icon: 'ri-delete-bin-line', seats: [e.player as number], cards: [{ id: card!.id, to: zone('deck') }] };
     case 'crisis_drawn':
-      return { icon: 'ri-alarm-warning-line', seats: [], cards: [{ id: card!.id, to: zone('crisis') }] };
+      // the top card of the Crisis pile turns over, then lands on the table
+      return { icon: 'ri-alarm-warning-line', seats: [], flip: true, cards: [{ id: card!.id, to: zone('crisis'), back: 'crisis' }] };
+    case 'round_started':
+      // this round's Meta cards turn over as the round begins
+      return {
+        icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line',
+        seats: [],
+        flip: true,
+        cards: (e.activeMeta as string[]).map((id, seatOrder) => ({ id, to: zone('crisis'), back: 'meta' as const, seatOrder })),
+      };
+    case 'round_ended': {
+      const round = e.round as number;
+      const standings = (e.scores as ScoreResult[]).map((s) => ({
+        seat: s.seat,
+        name: s.seat === view.you ? 'You' : (view.players[s.seat]?.name ?? '?'),
+        round: s.total,
+        total: view.roundScores.slice(0, round).reduce((sum, r) => sum + r[s.seat]!.total, 0),
+      }));
+      const goOn = round < view.totalRounds ? `Start round ${round + 1}` : 'See final results';
+      return { icon: 'ri-flag-line', seats: [], cards: [], standings: standings.sort((a, b) => b.total - a.total), goOn };
+    }
     case 'crisis_previewed':
       return { icon: 'ri-eye-line', seats: [], cards: [{ id: card!.id }] };
     case 'bonus_gained':
@@ -102,6 +137,7 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
     case 'no_effect':
       return { icon: 'ri-information-line', seats: [], cards: [{ id: idOfUid(view, String(e.source)) }] };
     case 'hands_passed':
+      return { icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line', seats: [], cards: [] };
     case 'hands_swapped':
       return { icon: 'ri-repeat-line', seats: [], cards: [] };
     default:
@@ -152,7 +188,7 @@ const lastSeqOf = (view: GameView) => view.events.reduce((m, e) => Math.max(m, e
  * The view to draw and the spotlight playing now. Incoming views wait in line: each one's new events
  * play over the previous board first, then the board catches up. `skip` jumps to the newest view.
  */
-export function usePlayback(view: View | undefined, speed: Speed): { shown: View | undefined; step: Step | undefined; skip: () => void } {
+export function usePlayback(view: View | undefined, speed: Speed): { shown: View | undefined; step: Step | undefined; skip: () => void; next: () => void } {
   const [shown, setShown] = useState(view);
   const speedRef = useRef(speed);
   speedRef.current = speed;
@@ -171,15 +207,24 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
     busy.current = true;
     while (queue.current.length) {
       const next = queue.current.shift()!;
-      if (next.phase === 'game' && shownRef.current?.phase === 'game' && !skipping.current) {
-        const fresh = next.events.filter((e) => e.seq > lastSeq.current);
+      // the first board after the lobby is drawn first, then plays only the opening round's start (its Meta cards turning over)
+      const opening = next.phase === 'game' && shownRef.current?.phase === 'lobby';
+      if (opening) {
+        // a new game numbers its events from the start again
+        lastSeq.current = -1;
+        shownRef.current = next;
+        setShown(next);
+      }
+      if (next.phase === 'game' && shownRef.current?.phase === 'game') {
+        const fresh = next.events.filter((e) => e.seq > lastSeq.current && (!opening || e.type === 'round_started'));
         // labels and positions come from the board still on screen, where the cards are now
         for (const s of stepsFor(next, fresh)) {
-          if (skipping.current) break;
+          // skipping passes everything but a round's standings, which wait for a tap
+          if (skipping.current && !s.standings) continue;
           setStep(s);
           if (s.sound) sfx(s.sound);
           await new Promise<void>((resolve) => {
-            const timer = setTimeout(resolve, TIMING[speedRef.current].spotlightMs);
+            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs);
             wake.current = () => {
               clearTimeout(timer);
               resolve();
@@ -216,6 +261,7 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
       setStep(undefined);
       wake.current();
     },
+    next: () => wake.current(),
   };
 }
 
@@ -231,7 +277,7 @@ function centreOf(selector: string): { x: number; y: number } | undefined {
 }
 
 /** The spotlight for the step playing now, with seat pulses and bonus numbers. Tap to skip. */
-export function PlaybackOverlay({ step, speed, onSkip }: { step: Step | undefined; speed: Speed; onSkip: () => void }) {
+export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | undefined; speed: Speed; onSkip: () => void; onNext: () => void }) {
   const cards = useRef<HTMLDivElement>(null);
   const [bonusAt, setBonusAt] = useState<{ x: number; y: number }>();
 
@@ -266,19 +312,48 @@ export function PlaybackOverlay({ step, speed, onSkip }: { step: Step | undefine
 
   if (!step) return null;
   return (
-    <div className="playback" onClick={onSkip}>
+    <div className="playback" onClick={step.standings ? undefined : onSkip}>
       <div key={step.key} className="spotlight" role="status">
-        {step.flip ? (
-          <div className="spot-cards flip-row">
+        {step.standings ? (
+          <div className="standings">
+            <h2>{step.line}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th />
+                  <th>This round</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {step.standings.map((r, i) => (
+                  <tr key={r.seat}>
+                    <td>
+                      {i === 0 && <i className="ri-trophy-line" />} {r.name}
+                    </td>
+                    <td>{r.round}</td>
+                    <td>
+                      <b>{r.total}</b>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button className="primary" onClick={onNext}>
+              {step.goOn}
+            </button>
+          </div>
+        ) : step.flip ? (
+          <div ref={cards} className={`spot-cards flip-row ${step.cards.length === 1 ? 'single' : ''}`}>
             {step.cards.map((c, i) => (
               <div
                 key={i}
-                className="flip-card"
+                className="flip-card spot-card"
                 style={{ '--flip-ms': `${TIMING[speed].flipMs}ms`, '--flip-delay': `${(c.seatOrder ?? 0) * TIMING[speed].flipStaggerMs}ms` } as React.CSSProperties}
               >
                 <div className="flip-inner">
                   <div className="flip-back">
-                    <CardBack deck="main" />
+                    <CardBack deck={c.back ?? 'main'} />
                   </div>
                   <div className="flip-front">
                     <Card id={c.id} />
@@ -298,16 +373,18 @@ export function PlaybackOverlay({ step, speed, onSkip }: { step: Step | undefine
         ) : (
           <i className={`spot-icon ${step.icon}`} />
         )}
-        <p className="spot-line">
-          {step.cards.length > 0 && <i className={step.icon} />} {step.line}
-        </p>
+        {!step.standings && (
+          <p className="spot-line">
+            {step.cards.length > 0 && <i className={step.icon} />} {step.line}
+          </p>
+        )}
       </div>
       {step.bonus && bonusAt && (
         <div key={`bonus-${step.key}`} className="bonus-float" style={{ left: bonusAt.x, top: bonusAt.y }}>
           +{step.bonus.points}
         </div>
       )}
-      <span className="skip-hint">tap to skip</span>
+      {!step.standings && <span className="skip-hint">tap to skip</span>}
     </div>
   );
 }

@@ -39,4 +39,7 @@ npm run typecheck
 - When a card asks **you** to choose, a sheet slides up over your hand. It shows the card that asks, then one button per choice with the cards that choice is about. Tap the title to hide the sheet and look at the table, and tap it again to bring it back. The sheet waits until the step-by-step replay has finished.
 - During a game the page fits on one screen. Your team and your hand stay at the bottom, and only the middle (other players and the log) scrolls. On a phone, the hand is one fanned row: swipe it sideways to see every card. "What happened" stays closed until you tap it.
 - Cards show their art. On a phone the hand shows only art and name; hold a card to read it in full. Team members are round faces; hover or hold one to see which card it is.
+- A game has 3 rounds of 7 turns. The top bar shows the round, the turn and which way hands pass this round (left, right, left). Each round starts with its 3 new Meta cards turning over. When a round ends, a table shows each player's points for the round and in total, and waits until you tap to start the next round.
+- The results screen shows every player's points per round and in total, and a tab per round with each player's team and score breakdown for that round.
+- A Crisis turns over from its red back at full size before it goes to the table.
 - Hidden cards show only their back: the Main and Crisis piles show how many cards are left, and each other player's hand is a row of small backs, one per card.

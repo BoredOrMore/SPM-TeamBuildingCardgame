@@ -37,7 +37,7 @@ function Icon({ code, className = '' }: { code: IconCode; className?: string }) 
 }
 
 /** Decks that have a printed card back. */
-type BackDeck = 'main' | 'crisis' | 'meta';
+export type BackDeck = 'main' | 'crisis' | 'meta';
 
 /** Remix icon in the round badge of each deck's card back, as on the printed backs. */
 const BACK_ICONS: Record<BackDeck, string> = { main: 'ri-stack-line', crisis: 'ri-alarm-warning-line', meta: 'ri-global-line' };
@@ -426,6 +426,10 @@ export function eventLine(view: GameView, e: GameEvent): string | undefined {
       return `Next crisis: ${card(e.card)}`;
     case 'hands_passed':
       return `Everyone passed their hand ${e.direction}`;
+    case 'round_started':
+      return `Round ${e.round}: new hands, passing ${e.direction}`;
+    case 'round_ended':
+      return `Round ${e.round} over`;
     case 'hands_swapped':
       return `${who((e.players as number[])[0])} and ${whom((e.players as number[])[1])} swapped hands`;
     case 'hand_revealed':

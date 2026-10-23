@@ -86,7 +86,7 @@ export function App() {
         <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} />
       )}
       {!(shown?.phase === 'game' && !shown.result) && <SoundControls className="corner" />}
-      <PlaybackOverlay step={playback.step} speed={speed} onSkip={playback.skip} />
+      <PlaybackOverlay step={playback.step} speed={speed} onSkip={playback.skip} onNext={playback.next} />
       {toast && <div className="toast">{toast}</div>}
     </div>
     </PreviewProvider>
@@ -183,15 +183,16 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
   return (
     <main className="game">
       <header className="topbar">
-        <span>
-          Turn {view.turn}/{view.totalTurns}
+        <span title={`Round ${view.round} of ${view.totalRounds}, turn ${view.turn} of ${view.totalTurns}; hands pass ${view.passDirection} this round`}>
+          Round {view.round}/{view.totalRounds} · Turn {view.turn}/{view.totalTurns}{' '}
+          <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={`passing ${view.passDirection}`} />
         </span>
-        <span className="muted">Room {view.code}</span>
+        <span className="muted room">Room {view.code}</span>
         <button className="speed" onClick={onToggleSpeed} title="Spotlight speed">
           <i className="ri-speed-line" /> {speed === 'fast' ? 'Fast' : 'Normal'}
         </button>
-        <span className="score">
-          <i className="ri-trophy-line" /> {view.yourScore.total}
+        <span className="score" title={`${view.yourTotal} over all rounds, ${view.yourScore.total} this round`}>
+          <i className="ri-trophy-line" /> {view.yourTotal}
         </span>
         <SoundControls />
       </header>
@@ -368,7 +369,7 @@ function nowLine(view: GameView): string {
 function Log({ view }: { view: GameView }) {
   const turns: Array<{ title: string; steps: Step[] }> = [];
   for (const e of view.events) {
-    if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? `Turn ${e.turn}` : 'Earlier', steps: [] });
+    if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? `Round ${e.round} · Turn ${e.turn}` : 'Earlier', steps: [] });
     // the flip only shows cards turning over; the per-player lines that follow say who played what
     turns[turns.length - 1]!.steps.push(...stepsFor(view, [e]).filter((s) => !s.flip));
   }
@@ -399,38 +400,76 @@ function Results({ view, conn }: { view: GameView; conn: Connection }) {
   const isHost = view.players[view.you]?.isHost;
   const scores = [...view.result!.scores].sort((a, b) => b.total - a.total);
   const won = view.result!.winners.includes(view.you);
+  // the round whose breakdown is open, the last one at first
+  const [round, setRound] = useState(view.roundScores.length - 1);
   useEffect(() => sfx(won ? 'win' : 'lose'), [won]);
   return (
     <main className="results">
       <h1>Game over</h1>
-      {scores.map((s) => (
-        <div key={s.seat} className={`result ${view.result!.winners.includes(s.seat) ? 'winner' : ''}`}>
-          <h2>
-            {view.result!.winners.includes(s.seat) && <i className="ri-trophy-line" />} {view.players[s.seat]?.name} · {s.total}
-          </h2>
-          <TeamChips team={view.players[s.seat]?.team ?? []} protectedUids={[]} zone={`result-${s.seat}`} />
-          <ul className="breakdown">
-            {s.lines.map((l, i) => (
-              <li key={i}>
-                <span>
-                  {/* play-time bonuses are labelled by the card id that gave them */}
-                  <b>{cardName(l.label)}</b>
-                  {l.detail && (
-                    <span className="muted detail">
-                      <CardText text={l.detail} />
-                    </span>
-                  )}
-                </span>
-                <b className={l.points < 0 ? 'minus' : 'plus'}>{l.points > 0 ? `+${l.points}` : l.points}</b>
-              </li>
+      <table className="standings-table">
+        <thead>
+          <tr>
+            <th />
+            {view.roundScores.map((_, r) => (
+              <th key={r}>Round {r + 1}</th>
             ))}
-            <li className="total">
-              <b>Total</b>
-              <b>{s.total}</b>
-            </li>
-          </ul>
-        </div>
-      ))}
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scores.map((s) => (
+            <tr key={s.seat} className={view.result!.winners.includes(s.seat) ? 'winner' : ''}>
+              <td>
+                {view.result!.winners.includes(s.seat) && <i className="ri-trophy-line" />} {view.players[s.seat]?.name}
+              </td>
+              {view.roundScores.map((r, i) => (
+                <td key={i}>{r[s.seat]!.total}</td>
+              ))}
+              <td>
+                <b>{s.total}</b>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="round-tabs" role="tablist">
+        {view.roundScores.map((_, r) => (
+          <button key={r} role="tab" aria-selected={r === round} className={r === round ? 'primary' : ''} onClick={() => setRound(r)}>
+            Round {r + 1}
+          </button>
+        ))}
+      </div>
+      {scores.map(({ seat }) => {
+        const s = view.roundScores[round]![seat]!;
+        return (
+          <div key={seat} className="result">
+            <h2>
+              {view.players[seat]?.name} · {s.total}
+            </h2>
+            <TeamChips team={view.roundTeams[round]?.[seat] ?? []} protectedUids={[]} zone={`result-${seat}`} />
+            <ul className="breakdown">
+              {s.lines.map((l, i) => (
+                <li key={i}>
+                  <span>
+                    {/* play-time bonuses are labelled by the card id that gave them */}
+                    <b>{cardName(l.label)}</b>
+                    {l.detail && (
+                      <span className="muted detail">
+                        <CardText text={l.detail} />
+                      </span>
+                    )}
+                  </span>
+                  <b className={l.points < 0 ? 'minus' : 'plus'}>{l.points > 0 ? `+${l.points}` : l.points}</b>
+                </li>
+              ))}
+              <li className="total">
+                <b>Round {round + 1}</b>
+                <b>{s.total}</b>
+              </li>
+            </ul>
+          </div>
+        );
+      })}
       {isHost ? <button className="primary" onClick={() => conn.send('play_again', {})}>Back to lobby</button> : <p className="muted">The host can start another game.</p>}
       <button className="link" onClick={() => conn.leave()}>
         Leave room
