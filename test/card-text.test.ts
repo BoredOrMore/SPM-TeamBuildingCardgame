@@ -10,7 +10,9 @@ const keywords = JSON.parse(readFileSync(fileURLToPath(new URL('../data/keywords
   bannedPatterns: string[];
   placeholders: string[];
   keywords: Array<{ code: string; icon: string; group: 'timing' | 'condition' | 'interaction' }>;
-  icons: Array<{ code: string; icon: string }>;
+  icons: Array<{ code: string; icon: string; chip?: string }>;
+  frameColors: Record<string, string>;
+  iconInk: string;
   pendingSimplify: string[];
 };
 
@@ -36,6 +38,16 @@ describe('card text follows the keyword rules (AGENTS.md)', () => {
 
   it('gives every code an icon, so cards never show a code as text', () => {
     for (const k of [...keywords.keywords, ...keywords.icons]) expect(k.icon, k.code).toMatch(/^[a-z0-9-]+$/);
+  });
+
+  it('gives every card type a frame color and tints chips only with those colors', () => {
+    const hex = /^#[0-9A-F]{6}$/;
+    for (const color of [keywords.iconInk, ...Object.values(keywords.frameColors)]) expect(color).toMatch(hex);
+    for (const [deck, cards] of Object.entries(data.cards.decks)) {
+      if (deck === 'support') continue;
+      for (const card of cards) expect(keywords.frameColors, card.id).toHaveProperty(deck === 'main' ? card.type! : deck);
+    }
+    for (const icon of keywords.icons) if (icon.chip) expect(keywords.frameColors, icon.code).toHaveProperty(icon.chip);
   });
 
   it('leaves timing keywords to the card frame', () => {

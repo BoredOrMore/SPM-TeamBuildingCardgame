@@ -1,6 +1,8 @@
 {
   "maxConditionKeywordsPerCard": 2,
   "maxTextChars": 70,
+  "frameColors": { "role": "#3B82C4", "event": "#E9A23B", "action": "#F07A52", "defense": "#5B7A99", "boost": "#4CAF6A", "crisis": "#E0524A", "meta": "#7C5CC4" },
+  "iconInk": "#2B2A33",
   "iconSet": "Remix Icon 4.9.1, Line style: <icon>-line.svg",
   "bannedPatterns": [
     "instead of",
@@ -79,51 +81,61 @@
   "icons": [
     {
       "code": "JUNIOR",
+      "chip": "role",
       "icon": "seedling",
       "meaning": "Junior Developer"
     },
     {
       "code": "SENIOR",
+      "chip": "role",
       "icon": "vip-crown",
       "meaning": "Senior Developer"
     },
     {
       "code": "PM",
+      "chip": "role",
       "icon": "clipboard",
       "meaning": "Project Manager"
     },
     {
       "code": "DESIGNER",
+      "chip": "role",
       "icon": "palette",
       "meaning": "UX/UI Designer"
     },
     {
       "code": "QA",
+      "chip": "role",
       "icon": "search",
       "meaning": "QA Tester"
     },
     {
       "code": "BUG",
+      "chip": "event",
       "icon": "bug",
       "meaning": "Bug"
     },
     {
       "code": "COFFEE",
+      "chip": "event",
       "icon": "cup",
       "meaning": "Coffee"
     },
     {
       "code": "FREELANCE",
+      "chip": "event",
       "icon": "macbook",
       "meaning": "Freelance"
     },
     {
       "code": "INVESTORS",
+      "chip": "event",
       "icon": "hand-coin",
       "meaning": "Investors"
     },
     {
       "code": "EMPLOYEE",
+      "chip": "role",
       "icon": "id-card",
       "meaning": "any role card"
     },
@@ -134,6 +146,7 @@
     },
     {
       "code": "CRISIS",
+      "chip": "crisis",
       "icon": "alarm-warning",
       "meaning": "a Crisis card"
     }
