@@ -53,6 +53,25 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @media (max-width: 600px) { .topbar .room { display: none; } }
 .topbar > *, .topbar button.speed { white-space: nowrap; }
 .score { font-size: 1.2rem; }
+/* the round track: every turn of the round, the Crisis draws between them, and the step of the turn now */
+.round-track { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 0.85rem; font-weight: 600; }
+.track-round { white-space: nowrap; }
+.track-turns { display: flex; align-items: center; gap: 3px; flex: 1; justify-content: center; margin: 0; padding: 0; list-style: none; }
+.track-turn { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); color: var(--muted); font-size: 0.75rem; }
+.track-turn.done { background: var(--line); border-color: var(--line); color: var(--ink); }
+.track-turn.current { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.15); }
+.track-crisis { display: grid; place-items: center; width: 20px; height: 20px; color: var(--warn); opacity: 0.55; font-size: 0.9rem; }
+.track-crisis.done { opacity: 0.25; }
+.track-crisis.current { opacity: 1; border-radius: 50%; background: var(--warn); color: #fff; transform: scale(1.2); }
+.track-step { white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: var(--line); font-size: 0.75rem; }
+@media (max-width: 600px) {
+  /* a phone gives the track its own line under the buttons */
+  .topbar { flex-wrap: wrap; row-gap: 6px; }
+  .round-track { order: 1; flex-basis: 100%; gap: 4px; font-size: 0.75rem; }
+  .track-turns { gap: 1px; }
+  .track-turn { width: 20px; height: 20px; font-size: 0.7rem; }
+  .track-crisis { width: 14px; }
+}
 .now { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--line); font-weight: 600; text-align: center; }
 .now.yours { background: var(--accent); color: #fff; }
 .goals, .mini-team, .hand-cards { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }

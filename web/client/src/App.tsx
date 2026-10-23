@@ -1,6 +1,7 @@
 // Screens: home (create or join), lobby, game table, and final scores.
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import rulesJson from '../../../data/rules.json';
 import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
@@ -10,6 +11,11 @@ import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decis
 import { SoundControls } from './SoundControls.js';
 import { setMusic, sfx } from './sound.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
+
+/** Turns after which a Crisis card is drawn, from rules.json. */
+const CRISIS_AFTER: number[] = rulesJson.crisis.afterTurns;
+/** What each stage of a turn is called on the round track. */
+const STEP_NAMES: Record<GameView['stage'], string> = { pick: 'Pick', actions: 'Actions', nda: 'NDA', crisis: 'Crisis', ended: 'Round over' };
 
 const NAME_KEY = 'hh_name';
 const SPEED_KEY = 'hh_speed';
@@ -172,6 +178,41 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
 }
 
 /** The table: crisis and goals, other players, your team, your hand, and the current decision. */
+/** Where the game is: the round, each turn of it with the Crisis draws between turns, and the step of the turn now. */
+function RoundTrack({ view }: { view: GameView }) {
+  // the engine counts the next turn as soon as hands pass, so a Crisis drawn now sits before `turn`
+  const crisisNow = view.stage === 'crisis';
+  const done = (t: number) => t < view.turn;
+  return (
+    <nav
+      className="round-track"
+      aria-label={`Round ${view.round} of ${view.totalRounds}, turn ${view.turn} of ${view.totalTurns}; hands pass ${view.passDirection} this round`}
+    >
+      <span className="track-round">
+        Round {view.round}/{view.totalRounds} <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={`passing ${view.passDirection}`} />
+      </span>
+      <ol className="track-turns">
+        {Array.from({ length: view.totalTurns }, (_, i) => i + 1).map((t) => (
+          <Fragment key={t}>
+            <li className={`track-turn ${t === view.turn && !crisisNow ? 'current' : done(t) ? 'done' : ''}`} title={`Turn ${t}`}>
+              {t}
+            </li>
+            {CRISIS_AFTER.includes(t) && t < view.totalTurns && (
+              <li
+                className={`track-crisis ${crisisNow && t === view.turn - 1 ? 'current' : t < view.turn - (crisisNow ? 1 : 0) ? 'done' : ''}`}
+                title={`A Crisis card is drawn after turn ${t}`}
+              >
+                <i className="ri-alarm-warning-line" aria-label="Crisis" />
+              </li>
+            )}
+          </Fragment>
+        ))}
+      </ol>
+      <span className="track-step">{STEP_NAMES[view.stage]}</span>
+    </nav>
+  );
+}
+
 function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; conn: Connection; playing: boolean; speed: Speed; onToggleSpeed: () => void }) {
   const me = view.players[view.you]!;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
@@ -186,10 +227,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
   return (
     <main className="game">
       <header className="topbar">
-        <span title={`Round ${view.round} of ${view.totalRounds}, turn ${view.turn} of ${view.totalTurns}; hands pass ${view.passDirection} this round`}>
-          Round {view.round}/{view.totalRounds} · Turn {view.turn}/{view.totalTurns}{' '}
-          <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={`passing ${view.passDirection}`} />
-        </span>
+        <RoundTrack view={view} />
         <span className="muted room">Room {view.code}</span>
         <button className="speed" onClick={onToggleSpeed} title={`Spotlight speed: ${speed === 'fast' ? 'Fast' : 'Normal'}`}>
           <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? 'Fast' : 'Normal'}</span>
