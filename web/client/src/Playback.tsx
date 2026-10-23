@@ -25,6 +25,8 @@ const CAUSED = new Set(['card_gained', 'card_stolen', 'card_given', 'cards_swapp
 const CAUSE_BOUNDARY = new Set(['cards_revealed', 'crisis_drawn', 'hands_passed', 'turn_started', 'round_started']);
 /** Decision kinds named differently from the card that asks them. */
 const DECISION_CARD: Record<string, string> = { merger_propose: 'merger_offer', merger_respond: 'merger_offer' };
+/** How many spotlight lengths a step stays when the step before it had the same cause, as each player's Burnout discard. */
+const SAME_CAUSE_HOLD = 0.5;
 /** How many spotlight lengths a Crisis stays, so its card can turn over and be read. */
 const CRISIS_HOLD = 2;
 /** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
@@ -275,6 +277,8 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
   const busy = useRef(false);
   const skipping = useRef(false);
   const shownRef = useRef(view);
+  /** the cause of the step played last, so a run of effects from one card plays faster after the first */
+  const lastCause = useRef<string | undefined>(undefined);
   /** ends the spotlight now playing early */
   const wake = useRef(() => {});
 
@@ -298,10 +302,13 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
         for (const s of stepsFor(next, fresh)) {
           // skipping passes everything but a round's standings, which wait for a tap
           if ((skipping.current && !s.standings) || s.logOnly) continue;
-          setStep(s);
+          // players' events often arrive one view at a time, so a run of one card's effects is sped up here, not merged
+          const step = s.cause && s.cause === lastCause.current ? { ...s, hold: SAME_CAUSE_HOLD } : s;
+          lastCause.current = s.cause;
+          setStep(step);
           if (s.sound) sfx(s.sound);
           await new Promise<void>((resolve) => {
-            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs * (s.hold ?? 1));
+            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs * (step.hold ?? 1));
             wake.current = () => {
               clearTimeout(timer);
               resolve();
