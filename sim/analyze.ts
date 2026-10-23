@@ -20,8 +20,8 @@ const CLOSE_POINTS = 5;
 /** At least this share of games must be close. */
 const CLOSE_MIN = 0.4;
 /** Comebacks are measured from the totals after this turn. */
-const COMEBACK_AFTER_TURN = 6;
-/** Allowed share of games won by a player who was not leading after COMEBACK_AFTER_TURN. */
+const COMEBACK_AFTER_ROUND = 2;
+/** Allowed share of games won by a player who was not leading the game totals after COMEBACK_AFTER_ROUND [P41]. */
 const COMEBACK_RANGE: [number, number] = [0.1, 0.25];
 /** Allowed share of all points that come from Meta cards. */
 const META_RANGE: [number, number] = [0.1, 0.3];
@@ -36,11 +36,15 @@ interface GameRecord {
   players: number;
   bots: string[];
   firstPlayer: number;
-  activeMeta: string[];
-  crises: Array<{ turn: number; id: string; totalsBefore: number[] }>;
+  /** Active Meta of each round */
+  activeMeta: string[][];
+  crises: Array<{ round: number; turn: number; id: string; totalsBefore: number[]; totalsAfter: number[] }>;
   picks: string[][];
   teams: string[][];
+  /** Game totals at the start of every turn, all rounds in order */
   totalsByTurn: number[][];
+  /** Each round's points by seat */
+  rounds: number[][];
   scores: Array<{ total: number; lines: Array<[string, number]> }>;
   winners: number[];
 }
@@ -202,9 +206,8 @@ function analyze(dir: string, players: number, flags: string[], metrics: Record<
     const t = g.scores.map((s) => s.total).sort((a, b) => b - a);
     return t[0]! - t[1]! <= CLOSE_POINTS;
   }).length / mirror.length;
-  // Two Deadline Crunches can end a game before turn 7; then the final totals stand in.
-  const afterTurn = (g: GameRecord) => g.totalsByTurn[COMEBACK_AFTER_TURN] ?? g.scores.map((s) => s.total);
-  const comeback = mirror.filter((g) => !leaders(afterTurn(g)).some((s) => g.winners.includes(s))).length / mirror.length;
+  const afterRound = (g: GameRecord) => g.scores.map((_, seat) => g.rounds.slice(0, COMEBACK_AFTER_ROUND).reduce((sum, r) => sum + r[seat]!, 0));
+  const comeback = mirror.filter((g) => !leaders(afterRound(g)).some((s) => g.winners.includes(s))).length / mirror.length;
   let metaPoints = 0;
   let allPoints = 0;
   for (const g of mirror) {
@@ -225,7 +228,7 @@ function analyze(dir: string, players: number, flags: string[], metrics: Record<
       ['Metric', 'Value', 'Threshold', ''],
       [
         [`Close games (top two within ${CLOSE_POINTS} points)`, pct(close), `at least ${pct(CLOSE_MIN)}`, close >= CLOSE_MIN ? 'ok' : 'FLAG'],
-        [`Comeback (winner not leading after turn ${COMEBACK_AFTER_TURN})`, pct(comeback), `${pct(COMEBACK_RANGE[0])}-${pct(COMEBACK_RANGE[1])}`, inRange(comeback, COMEBACK_RANGE) ? 'ok' : 'FLAG'],
+        [`Comeback (winner not leading after round ${COMEBACK_AFTER_ROUND})`, pct(comeback), `${pct(COMEBACK_RANGE[0])}-${pct(COMEBACK_RANGE[1])}`, inRange(comeback, COMEBACK_RANGE) ? 'ok' : 'FLAG'],
         ['Meta share of all points', pct(metaShare), `${pct(META_RANGE[0])}-${pct(META_RANGE[1])}`, inRange(metaShare, META_RANGE) ? 'ok' : 'FLAG'],
       ],
     ),
@@ -236,8 +239,7 @@ function analyze(dir: string, players: number, flags: string[], metrics: Record<
   for (const g of mirror) {
     for (const c of g.crises) {
       const before = leaders(c.totalsBefore).join();
-      // A Crisis drawn after the last turn is followed by final scoring instead of a new turn.
-      const after = leaders(g.totalsByTurn[c.turn - 1] ?? g.scores.map((s) => s.total)).join();
+      const after = leaders(c.totalsAfter).join();
       const s = crisisStats.get(c.id) ?? { seen: 0, swings: 0 };
       s.seen += 1;
       if (before !== after) s.swings += 1;
@@ -256,7 +258,7 @@ function analyze(dir: string, players: number, flags: string[], metrics: Record<
     });
   out.push(
     `### Crisis swing (mirror, leader changed in at most ${pct(CRISIS_MAX_SWING)} of draws)`,
-    'Leader just before the Crisis compared with the leader when the next turn starts.',
+    'Leader of the game totals just before the Crisis compared with the leader when the next turn starts.',
     table(['Crisis', 'Draws', 'Leader changed', ''], crisisRows),
   );
 

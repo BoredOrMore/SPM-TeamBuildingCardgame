@@ -7,7 +7,7 @@ import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
 import { actingSeat, greedyBot, monteCarloBot, randomBot, type Archetype } from '../src/bots.js';
 import { parseGameData } from '../src/data.js';
-import { applyActionInPlace, createGame, currentScores } from '../src/game.js';
+import { applyActionInPlace, createGame, gameTotals } from '../src/game.js';
 import { randomInt } from '../src/rng.js';
 import type { Bot, CardsFile, GameData, RulesFile } from '../src/types.js';
 
@@ -46,17 +46,22 @@ function seats(players: number, make: (seat: number) => Bot): Bot[] {
 }
 
 /**
- * Plays game `g` and returns its record: setup, picks, crises (with every total just before
- * each one), totals at the start of each turn and the final scores.
+ * Plays game `g` and returns its record: setup, picks, crises (with the game totals just before
+ * and just after each one), game totals at the start of every turn of every round [P41], each
+ * round's totals and the final scores with lines summed over the rounds.
  */
 function playRecorded(data: GameData, bots: Bot[], g: number) {
   const seed = BASE_SEED + g;
   const state = createGame(data, { players: bots.length, seed });
   const totalsByTurn: number[][] = [];
   const totalsBeforeCrisis: number[][] = [];
+  let lastTurn = '';
   for (let steps = 0; state.stage !== 'ended'; steps++) {
     if (steps >= MAX_STEPS) throw new Error(`game ${g} did not finish`);
-    if (state.stage === 'pick' && totalsByTurn.length < state.turn) totalsByTurn.push(currentScores(data, state).map((s) => s.total));
+    if (state.stage === 'pick' && lastTurn !== `${state.round}:${state.turn}`) {
+      lastTurn = `${state.round}:${state.turn}`;
+      totalsByTurn.push(gameTotals(data, state));
+    }
     const seat = actingSeat(state);
     const action = bots[seat]!.act(data, state, seat);
     // On a crisis turn, replay the action on a copy whose rules skip this crisis to see the totals just before it.
@@ -65,30 +70,45 @@ function playRecorded(data: GameData, bots: Bot[], g: number) {
     applyActionInPlace(data, state, action);
     if (copy && state.turn !== turn) {
       applyActionInPlace(withoutCrisisAfter(data, turn), copy, action);
-      totalsBeforeCrisis.push(currentScores(data, copy).map((s) => s.total));
+      totalsBeforeCrisis.push(gameTotals(data, copy));
     }
   }
   const picks: string[][] = bots.map(() => []);
-  const crises: Array<{ turn: number; id: string; totalsBefore: number[] }> = [];
+  const teams: string[][] = bots.map(() => []);
+  const crises: Array<{ round: number; turn: number; id: string; totalsBefore: number[]; totalsAfter?: number[] }> = [];
+  // Global turn index of each turn start, to find the totals right after a Crisis.
+  let turnIndex = -1;
   for (const e of state.events) {
+    if (e.type === 'turn_started') turnIndex += 1;
     if (e.type === 'cards_revealed') {
       for (const r of e.cards as Array<{ player: number; cards: Array<{ id: string }> }>) picks[r.player]!.push(...r.cards.map((c) => c.id));
     }
-    if (e.type === 'crisis_drawn') crises.push({ turn: e.turn, id: (e.card as { id: string }).id, totalsBefore: totalsBeforeCrisis[crises.length]! });
+    if (e.type === 'round_ended') (e.teams as Array<Array<{ id: string }>>).forEach((t, seat) => teams[seat]!.push(...t.map((c) => c.id)));
+    if (e.type === 'crisis_drawn') crises.push({ round: e.round, turn: e.turn, id: (e.card as { id: string }).id, totalsBefore: totalsBeforeCrisis[crises.length]!, totalsAfter: undefined });
+    if (e.type === 'turn_started') for (const c of crises) c.totalsAfter ??= totalsByTurn[turnIndex];
   }
+  const final = state.result!.scores.map((s) => s.total);
+  for (const c of crises) c.totalsAfter ??= final;
+  // Lines of all rounds summed by label, so Meta and other sources can be compared over the game.
+  const lines = state.players.map((p) => {
+    const sum = new Map<string, number>();
+    for (const r of state.roundScores) for (const l of r[p.seat]!.lines) sum.set(l.label, (sum.get(l.label) ?? 0) + l.points);
+    return [...sum.entries()];
+  });
   return {
     game: g,
     seed,
     players: bots.length,
     bots: bots.map((b) => b.name),
     firstPlayer: state.firstPlayer,
-    activeMeta: state.activeMeta,
+    activeMeta: state.events.filter((e) => e.type === 'round_started').map((e) => e.activeMeta as string[]),
     ...(data.rules.setup.privateMetaPerPlayer > 0 && { privateMeta: state.players.map((p) => p.privateMeta) }),
     crises,
     picks,
-    teams: state.players.map((p) => p.team.map((c) => c.id)),
+    teams,
     totalsByTurn,
-    scores: state.result!.scores.map((s) => ({ total: s.total, lines: s.lines.map((l) => [l.label, l.points]) })),
+    rounds: state.roundScores.map((r) => r.map((s) => s.total)),
+    scores: state.result!.scores.map((s) => ({ total: s.total, lines: lines[s.seat]! })),
     winners: state.result!.winners,
   };
 }
