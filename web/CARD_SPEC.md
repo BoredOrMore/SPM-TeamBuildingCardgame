@@ -55,17 +55,18 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 |---|---|---|---|
 | Full (a popup of 1 or 2 cards, preview, hover, rules gallery) | 240 (2 cards: up to 44% of the screen each) | 300 | everything, always in the Figma card's shape (548 × 768) and with the art always the same share of it: a longer text shrinks to fit, so every full card is the same size |
 | Popup row (3 or 4 cards turning over together: the reveal, a round's Meta) | 96 or less, so 4 fit one row | 140 | art, badges and name, in the Figma card's shape, so every card in the row is the same size |
-| Hand | a quarter of the row (about 84), 4 a row, a second row for the rest | 168, less when the hand would not fit one row | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same size, 6 px apart and never overlapping |
+| Hand | a quarter of the row (about 84), 4 a row, a second row for the rest | 168, less when the hand would not fit one row or the screen is short (at most 22% of its height) | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same size, 6 px apart and never overlapping |
 | Table (Crisis and Meta in play) | 210 | 250 | a tile: square art left, name and effect right, no badges or footer |
 | Team chip | 36 | 44 | round art face, ring in frame color, the type badge icon top left so the card is known at a glance |
-| Pile back | 56 (40 during a game) | 72 | card back by deck |
-| Opponent hand back | 20 | 28 | card back by deck |
+| Pile back | 56 (40 during a game) | 72 (48 during a game) | card back by deck |
+| Opponent hand back | 20 | 28 | one card back with the number of cards beside it |
 
 ## Behaviour
 
 - Hidden cards always show the back of their deck (Main, Crisis, Meta), never their type.
 - Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it, on top of everything (the rules panel and playback included) and whole inside the window, 12 px from the card and the window edge; it shrinks to fit rather than being cut off. On touch, holding the card does the same.
 - A card being dragged keeps the size it has in the hand.
+- The table above your team (Crisis, Meta, opponents) never scrolls: on a short screen it shrinks as a whole to fit, down to 60%, and the play log opens from a topbar button. Sizes in the table are before that shrink.
 - A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
 - In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
 
