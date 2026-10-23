@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { IllegalAction, parseGameData } from '../../src/index.js';
+import { IllegalAction, parseGameData, scorePlayer } from '../../src/index.js';
 import type { CardsFile, GameData, RulesFile } from '../../src/index.js';
 import type { GameView } from '../shared/protocol.js';
 import { Table } from '../server/table.js';
@@ -20,9 +20,9 @@ function startedTable(seed = 1): Table {
   return table;
 }
 
-/** Plays humans with the first legal move and bots with their own logic until the game ends. */
-function playOut(table: Table): void {
-  for (let steps = 0; table.state!.stage !== 'ended'; steps++) {
+/** Plays humans with the first legal move and bots with their own logic until the game ends, or until `until` holds. */
+function playOut(table: Table, until = (t: Table) => t.state!.stage === 'ended'): void {
+  for (let steps = 0; !until(table); steps++) {
     if (steps > 5000) throw new Error('game did not finish');
     const bot = table.nextBotAction();
     if (bot) {
@@ -77,6 +77,19 @@ describe('views hide private information', () => {
     for (const id of state.unusedMeta) expect(view.activeMeta).not.toContain(id);
     expect(view.players[1]!.handCount).toBe(state.players[1]!.hand.length);
     expect(json).not.toContain('mainRemaining":[');
+  });
+
+  it("scores others from the table only, never from their private Meta", () => {
+    const table = startedTable();
+    playOut(table, (t) => t.state!.turn >= 5);
+    // Ben's live score as Ann sees it leaves out his private Meta; as Ben sees it, it counts them
+    const state = table.state!;
+    const view = table.viewFor('a') as GameView;
+    const ben = state.players[1]!;
+    const teams = state.players.map((p) => p.team);
+    const input = { data, teams, seat: 1, visibleCrisis: state.visibleCrisis, bonuses: ben.bonuses, totalTurns: state.totalTurns };
+    expect(view.players[1]!.score).toBe(scorePlayer({ ...input, activeMeta: state.activeMeta }).total);
+    expect((table.viewFor('b') as GameView).players[1]!.score).toBe(scorePlayer({ ...input, activeMeta: [...state.activeMeta, ...ben.privateMeta] }).total);
   });
 
   it('sends decision options only to the decision owner and private events only to their audience', () => {

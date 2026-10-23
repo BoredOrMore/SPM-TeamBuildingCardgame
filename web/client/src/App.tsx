@@ -228,6 +228,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
               <div key={p.seat} data-zone={`seat-${p.seat}`} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
                 <div className="opp-head">
                   <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
+                  <SeatScore score={p.score} round={view.round} />
                   {!p.connected && <span className="tag warn">offline</span>}
                   <span className="opp-hand" title={`${p.handCount} cards in hand`}>
                     {Array.from({ length: p.handCount }, (_, i) => (
@@ -254,7 +255,9 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
       </div>
 
       <section className="my-team" data-zone={`seat-${view.you}`}>
-        <h2>Your team</h2>
+        <h2>
+          Your team <SeatScore score={me.score} round={view.round} />
+        </h2>
         <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
       </section>
 
@@ -285,6 +288,27 @@ function TeamChips({ team, protectedUids, zone }: { team: CardInstance[]; protec
         <span className="muted">No one hired yet</span>
       )}
     </div>
+  );
+}
+
+/** A seat's points this round, with a "+N" or "−N" that rises when a play changes them. */
+function SeatScore({ score, round }: { score: number; round: number }) {
+  const prev = useRef({ score, round });
+  const [delta, setDelta] = useState<{ n: number; key: number }>();
+  useEffect(() => {
+    // a new round starts every team from 0, which is not a loss worth showing
+    if (round === prev.current.round && score !== prev.current.score) setDelta((d) => ({ n: score - prev.current.score, key: (d?.key ?? 0) + 1 }));
+    prev.current = { score, round };
+  }, [score, round]);
+  return (
+    <span className="seat-score" title="Points this round if it ended now">
+      <i className="ri-star-line" /> {score}
+      {delta && (
+        <b key={delta.key} className={`score-delta ${delta.n > 0 ? 'up' : 'down'}`}>
+          {delta.n > 0 ? `+${delta.n}` : `−${-delta.n}`}
+        </b>
+      )}
+    </span>
   );
 }
 

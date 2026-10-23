@@ -275,6 +275,11 @@ button.picker-tile.picked { border-color: var(--accent); }
 .spot-card .card .card-text { font-size: 0.95rem; padding: 0 10px; }
 .spot-icon { font-size: 3.5rem; color: #fff; }
 .spot-line { margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; font-size: 1.05rem; text-align: center; }
+.seat-score { position: relative; display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-weight: 700; font-size: 0.9rem; }
+.score-delta { position: absolute; left: 100%; top: -4px; margin-left: 4px; font-size: 1rem; animation: score-rise 1400ms ease-out forwards; pointer-events: none; }
+.score-delta.up { color: #2e8b57; }
+.score-delta.down { color: #c0392b; }
+@keyframes score-rise { from { opacity: 1; transform: translateY(6px); } 70% { opacity: 1; } to { opacity: 0; transform: translateY(-14px); } }
 .bonus-float { position: fixed; z-index: 42; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 800; color: #2e8b57; animation: bonus-up 1200ms ease-out forwards; }
 .app.playing .play { visibility: hidden; }
 .skip-hint { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #fff; }
@@ -316,6 +321,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   .spotlight, .bonus-float, .pulse, .sheet, .picked-back { animation: none; }
+  .score-delta { animation: none; opacity: 0; }
   .flip-inner { animation: none; transform: rotateY(180deg); }
 }
 
