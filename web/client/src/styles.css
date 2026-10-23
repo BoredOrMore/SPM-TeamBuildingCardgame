@@ -53,6 +53,25 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @media (max-width: 600px) { .topbar .room { display: none; } }
 .topbar > *, .topbar button.speed { white-space: nowrap; }
 .score { font-size: 1.2rem; }
+/* the round track: every turn of the round, the Crisis draws between them, and the step of the turn now */
+.round-track { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 0.85rem; font-weight: 600; }
+.track-round { white-space: nowrap; }
+.track-turns { display: flex; align-items: center; gap: 3px; flex: 1; justify-content: center; margin: 0; padding: 0; list-style: none; }
+.track-turn { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); color: var(--muted); font-size: 0.75rem; }
+.track-turn.done { background: var(--line); border-color: var(--line); color: var(--ink); }
+.track-turn.current { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.15); }
+.track-crisis { display: grid; place-items: center; width: 20px; height: 20px; color: var(--warn); opacity: 0.55; font-size: 0.9rem; }
+.track-crisis.done { opacity: 0.25; }
+.track-crisis.current { opacity: 1; border-radius: 50%; background: var(--warn); color: #fff; transform: scale(1.2); }
+.track-step { white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: var(--line); font-size: 0.75rem; }
+@media (max-width: 600px) {
+  /* a phone gives the track its own line under the buttons */
+  .topbar { flex-wrap: wrap; row-gap: 6px; }
+  .round-track { order: 1; flex-basis: 100%; gap: 4px; font-size: 0.75rem; }
+  .track-turns { gap: 1px; }
+  .track-turn { width: 20px; height: 20px; font-size: 0.7rem; }
+  .track-crisis { width: 14px; }
+}
 .now { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--line); font-weight: 600; text-align: center; }
 .now.yours { background: var(--accent); color: #fff; }
 .goals, .mini-team, .hand-cards { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -63,11 +82,12 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 /* one screen during a game: the middle scrolls, your team and hand stay at the bottom */
 .app.in-game { height: 100dvh; padding: 8px 12px env(safe-area-inset-bottom); overflow: hidden; }
 .app.in-game .game { height: 100%; gap: 8px; }
-.app.in-game .goals { flex: none; flex-wrap: nowrap; overflow-x: auto; }
+/* nothing on the table is hidden: Crisis and Meta tiles share the row and wrap onto a new line when they run out of room */
+.app.in-game .goals { flex: none; flex-wrap: wrap; }
 .app.in-game .goals > * { flex: none; white-space: nowrap; }
 /* Crisis and Meta in play are tiles: square art, name and effect; hover or hold one for the full card */
 .app.in-game .goals { align-items: center; }
-.app.in-game .goals > .card { width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
+.app.in-game .goals > .card { flex: 1 1 200px; width: auto; max-width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
 .app.in-game .goals > .card .card-top { grid-row: 1 / 3; align-self: start; width: 64px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; }
 .app.in-game .goals > .card .card-art { height: 100%; aspect-ratio: 1; }
 .app.in-game .goals > .card .card-badge, .app.in-game .goals > .card .card-footer { display: none; }
@@ -79,17 +99,17 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 }
 .table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .my-team, .hand { flex: none; }
-/* every opponent board stays in full view: the middle never shrinks below them, and the open log scrolls inside itself */
-.app.in-game .table { flex: 1 0 auto; }
+/* nothing is cut off: your hand and team always show in full, and on a short screen the table above them
+   (Crisis, Meta, opponents, log) scrolls up and down inside its own area */
+.app.in-game .table { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.app.in-game .table > * { flex: none; }
 .app.in-game .log[open] { max-height: 30vh; overflow-y: auto; }
-/* on a short screen the hand gives way instead: the play zone stays, and the cards scroll to show the rest */
-.app.in-game .hand { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.app.in-game .hand { flex: none; display: flex; flex-direction: column; }
 .app.in-game .hand > * { flex: none; }
-.app.in-game .hand > .hand-cards { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 /* your team is one row, heading then chips, so the hand keeps its room */
 .app.in-game .my-team { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
 .app.in-game .my-team h2 { flex: none; margin: 0; }
-.app.in-game .my-team .mini-team { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+.app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
@@ -98,8 +118,9 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @keyframes hand-in-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
 @keyframes hand-in-left { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
 /* every card in the hand is the same size; neighbours overlap a little */
-.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; }
-.app.in-game .hand-cards .card { flex: none; width: 168px; min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
+.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; container-type: inline-size; }
+/* the whole hand fits the row: cards shrink below 168px when there are more of them than room (--n is the hand size) */
+.app.in-game .hand-cards .card { flex: none; width: min(168px, calc((100cqw + 20px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
 .app.in-game .hand-cards .card + .card { margin-left: -20px; }
 /* the next card covers this card's right edge, so its text stops short of it */
 .app.in-game .hand-cards .card .card-text { padding-right: 24px; }
@@ -110,18 +131,18 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .app.in-game .hand-cards .card { width: 108px; }
   .app.in-game .hand-cards .card + .card { margin-left: -14px; }
   /* too small to read on a phone: hold a card to see its full text */
-  .app.in-game .hand-cards .card .card-text { display: none; }
+  .app.in-game .hand-cards .card .card-text, .app.in-game .hand-cards .card .card-footer { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
 }
 @media (max-width: 600px) {
   /* a phone keeps every board on one screen: Crisis and Meta become small tiles (art, name, effect), each player one row */
   .app.in-game .game { gap: 6px; }
-  .app.in-game .goals > .card { width: 210px; grid-template-columns: 48px 1fr; gap: 2px 6px; }
+  .app.in-game .goals > .card { flex-basis: 150px; max-width: none; grid-template-columns: 48px 1fr; gap: 2px 6px; }
   .app.in-game .goals > .card .card-top { width: 48px; }
   .app.in-game .opponents { grid-template-columns: 1fr; gap: 6px; }
   .app.in-game .opponent, .app.in-game .my-team { display: flex; align-items: center; gap: 6px; padding: 6px 8px; }
   .app.in-game .opp-head, .app.in-game .my-team h2 { flex: none; flex-wrap: nowrap; margin: 0; }
-  .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+  .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
   .app.in-game .pile .card-back { width: 40px; }
   .app.in-game .now { padding: 6px 10px; }
   .app.in-game .hand { padding: 6px 8px; }
@@ -131,7 +152,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 
 /* your decision, as a sheet over the hand */
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
+  position: fixed; left: 0; right: var(--rules-right, 0px); bottom: var(--rules-bottom, 0px); z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
   background: var(--panel); border-top: 3px solid var(--accent); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.2);
   padding: 0 16px calc(16px + env(safe-area-inset-bottom)); animation: sheet-up 220ms ease-out;
 }
@@ -203,6 +224,21 @@ button.picker-tile.picked { border-color: var(--accent); }
 .card-badge.type { left: min(4cqw, 12px); }
 .card-badge.timing { right: min(4cqw, 12px); }
 .card-top + .card-name { outline: max(1px, 0.9cqw) solid var(--paper); }
+/* the printed card's size is locked to the Figma shape (548 x 768) wherever it shows in full: the art keeps its share,
+   and the text shrinks to fit the space left (useFitText) instead of the card growing */
+.card:where(:has(> .card-top):not(.goals > .card)) { aspect-ratio: 548 / 768; min-height: 0; gap: 0; }
+.card:where(:has(> .card-top):not(.goals > .card)) > * { flex: none; }
+.card:where(:has(> .card-top):not(.goals > .card)) > .card-top { overflow: hidden; }
+.card:where(:has(> .card-top):not(.goals > .card)) .card-art { height: auto; aspect-ratio: 520 / 540; }
+.card:where(:has(> .card-top):not(.goals > .card)) > .card-name { font-size: 5.8cqw; padding: 1.8cqw 4cqw; margin-top: -5cqw; }
+.card:where(:has(> .card-top):not(.goals > .card)) > .card-text { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 2cqw 4cqw 0; font-size: calc(5.6cqw * var(--fit, 1)); line-height: 1.3; }
+.card:where(:has(> .card-top):not(.goals > .card)) > .card-footer { padding-bottom: 1.5cqw; }
+/* each part of a card's text on its own line; points bold, conditions plain */
+.card-text b { font-weight: 800; }
+.card-text { font-weight: 400; }
+.card:where(:has(> .card-top):not(.goals > .card)) .text-line { display: block; }
+.text-line + .text-line::before { content: ' · '; }
+.card:where(:has(> .card-top):not(.goals > .card)) .text-line + .text-line::before { content: none; }
 .card:has(> .card-top) .card-text { text-align: center; }
 .card-footer { margin-top: auto; text-align: center; color: var(--frame); font-weight: 800; font-size: max(0.55rem, 3.3cqw); letter-spacing: 0.12em; }
 /* a team member: a round face in the card type's frame colour */
@@ -243,19 +279,12 @@ button.picker-tile.picked { border-color: var(--accent); }
 .drag-ghost { position: fixed; z-index: 20; pointer-events: none; transform: translate(-50%, -60%) rotate(-3deg) scale(1.05); filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.25)); }
 .drag-ghost .card { width: 100%; height: 100%; min-height: 0; }
 .preview {
-  position: fixed; inset: 0; z-index: 30; pointer-events: none; display: flex; flex-direction: column;
+  position: fixed; inset: 0 var(--rules-right, 0px) var(--rules-bottom, 0px) 0; z-index: 30; pointer-events: none; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 12px; background: rgb(43 42 51 / 0.45); padding: 16px;
 }
-/* a full card always has the Figma card's shape (548 x 768), so every card opened or hovered is the same size: the art gives way to longer text */
-.preview-card, .card-gallery .card { aspect-ratio: 548 / 768; }
-.preview-card .card-top, .card-gallery .card .card-top { flex: 1 1 0; min-height: 0; overflow: hidden; }
-.preview-card .card-art, .card-gallery .card .card-art { height: 100%; aspect-ratio: auto; }
-.preview-card > *:not(.card-top), .card-gallery .card > *:not(.card-top) { flex: none; }
 .card.preview-card { width: 240px; }
 @media (min-width: 601px) { .card.preview-card { width: 300px; } }
 .preview-card { min-height: 0; box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }
-.preview-card .card-name { font-size: 1rem; padding: 8px 12px; }
-.preview-card .card-text { font-size: 0.95rem; padding: 0 12px; line-height: 1.4; }
 .preview-keywords { display: flex; flex-direction: column; gap: 6px; width: min(320px, 100%); }
 
 /* keyword boxes: hover tooltip (mouse) and big preview (touch) */
@@ -289,18 +318,16 @@ button.picker-tile.picked { border-color: var(--accent); }
 }
 
 /* event playback */
-.playback { position: fixed; inset: 0; z-index: 40; cursor: pointer; background: rgb(20 20 30 / 0.35); }
+.playback { position: fixed; inset: 0 var(--rules-right, 0px) var(--rules-bottom, 0px) 0; z-index: 40; cursor: pointer; background: rgb(20 20 30 / 0.35); }
 .spotlight {
-  position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 32px);
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 32px);
   display: flex; flex-direction: column; align-items: center; gap: 12px; animation: spot-in 200ms ease-out;
 }
 .spot-cards { display: flex; gap: 12px; justify-content: center; }
 .spot-card .card { width: 240px; min-height: 0; box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }
 @media (min-width: 601px) { .spot-card .card { width: 300px; } }
 /* two cards side by side (a swap) still fit a phone */
-.spot-cards:has(> :nth-child(2)) .card { width: min(240px, 44vw); }
-.spot-card .card .card-name { font-size: 1rem; padding: 8px 10px; }
-.spot-card .card .card-text { font-size: 0.95rem; padding: 0 10px; }
+@media (max-width: 600px) { .spot-cards:has(> :nth-child(2)) .card { width: min(240px, 44vw); } }
 .spot-icon { font-size: 3.5rem; color: #fff; }
 .spot-cause { margin: 0 0 -4px; padding: 4px 12px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 700; font-size: 0.85rem; }
 .spot-line { margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; font-size: 1.05rem; text-align: center; }
@@ -311,7 +338,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 @keyframes score-rise { from { opacity: 1; transform: translateY(6px); } 70% { opacity: 1; } to { opacity: 0; transform: translateY(-14px); } }
 .bonus-float { position: fixed; z-index: 42; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 800; color: #2e8b57; animation: bonus-up 1200ms ease-out forwards; }
 .app.playing .play { visibility: hidden; }
-.skip-hint { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #fff; }
+.skip-hint { position: absolute; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #fff; }
 .pulse { animation: pulse 900ms ease-in-out 1; box-shadow: 0 0 0 3px #e9a23b; }
 
 @keyframes spot-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
@@ -330,12 +357,15 @@ button.picker-tile.picked { border-color: var(--accent); }
 .flip-front { transform: rotateY(180deg); }
 .flip-row .flip-front .card { width: 100%; min-height: 0; box-shadow: 0 12px 32px rgb(0 0 0 / 0.3); }
 .flip-front .card .card-text { display: none; }
+.flip-row:not(.single) .card .card-footer { display: none; }
+.flip-row:not(.single) .card .card-name { font-size: 0.62rem; padding: 3px 5px; line-height: 1.15; }
+@media (min-width: 601px) { .flip-row:not(.single) .card .card-name { font-size: 0.9rem; } }
 @media (min-width: 601px) { .flip-card { width: 140px; } }
 @keyframes flip { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
 /* one card turning over (a Crisis) is shown at full size with its text */
 .flip-row.single .flip-card { width: 240px; }
 @media (min-width: 601px) { .flip-row.single .flip-card { width: 300px; } }
-.flip-row.single .flip-front .card .card-text { display: block; font-size: 0.95rem; padding: 0 10px; }
+.flip-row.single .flip-front .card .card-text { display: block; }
 /* the scores after a round, and the per-round table on the results screen */
 .standings { display: flex; flex-direction: column; gap: 12px; min-width: min(320px, 88vw); padding: 16px; border-radius: 14px; background: var(--panel); box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); cursor: default; }
 .standings table, .standings-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -380,9 +410,22 @@ button.picker-tile.picked { border-color: var(--accent); }
   .topbar button.speed, .topbar .rules-button { padding: 4px 8px; }
   .topbar .sound-btn { min-width: 36px; min-height: 36px; padding: 4px; }
 }
-/* opened from the topbar, which keeps its own items on one line; the rules wrap and scroll only up and down */
-.rulebook-backdrop { position: fixed; inset: 0; z-index: 60; background: rgb(20 20 30 / 0.45); display: grid; place-items: center; padding: 12px; white-space: normal; font-weight: 400; }
-.rulebook { width: min(760px, 100%); min-width: 0; overflow-wrap: anywhere; max-height: calc(100dvh - 24px); display: flex; flex-direction: column; background: var(--panel); border-radius: 14px; box-shadow: 0 16px 48px rgb(0 0 0 / 0.35); overflow: hidden; }
+/* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.
+   The body makes room (--rules-right, --rules-bottom) and the fixed overlays stop at the panel's edge */
+body.rules-open { --rules-right: 380px; padding-right: var(--rules-right); }
+@media (max-width: 899px) {
+  body.rules-open { --rules-right: 0px; --rules-bottom: 50dvh; padding-bottom: var(--rules-bottom); }
+  /* the board scrolls above the panel instead of squeezing into half a phone */
+  body.rules-open .app.in-game { height: auto; overflow: visible; }
+}
+.rulebook {
+  position: fixed; z-index: 45; top: 0; right: 0; bottom: 0; width: var(--rules-right); min-width: 0;
+  display: flex; flex-direction: column; background: var(--panel); box-shadow: -8px 0 32px rgb(0 0 0 / 0.18);
+  overflow: hidden; overflow-wrap: anywhere; white-space: normal; font-weight: 400;
+}
+@media (max-width: 899px) {
+  .rulebook { top: auto; left: 0; width: auto; height: var(--rules-bottom); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 32px rgb(0 0 0 / 0.2); }
+}
 .rulebook header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 0; }
 .rulebook header h2 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 6px; }
 .rulebook .close { border: 0; background: none; font-size: 1.4rem; cursor: pointer; padding: 4px; }
@@ -391,8 +434,11 @@ button.picker-tile.picked { border-color: var(--accent); }
 .rule-body .rule-tabs { padding: 0 0 10px; }
 .rule-body { overflow-y: auto; overflow-x: hidden; padding: 0 16px 16px; line-height: 1.5; }
 .rule-body h3 { margin: 12px 0 4px; font-size: 1rem; }
-.rule-body ul, .rule-steps { padding-left: 20px; margin: 4px 0; }
-.rule-steps li, .rule-body ul li { margin-bottom: 6px; }
+/* one short rule per line, its icon in front */
+.rule-body .rules { list-style: none; padding: 0; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 8px; }
+.rule-body .rules .rule { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+.rule-body .rules .rule > i { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--line); font-size: 1rem; }
+.rule-body .rules .rule > span { padding-top: 3px; }
 .glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
 .card-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .card-gallery figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }

@@ -53,7 +53,8 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 
 | Size | Phone (≤ 600 px) | Wider | Shows |
 |---|---|---|---|
-| Full (spotlight, preview, hover, rules gallery) | 240 | 300 | everything, always in the Figma card's shape (548 × 768): the art gives way to longer text, so every full card is the same size |
+| Full (a popup of 1 or 2 cards, preview, hover, rules gallery) | 240 (2 cards: up to 44% of the screen each) | 300 | everything, always in the Figma card's shape (548 × 768) and with the art always the same share of it: a longer text shrinks to fit, so every full card is the same size |
+| Popup row (3 or 4 cards turning over together: the reveal, a round's Meta) | 96 or less, so 4 fit one row | 140 | art, badges and name, in the Figma card's shape, so every card in the row is the same size |
 | Hand | 108 | 168 | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same height and overlap a little |
 | Table (Crisis and Meta in play) | 210 | 250 | a tile: square art left, name and effect right, no badges or footer |
 | Team chip | 36 | 44 | round art face only, ring in frame color |
@@ -65,6 +66,8 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 - Hidden cards always show the back of their deck (Main, Crisis, Meta), never their type.
 - Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it. On touch, holding the card does the same.
 - A card being dragged keeps the size it has in the hand.
+- A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
+- In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
 
 ## Checklist
 
@@ -72,7 +75,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 2. The type badge is top left and its icon follows the table above.
 3. The timing badge is top right, its icon comes from data as in Timing, and Role and Event cards leave it empty.
 4. The name pill overlaps the art's bottom edge and is centered.
-5. Card text is centered, uses icons for every code and chips for card icons.
+5. Card text is centered, uses icons for every code and chips for card icons, shows points bold and conditions plain, and puts each ` · ` part on its own line.
 6. The footer shows the type label.
-7. The card keeps the size in Sizes for where it is shown, and every card in a row has the same size.
+7. The card keeps the size in Sizes for where it is shown whatever its content, and every card in a row has the same size.
 8. Hover (mouse) and hold (touch) show the full card with Tooltips.

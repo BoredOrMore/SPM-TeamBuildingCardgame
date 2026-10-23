@@ -188,7 +188,12 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       {/* what to do now is in the status bar at the top */}
       <h2>Your hand</h2>
       {/* a new hand each turn slides in from the neighbour it came from: passing left, it comes from the right */}
-      <div key={`${view.round}-${view.turn}`} className={`hand-cards ${view.turn > 1 ? `from-${view.passDirection === 'left' ? 'right' : 'left'}` : ''}`} data-zone="hand">
+      <div
+        key={`${view.round}-${view.turn}`}
+        className={`hand-cards ${view.turn > 1 ? `from-${view.passDirection === 'left' ? 'right' : 'left'}` : ''}`}
+        data-zone="hand"
+        style={{ '--n': Math.max(view.hand.length, 1) } as React.CSSProperties}
+      >
         {view.hand.map((c) => (
           <Card
             key={c.uid}
