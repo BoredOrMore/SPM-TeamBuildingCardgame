@@ -52,13 +52,25 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .goals, .mini-team, .hand-cards { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .deck-count { font-size: 0.8rem; }
 .opponents { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
-.opponent, .my-team, .decision, .hand, .log { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.opponent, .my-team, .hand, .log { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
 .opponent.acting { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .opp-head { margin-bottom: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.decision { border-color: var(--accent); }
-.decision.waiting { border-color: var(--line); color: var(--muted); }
-.options { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.options button { text-align: left; }
+/* your decision, as a sheet over the hand */
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
+  background: var(--panel); border-top: 3px solid var(--accent); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.2);
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom)); animation: sheet-up 220ms ease-out;
+}
+.sheet.closed { padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+.sheet button.sheet-head { position: sticky; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; border-radius: 0; background: var(--panel); font-weight: 700; font-size: 1.05rem; padding: 12px 0; min-height: 48px; }
+.sheet-body { display: flex; flex-direction: column; gap: 10px; }
+.sheet-source .card { width: 100%; min-height: 0; }
+.sheet-offer { font-weight: 600; }
+.sheet-options { display: flex; flex-direction: column; gap: 8px; }
+button.option { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 52px; }
+button.option:hover { border-color: var(--accent); }
+.option-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .play { width: 100%; margin-top: 10px; }
 .log ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.85rem; color: var(--muted); }
 .log summary { cursor: pointer; font-weight: 600; }
@@ -157,5 +169,5 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @keyframes pulse { 50% { transform: scale(1.02); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .spotlight, .bonus-float, .pulse { animation: none; }
+  .spotlight, .bonus-float, .pulse, .sheet { animation: none; }
 }

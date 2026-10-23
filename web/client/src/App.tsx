@@ -1,7 +1,8 @@
 // Screens: home (create or join), lobby, game table, and final scores.
 
 import { useEffect, useRef, useState } from 'react';
-import type { GameView, LobbyView, View } from '../../shared/protocol.js';
+import type { Choice } from '../../../src/index.js';
+import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
 import { PlaybackOverlay, usePlayback } from './Playback.js';
 import { Card, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, eventLine, idOfUid } from './cards.js';
@@ -198,30 +199,76 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
         </div>
       </section>
 
-      {myDecision?.options ? (
-        <section className="decision">
-          <h2>{decisionTitle(myDecision)}</h2>
-          {cardName(idOfUid(view, myDecision.source)) !== myDecision.source && <p className="muted">From {cardName(idOfUid(view, myDecision.source))}</p>}
-          <div className="options">
-            {myDecision.options.map((o, i) => (
-              <button key={i} onClick={() => conn.send('choose', { decisionId: myDecision.id, option: i })}>
-                {choiceLabel(view, o)}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : (
-        view.decision && (
-          <section className="decision waiting">
-            Waiting for {view.players[view.decision.player]?.name}: {decisionTitle(view.decision)}
-          </section>
-        )
-      )}
+      {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
 
       <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
 
       <Log view={view} />
     </main>
+  );
+}
+
+/** The cards a decision option is about, as uids, so the option can show them. */
+function choiceCards(c: Choice): string[] {
+  switch (c.kind) {
+    case 'headhunt':
+    case 'merger_offer':
+      return [c.give, c.take];
+    case 'nda':
+      return [c.protect];
+    case 'discard':
+    case 'take':
+    case 'take_discard':
+      return [c.uid];
+    case 'give':
+      return c.uids;
+    case 'pivot':
+      return c.discard;
+    default:
+      return [];
+  }
+}
+
+/** Your decision as a sheet over the hand: the card that asks, then one tile per option. */
+function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision: DecisionView; onChoose: (option: number) => void }) {
+  const [open, setOpen] = useState(true);
+  const source = idOfUid(view, decision.source);
+  const offer = decision.context?.offer;
+  return (
+    <section className={`sheet ${open ? '' : 'closed'}`} aria-label="Your decision">
+      <button className="sheet-head" onClick={() => setOpen((o) => !o)}>
+        <span>{decisionTitle(decision)}</span>
+        <i className={open ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line'} aria-label={open ? 'Hide' : 'Show'} />
+      </button>
+      {open && (
+        <div className="sheet-body">
+          {cardName(source) !== source && (
+            <div className="sheet-source">
+              <Card id={source} />
+            </div>
+          )}
+          {offer && (
+            <div className="sheet-offer">
+              {view.players[decision.context?.proposer ?? -1]?.name ?? 'They'} offer: {choiceLabel(view, offer)}
+            </div>
+          )}
+          <div className="sheet-options">
+            {decision.options!.map((o, i) => (
+              <button key={i} className="option" onClick={() => onChoose(i)}>
+                {choiceCards(o).length > 0 && (
+                  <span className="option-cards">
+                    {choiceCards(o).map((uid) => (
+                      <Card key={uid} id={idOfUid(view, uid)} small />
+                    ))}
+                  </span>
+                )}
+                <span>{choiceLabel(view, o)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
