@@ -78,6 +78,11 @@ export function cardName(id: string): string {
   return CARD_DEFS.get(id)?.name ?? id;
 }
 
+/** Whether a card comes from the Crisis deck. */
+export function isCrisis(id: string): boolean {
+  return CARD_DEFS.get(id)?.deck === 'crisis';
+}
+
 /** Whether a card is an Action card, which goes to the discard pile once played. */
 export function isAction(id: string): boolean {
   return CARD_DEFS.get(id)?.type === 'action';

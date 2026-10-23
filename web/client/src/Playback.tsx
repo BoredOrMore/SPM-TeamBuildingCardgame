@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CardInstance, GameEvent, ScoreResult } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
-import { Card, CardBack, eventLine, idOfUid, isAction, type BackDeck } from './cards.js';
+import { Card, CardBack, cardName, eventLine, idOfUid, isAction, isCrisis, type BackDeck } from './cards.js';
 import { sfx, type Sfx } from './sound.js';
 
 /** Spotlight speeds a player can pick. */
@@ -19,7 +19,19 @@ const TIMING: Record<Speed, { spotlightMs: number; flightMs: number; flipMs: num
   fast: { spotlightMs: 750, flightMs: 300, flipMs: 250, flipStaggerMs: 50 },
 };
 /** Events that change nothing a player needs to watch; the status bar already says whose turn it is. */
-const SILENT = new Set(['card_picked', 'teams_updated', 'decision_made', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
+/** Effects that come from a card: their spotlight says which card, and whose. */
+const CAUSED = new Set(['card_gained', 'card_stolen', 'card_given', 'cards_swapped', 'card_discarded', 'card_protected', 'hand_revealed', 'hands_swapped']);
+/** Events that end the reach of a decision: an effect after one of these was not caused by an earlier decision. */
+const CAUSE_BOUNDARY = new Set(['cards_revealed', 'crisis_drawn', 'hands_passed', 'turn_started', 'round_started']);
+/** Decision kinds named differently from the card that asks them. */
+const DECISION_CARD: Record<string, string> = { merger_propose: 'merger_offer', merger_respond: 'merger_offer' };
+/** How many spotlight lengths a step stays when the step before it had the same cause, as each player's Burnout discard. */
+const SAME_CAUSE_HOLD = 0.5;
+/** How many spotlight lengths a Crisis stays, so its card can turn over and be read. */
+const CRISIS_HOLD = 2;
+/** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
+const REVEAL_HOLD = 1.6;
+const SILENT = new Set(['card_picked', 'teams_updated', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
 
 type SeqEvent = GameEvent & { seq: number };
 
@@ -51,6 +63,8 @@ interface SpotCard {
   seatOrder?: number;
   /** on a flip step, the deck back it starts as; Main unless set */
   back?: BackDeck;
+  /** on a flip step, who played it, shown under the card */
+  owner?: string;
 }
 
 /** One row of the standings shown when a round ends. */
@@ -75,6 +89,12 @@ export interface Step {
   sound?: Sfx;
   /** every card starts face down and turns over, as when the table reveals together */
   flip?: boolean;
+  /** how many spotlight lengths the step stays, for steps with more to read; 1 unless set */
+  hold?: number;
+  /** a line for the play log only; the spotlight does not play it */
+  logOnly?: boolean;
+  /** the card that made this happen, and whose it is: "Bot 1's Headhunt", "Crisis: Poaching" */
+  cause?: string;
   /** the round's scores, shown until the player taps the button that says `goOn` */
   standings?: Standing[];
   goOn?: string;
@@ -108,7 +128,7 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
       return { icon: 'ri-delete-bin-line', seats: [e.player as number], cards: [{ id: card!.id, to: zone('deck') }] };
     case 'crisis_drawn':
       // the top card of the Crisis pile turns over, then lands on the table
-      return { icon: 'ri-alarm-warning-line', seats: [], flip: true, cards: [{ id: card!.id, to: zone('crisis'), back: 'crisis' }] };
+      return { icon: 'ri-alarm-warning-line', seats: [], flip: true, hold: CRISIS_HOLD, cards: [{ id: card!.id, to: zone('crisis'), back: 'crisis' }] };
     case 'round_started':
       // this round's Meta cards turn over as the round begins
       return {
@@ -137,7 +157,8 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
     case 'no_effect':
       return { icon: 'ri-information-line', seats: [], cards: [{ id: idOfUid(view, String(e.source)) }] };
     case 'hands_passed':
-      return { icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line', seats: [], cards: [] };
+      // the hand sliding in shows the pass; the topbar arrow says which way, so it needs no spotlight
+      return { icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line', seats: [], cards: [], logOnly: true };
     case 'hands_swapped':
       return { icon: 'ri-repeat-line', seats: [], cards: [] };
     default:
@@ -145,38 +166,96 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
   }
 }
 
+/** A seat as the spotlight names it: "You" for the viewer. */
+function seatName(view: GameView, seat: number): string {
+  return seat === view.you ? 'You' : (view.players[seat]?.name ?? `Seat ${seat + 1}`);
+}
+
+/** Names joined for a sentence: "A", "A and B", "A, B and C". */
+function listNames(names: string[]): string {
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** The card a decision belongs to: its kind is the card id, except for a few named in DECISION_CARD. */
+function cardOfDecision(kind: string): string {
+  return DECISION_CARD[kind] ?? kind;
+}
+
+/** Which card made an effect happen: the latest decision or Crisis before it, unless a reveal or a pass came in between. */
+function causeOf(view: GameView, e: SeqEvent): string | undefined {
+  for (let i = view.events.length - 1; i >= 0; i--) {
+    const x = view.events[i]!;
+    if (x.seq >= e.seq) continue;
+    if (x.type === 'decision_made') {
+      const card = cardOfDecision(String(x.decision));
+      if (isCrisis(card)) return `Crisis: ${cardName(card)}`;
+      return `${x.player === view.you ? 'Your' : `${seatName(view, x.player as number)}’s`} ${cardName(card)}`;
+    }
+    if (x.type === 'crisis_drawn') return `Crisis: ${cardName((x.card as CardInstance).id)}`;
+    if (CAUSE_BOUNDARY.has(x.type)) return undefined;
+  }
+  return undefined;
+}
+
 /** Turns new events into spotlights, one per event and one per player for a reveal. */
 export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
   const steps: Step[] = [];
+  // players who each added a card for the same cause in a row, shown as one step (a Crisis that gives everyone a card)
+  let gains: { step: Step; players: number[] } | undefined;
   for (const e of events) {
     if (SILENT.has(e.type)) continue;
     if (e.type === 'cards_revealed') {
       const reveals = e.cards as Array<{ player: number; cards: CardInstance[] }>;
-      // everyone's picks turn over together first, then each player's play is shown on its own
+      // everyone's picks turn over together, named by who played them; hires fly to their teams at once,
+      // and only Action cards, which do something now, then get a spotlight of their own
       steps.push({
         key: `${e.seq}-flip`,
         line: 'Everyone reveals',
         icon: 'ri-eye-line',
         seats: reveals.map((r) => r.player),
-        cards: reveals.flatMap((r, seatOrder) => r.cards.map((c) => ({ id: c.id, seatOrder }))),
+        cards: reveals.flatMap((r, seatOrder) =>
+          r.cards.map((c) => ({ id: c.id, seatOrder, owner: seatName(view, r.player), to: isAction(c.id) ? undefined : zone(`team-${r.player}`) })),
+        ),
         sound: SOUND_OF[e.type],
         flip: true,
+        hold: REVEAL_HOLD,
       });
       for (const r of reveals) {
         steps.push({
+          // a card that does something now gets its spotlight when it is used, right before what it does
+          logOnly: true,
           key: `${e.seq}-${r.player}`,
           line: eventLine(view, { ...e, cards: [r] })!,
           icon: 'ri-eye-line',
           seats: [r.player],
-          // played Action cards go to the discard pile, the rest join the team
-          cards: r.cards.map((c) => ({ id: c.id, to: isAction(c.id) ? zone('deck') : zone(`team-${r.player}`) })),
+              cards: [],
         });
+      }
+      continue;
+    }
+    if (e.type === 'decision_made') {
+      // a played card that asks a choice (an Action, or NDA) shows as it is used, right before its effects, which name it as their cause;
+      // an Action then flies to the discard pile, other cards stay in the team
+      const card = cardOfDecision(String(e.decision));
+      if (!isCrisis(card)) {
+        const to = isAction(card) ? zone('deck') : undefined;
+        steps.push({ key: String(e.seq), line: `${seatName(view, e.player as number)} used ${cardName(card)}`, icon: 'ri-magic-line', seats: [e.player as number], cards: [{ id: card, to }] });
       }
       continue;
     }
     const line = eventLine(view, e);
     if (!line) continue;
-    steps.push({ key: String(e.seq), line, sound: SOUND_OF[e.type], ...stepFor(view, e) });
+    const cause = CAUSED.has(e.type) ? causeOf(view, e) : undefined;
+    if (e.type === 'card_gained' && gains && gains.step === steps[steps.length - 1] && gains.step.cause === cause) {
+      const more = stepFor(view, e);
+      gains.players.push(e.player as number);
+      gains.step.cards.push(...more.cards);
+      gains.step.seats.push(...more.seats);
+      gains.step.line = `${listNames(gains.players.map((seat) => seatName(view, seat)))} each added a card`;
+      continue;
+    }
+    steps.push({ key: String(e.seq), line, sound: SOUND_OF[e.type], cause, ...stepFor(view, e) });
+    gains = e.type === 'card_gained' && cause ? { step: steps[steps.length - 1]!, players: [e.player as number] } : undefined;
   }
   return steps;
 }
@@ -198,6 +277,8 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
   const busy = useRef(false);
   const skipping = useRef(false);
   const shownRef = useRef(view);
+  /** the cause of the step played last, so a run of effects from one card plays faster after the first */
+  const lastCause = useRef<string | undefined>(undefined);
   /** ends the spotlight now playing early */
   const wake = useRef(() => {});
 
@@ -220,11 +301,14 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
         // labels and positions come from the board still on screen, where the cards are now
         for (const s of stepsFor(next, fresh)) {
           // skipping passes everything but a round's standings, which wait for a tap
-          if (skipping.current && !s.standings) continue;
-          setStep(s);
+          if ((skipping.current && !s.standings) || s.logOnly) continue;
+          // players' events often arrive one view at a time, so a run of one card's effects is sped up here, not merged
+          const step = s.cause && s.cause === lastCause.current ? { ...s, hold: SAME_CAUSE_HOLD } : s;
+          lastCause.current = s.cause;
+          setStep(step);
           if (s.sound) sfx(s.sound);
           await new Promise<void>((resolve) => {
-            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs);
+            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs * (step.hold ?? 1));
             wake.current = () => {
               clearTimeout(timer);
               resolve();
@@ -287,7 +371,8 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
     const els = step.seats.map((s) => document.querySelector(zone(`seat-${s}`))).filter((el): el is Element => !!el);
     els.forEach((el) => el.classList.add('pulse'));
     setBonusAt(step.bonus && centreOf(zone(`seat-${step.bonus.seat}`)));
-    const { spotlightMs, flightMs } = TIMING[speed];
+    const { flightMs } = TIMING[speed];
+    const spotlightMs = TIMING[speed].spotlightMs * (step.hold ?? 1);
     // the swish as cards leave for their zones
     if (step.cards.some((c) => c.to)) sfx('whoosh', (spotlightMs - flightMs) / 1000);
     if (cards.current && !reducedMotion()) {
@@ -359,6 +444,7 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
                     <Card id={c.id} />
                   </div>
                 </div>
+                {c.owner && <span className="flip-owner">{c.owner}</span>}
               </div>
             ))}
           </div>
@@ -373,6 +459,7 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
         ) : (
           <i className={`spot-icon ${step.icon}`} />
         )}
+        {step.cause && <p className="spot-cause">{step.cause}</p>}
         {!step.standings && (
           <p className="spot-line">
             {step.cards.length > 0 && <i className={step.icon} />} {step.line}

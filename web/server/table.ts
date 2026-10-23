@@ -1,6 +1,6 @@
 // One game table: lobby seats, bots, the engine state, and what each seat may see. No networking here.
 
-import { applyActionInPlace, createGame, currentDecision, currentScores, greedyBot, IllegalAction } from '../../src/index.js';
+import { applyActionInPlace, createGame, currentDecision, currentScores, greedyBot, IllegalAction, scorePlayer } from '../../src/index.js';
 import type { Action, Bot, CardInstance, GameData, GameEvent, GameState } from '../../src/index.js';
 import type { GameView, LobbyView, OpponentView, SeatInfo, View } from '../shared/protocol.js';
 
@@ -138,6 +138,11 @@ export class Table {
     }
     const me = state.players[you]!;
     const decision = currentDecision(state);
+    const yourScore = currentScores(this.data, state)[you]!;
+    const teams = state.players.map((p) => p.team);
+    // others' private Meta is hidden, so their live score counts only what is on the table
+    const publicScore = (seat: number) =>
+      scorePlayer({ data: this.data, teams, seat, activeMeta: state.activeMeta, visibleCrisis: state.visibleCrisis, bonuses: state.players[seat]!.bonuses, totalTurns: state.totalTurns }).total;
     const players: OpponentView[] = state.players.map((p) => ({
       ...seats[p.seat]!,
       team: p.team,
@@ -146,8 +151,8 @@ export class Table {
       handCount: p.hand.length,
       hasPicked: p.picked !== null,
       revealed: p.revealed,
+      score: p.seat === you ? yourScore.total : publicScore(p.seat),
     }));
-    const yourScore = currentScores(this.data, state)[you]!;
     const view: GameView = {
       phase: 'game',
       code: this.code,

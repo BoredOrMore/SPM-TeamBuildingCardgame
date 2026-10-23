@@ -31,6 +31,8 @@ export interface OpponentView extends SeatInfo {
   handCount: number;
   hasPicked: boolean;
   revealed: CardInstance[];
+  /** points this round if it ended now, from what everyone can see (your own also counts your private Meta) */
+  score: number;
 }
 
 /** The decision someone must answer now. `options` is set only when it is yours. */

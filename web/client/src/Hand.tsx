@@ -182,7 +182,8 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       )}
       {/* what to do now is in the status bar at the top */}
       <h2>Your hand</h2>
-      <div className="hand-cards" data-zone="hand">
+      {/* a new hand each turn slides in from the neighbour it came from: passing left, it comes from the right */}
+      <div key={`${view.round}-${view.turn}`} className={`hand-cards ${view.turn > 1 ? `from-${view.passDirection === 'left' ? 'right' : 'left'}` : ''}`} data-zone="hand">
         {view.hand.map((c) => (
           <Card
             key={c.uid}
