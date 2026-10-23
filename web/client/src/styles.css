@@ -19,6 +19,8 @@ button { font: inherit; color: inherit; }
 input { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); width: 100%; }
 
 .app { max-width: 960px; margin: 0 auto; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
+/* wide enough for a full hand of 7 at hand size */
+.app.in-game { max-width: 1120px; }
 .muted { color: var(--muted); font-weight: normal; }
 .row { display: flex; gap: 8px; }
 
@@ -89,18 +91,22 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
-.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; padding: 10px 4px 4px; align-items: flex-start; }
 .hand-cards.from-right { animation: hand-in-right 400ms ease-out; }
 .hand-cards.from-left { animation: hand-in-left 400ms ease-out; }
 @keyframes hand-in-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
 @keyframes hand-in-left { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
-.app.in-game .hand-cards .card { flex: none; width: 140px; min-height: 0; position: relative; }
+/* every card in the hand is the same size; neighbours overlap a little */
+.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; }
+.app.in-game .hand-cards .card { flex: none; width: 168px; min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
+.app.in-game .hand-cards .card + .card { margin-left: -20px; }
+/* the next card covers this card's right edge, so its text stops short of it */
+.app.in-game .hand-cards .card .card-text { padding-right: 24px; }
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
 @media (max-width: 600px) {
   /* a fanned hand: each card overlaps the one before it, the name stays readable */
-  .app.in-game .hand-cards .card { width: 96px; }
-  .app.in-game .hand-cards .card + .card { margin-left: -24px; }
+  .app.in-game .hand-cards .card { width: 108px; }
+  .app.in-game .hand-cards .card + .card { margin-left: -14px; }
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
@@ -354,3 +360,26 @@ button.picker-tile.picked { border-color: var(--accent); }
 .sound-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
 .sound-row input[type='range'] { flex: 1; min-width: 0; padding: 0; }
 .sound-row input[type='checkbox'] { width: auto; }
+
+/* the rulebook: a book button anywhere, a panel over the screen with one tab per topic */
+.rules-button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
+.home .rules-button, .lobby .rules-button { align-self: center; }
+@media (max-width: 600px) { .topbar .rules-button .label { display: none; } }
+.rulebook-backdrop { position: fixed; inset: 0; z-index: 60; background: rgb(20 20 30 / 0.45); display: grid; place-items: center; padding: 12px; }
+.rulebook { width: min(760px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; background: var(--panel); border-radius: 14px; box-shadow: 0 16px 48px rgb(0 0 0 / 0.35); overflow: hidden; }
+.rulebook header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 0; }
+.rulebook header h2 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 6px; }
+.rulebook .close { border: 0; background: none; font-size: 1.4rem; cursor: pointer; padding: 4px; }
+.rule-tabs { display: flex; gap: 6px; padding: 10px 16px; flex-wrap: wrap; flex: none; }
+.rule-tabs button { flex: none; padding: 6px 12px; }
+.rule-body .rule-tabs { padding: 0 0 10px; }
+.rule-body { overflow-y: auto; padding: 0 16px 16px; line-height: 1.5; }
+.rule-body h3 { margin: 12px 0 4px; font-size: 1rem; }
+.rule-body ul, .rule-steps { padding-left: 20px; margin: 4px 0; }
+.rule-steps li, .rule-body ul li { margin-bottom: 6px; }
+.glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.card-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.card-gallery figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.card-gallery .card { width: 100%; min-height: 0; }
+.card-gallery figcaption { font-size: 0.8rem; }
+@media (max-width: 600px) { .card-gallery { grid-template-columns: repeat(2, 1fr); } }

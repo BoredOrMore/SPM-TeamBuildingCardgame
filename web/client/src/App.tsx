@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
+import { RulebookButton } from './Rulebook.js';
 import { PlaybackOverlay, SPEEDS, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
 import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SoundControls } from './SoundControls.js';
@@ -102,6 +103,7 @@ function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: 
     <main className="home">
       <h1>Head Hunter</h1>
       <p className="muted">Build the best software team before the deadline.</p>
+      <RulebookButton />
       <label>
         Your name
         <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="e.g. Bored" />
@@ -134,6 +136,7 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
       <p className="muted">Room code</p>
       <div className="code">{view.code}</div>
       <p className="muted">Share this code. {view.minPlayers}–{view.maxPlayers} players.</p>
+      <RulebookButton />
       <ul className="seats">
         {view.seats.map((s) => (
           <li key={s.seat}>
@@ -194,6 +197,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         <span className="score" title={`${view.yourTotal} over all rounds, ${view.yourScore.total} this round`}>
           <i className="ri-trophy-line" /> {view.yourTotal}
         </span>
+        <RulebookButton />
         <SoundControls />
       </header>
       <p className={`now ${yours ? 'yours' : ''}`} role="status">

@@ -202,10 +202,10 @@ function codesOf(id: string): IconCode[] {
 }
 
 /** One box per keyword: icon, name, and what it means. */
-function KeywordBoxes({ id }: { id: string }) {
+function KeywordBoxes({ codes }: { codes: IconCode[] }) {
   return (
     <>
-      {codesOf(id).map((k) => (
+      {codes.map((k) => (
         <div key={k.code} className="kw-box" style={{ '--box': k.chip ? (FRAME_COLORS[k.chip] ?? ICON_INK) : ICON_INK } as React.CSSProperties}>
           {/* keywords show their name and rule; icons (roles, events) are named by what they stand for */}
           <div className="kw-title">
@@ -216,6 +216,11 @@ function KeywordBoxes({ id }: { id: string }) {
       ))}
     </>
   );
+}
+
+/** Every keyword and icon code with what it means, for the rulebook. */
+export function IconGlossary() {
+  return <KeywordBoxes codes={[...ICONS.values()]} />;
 }
 
 /** The hovered card at full size with its keyword boxes: on its right, or its left when there is no room. */
@@ -229,7 +234,7 @@ function CardTooltip({ tip }: { tip: Tip }) {
       <FullCard id={tip.id} />
       {codesOf(tip.id).length > 0 && (
         <div className="preview-keywords">
-          <KeywordBoxes id={tip.id} />
+          <KeywordBoxes codes={codesOf(tip.id)} />
         </div>
       )}
     </div>
@@ -252,7 +257,7 @@ function CardPreview({ id }: { id: string }) {
       <FullCard id={id} />
       {codesOf(id).length > 0 && (
         <div className="preview-keywords">
-          <KeywordBoxes id={id} />
+          <KeywordBoxes codes={codesOf(id)} />
         </div>
       )}
     </div>
