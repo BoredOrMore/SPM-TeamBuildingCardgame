@@ -40,10 +40,10 @@ function effectOf(data: GameData, id: string): Effect {
   return effect;
 }
 
-/** Points from a 1/2/3+ tier table for a card count. */
-function tierScore(tiers: number[], count: number): number {
+/** Points from a 1/2/3 tier table for a card count, plus `perExtra` for each card past the table. */
+function tierScore(tiers: number[], count: number, perExtra = 0): number {
   if (count <= 0) return 0;
-  return tiers[Math.min(count, tiers.length) - 1]!;
+  return tiers[Math.min(count, tiers.length) - 1]! + Math.max(0, count - tiers.length) * perExtra;
 }
 
 /**
@@ -56,9 +56,16 @@ export function scorePlayer(input: ScoringInput): ScoreResult {
   const cancellable = effectOf(input.data, 'tech_debt_payoff').cancellable as string[];
   const penalties = input.visibleCrisis.filter((c) => cancellable.includes(c.id));
 
+  // Each Tech Debt Payoff cancels one penalty or gives its points instead, whichever scores more.
+  const unusedPoints = effectOf(input.data, 'tech_debt_payoff').pointsIfUnused as number;
   let best: ScoreResult | null = null;
   for (const cancelled of subsetsUpTo(penalties, tdp)) {
     const result = scoreWithCancellation(input, new Set(cancelled.map((c) => c.uid)));
+    const unused = tdp - cancelled.length;
+    if (unused > 0) {
+      result.lines.push({ label: 'Tech Debt Payoff', points: unused * unusedPoints });
+      result.total += unused * unusedPoints;
+    }
     if (!best || result.total > best.total) best = result;
   }
   return best!;
@@ -120,39 +127,34 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const pms = n(c, 'project_manager');
   let factor = 1;
   if (pms >= pmRule.conflictAtCount) factor = pmRule.conflictScore;
-  else if (pms > 0) {
-    factor = pmRule.factor;
-    const agile = metaEffect('agile_at_scale');
-    if (agile && checkCondition(agile.condition, input, effective)) factor = agile.factor as number;
-  }
-  // Fractional multipliers (Agile at Scale x2.5) round down [P32].
-  add('Junior Developer', Math.floor(tierScore(juniorEff.tiers as number[], juniors) * factor));
+  else if (pms > 0) factor = pmRule.factor;
+  add('Junior Developer', tierScore(juniorEff.tiers as number[], juniors, juniorEff.pointsEachAfterTiers as number) * factor);
+  add('Project Manager', pms * (effectOf(data, 'project_manager').points as number));
 
   const seniors = n(c, 'senior_dev');
   const seniorEff = effectOf(data, 'senior_dev');
   const ifMissing = seniorEff.ifMissing as { cardId: string; points: number };
   const perSenior = n(c, ifMissing.cardId) > 0 ? (seniorEff.points as number) : ifMissing.points;
-  const mergeConflict = crisisCount('merge_conflict') > 0 && seniors >= 2;
-  if (mergeConflict) {
-    lines.push({ label: 'Senior Developer (Merge Conflict)', points: 0 });
-  } else {
-    add('Senior Developer', seniors * perSenior);
-    // Each visible Technical Debt copy applies [P28].
-    add('Technical Debt', -crisisCount('technical_debt') * seniors);
-  }
+  // Merge Conflict sets every Senior to a fixed value; each visible Technical Debt copy still applies [P28].
+  const mergeConflict = crisisCount('merge_conflict') > 0;
+  const seniorValue = mergeConflict ? Math.min(perSenior, effectOf(data, 'merge_conflict').points as number) : perSenior;
+  add(mergeConflict ? 'Senior Developer (Merge Conflict)' : 'Senior Developer', seniors * seniorValue);
+  add('Technical Debt', -crisisCount('technical_debt') * seniors);
 
   add('UX/UI Designer', tierScore(effectOf(data, 'designer').tiers as number[], n(c, 'designer')));
 
   // Step 3: event cards.
   const scopeCreep = crisisCount('scope_creep') > 0;
   add('Coffee', scopeCreep ? 0 : n(c, 'coffee') * (effectOf(data, 'coffee').points as number));
-  add('Freelance', n(c, 'freelance') * (effectOf(data, 'freelance').points as number));
+  add('Freelance', scopeCreep ? 0 : n(c, 'freelance') * (effectOf(data, 'freelance').points as number));
   const invEff = effectOf(data, 'investors');
-  const invRequires = (invEff.requires as { roleGroups: number }).roleGroups;
-  if (!scopeCreep && groups >= invRequires) {
-    let perInvestor = invEff.points as number;
+  const allGroups = Object.keys(data.cards.roleGroups).length;
+  const fullTeam = groups >= allGroups;
+  if (!scopeCreep) {
+    let perInvestor = groups * (invEff.pointsPerRoleType as number) + (fullTeam ? (invEff.fullTeamPoints as number) : 0);
+    // Venture Capital Boom raises a full-team Investor to its own value [P39].
     const vc = metaEffect('venture_capital_boom');
-    if (vc && checkCondition(vc.condition, input, effective)) perInvestor = vc.points as number;
+    if (fullTeam && vc && checkCondition(vc.condition, input, effective)) perInvestor = vc.points as number;
     add('Investors', n(c, 'investors') * perInvestor);
   }
 
@@ -171,17 +173,11 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   }
 
   // Step 6: Crisis bonuses and play-time bonuses.
-  if (crisisCount('unicorn_hype') > 0) {
-    const base = effectOf(data, 'unicorn_hype');
-    if (groups >= (base.requires as { roleGroups: number }).roleGroups && leftoverBug === 0) add('Unicorn Hype', base.points as number);
-  }
-  if (crisisCount('product_launch') > 0) {
-    const tiers = effectOf(data, 'product_launch').tiers as Array<{ requires: { roleGroups: number; maxCount?: Record<string, number> }; points: number }>;
-    for (const tier of tiers) {
-      const okGroups = groups >= tier.requires.roleGroups;
-      const okMax = Object.entries(tier.requires.maxCount ?? {}).every(([id, max]) => n(effective, id) <= max);
-      if (okGroups && okMax) add('Product Launch', tier.points);
-    }
+  // Unicorn Hype and Product Launch: points per role type, plus more with no unpaired Bug.
+  for (const [id, label] of [['unicorn_hype', 'Unicorn Hype'], ['product_launch', 'Product Launch']] as const) {
+    if (crisisCount(id) === 0) continue;
+    const eff = effectOf(data, id);
+    add(label, groups * (eff.pointsPerRoleType as number) + (leftoverBug === 0 ? (eff.cleanPoints as number) : 0));
   }
   if (crisisCount('viral_success') > 0 && n(c, 'designer') > 0) {
     const eff = effectOf(data, 'viral_success');

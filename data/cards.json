@@ -20,14 +20,16 @@
         "type": "role",
         "quantity": 20,
         "text": "Score 1/3/7 points based on quantity. Double with Project Manager.",
-        "cardText": "{JUNIOR} 1/2/3+ = 1/3/7 · {SYNERGY}{PM}: 2/6/14",
+        "cardText": "{JUNIOR} 1/3/7, +1 each after 3 · {SYNERGY}{PM}: 2/6/14, +2 each",
         "effect": {
           "kind": "tiered_count",
           "tiers": [1, 3, 7],
           "multipliers": [
             { "kind": "project_manager", "factor": 2, "conflictAtCount": 2, "conflictScore": 0 }
-          ]
-        }
+          ],
+          "pointsEachAfterTiers": 1
+        },
+        "placeholders": ["P40"]
       },
       {
         "id": "senior_dev",
@@ -48,8 +50,9 @@
         "type": "role",
         "quantity": 5,
         "text": "Doubles Junior Developer score. Two PM cause conflict (score = 0).",
-        "cardText": "Your {JUNIOR} score the {PM} row · 2 {PM}: {JUNIOR} = 0",
-        "effect": { "kind": "modifier_only", "modifies": "junior_dev" }
+        "cardText": "+1 · Your {JUNIOR} score the {PM} row · 2 {PM}: {JUNIOR} = 0",
+        "effect": { "kind": "modifier_only", "modifies": "junior_dev", "points": 1 },
+        "placeholders": ["P40"]
       },
       {
         "id": "designer",
@@ -94,7 +97,8 @@
         "quantity": 5,
         "text": "+2 points.",
         "cardText": "+2",
-        "effect": { "kind": "per_card", "points": 2 }
+        "effect": { "kind": "per_card", "points": 2, "disabledBy": ["scope_creep"] },
+        "placeholders": ["P40"]
       },
       {
         "id": "investors",
@@ -102,13 +106,9 @@
         "type": "event",
         "quantity": 3,
         "text": "+5 points if you have all 4 role types.",
-        "cardText": "{FULLTEAM} +5",
-        "effect": {
-          "kind": "per_card",
-          "points": 5,
-          "requires": { "roleGroups": 4 },
-          "disabledBy": ["scope_creep"]
-        }
+        "cardText": "+1 per role type · {FULLTEAM} +1",
+        "effect": { "kind": "role_types_and_full_team", "pointsPerRoleType": 1, "fullTeamPoints": 1, "disabledBy": ["scope_creep"] },
+        "placeholders": ["P40"]
       },
       {
         "id": "headhunt",
@@ -138,7 +138,7 @@
         "type": "action",
         "quantity": 2,
         "text": "Convert Bug to QA or 2 Junior to 1 Senior.",
-        "cardText": "{BUG} → {QA}, or {JUNIOR}{JUNIOR} → {SENIOR}",
+        "cardText": "{BUG} → {QA}, {JUNIOR}{JUNIOR} → {SENIOR}, or +1",
         "timing": "on_reveal",
         "effect": {
           "kind": "convert",
@@ -147,9 +147,10 @@
             { "remove": { "junior_dev": 2 }, "add": { "senior_dev": 1 } }
           ],
           "removedCardsGoTo": "discard",
-          "addFrom": ["main_deck"]
+          "addFrom": ["main_deck"],
+          "fallbackPoints": 1
         },
-        "placeholders": ["P8", "P11", "P27"]
+        "placeholders": ["P8", "P11", "P27", "P40"]
       },
       {
         "id": "nda",
@@ -174,15 +175,16 @@
         "type": "defense",
         "quantity": 2,
         "text": "Cancel 1 crisis penalty card.",
-        "cardText": "Cancel 1 {CRISIS} penalty",
+        "cardText": "Cancel 1 {CRISIS} penalty, or +2",
         "timing": "scoring",
         "effect": {
           "kind": "cancel_crisis",
           "count": 1,
           "cancellable": ["technical_debt", "merge_conflict", "scope_creep"],
-          "scope": "owner_only"
+          "scope": "owner_only",
+          "pointsIfUnused": 2
         },
-        "placeholders": ["P8", "P10"]
+        "placeholders": ["P8", "P10", "P40"]
       },
       {
         "id": "upskill",
@@ -223,27 +225,28 @@
         "name": "Poaching",
         "quantity": 5,
         "text": "Player with Senior Dev steals from opponent.",
-        "cardText": "{POACH} A player with {SENIOR} takes 1 {CARD} from an opponent",
+        "cardText": "{POACH} Most {EMPLOYEE} takes 1 {CARD} from an opponent",
         "persistent": false,
         "effect": {
           "kind": "steal",
-          "eligible": { "hasCard": "senior_dev" },
-          "winner": "most_team_cards",
+          "eligible": "everyone",
+          "winner": "most_role_cards",
           "tieBreak": "random",
           "count": 1,
           "from": "chosen_opponent_team",
           "chooser": "winner"
         },
-        "placeholders": ["P6"]
+        "placeholders": ["P6", "P40"]
       },
       {
         "id": "layoff",
         "name": "Layoff",
         "quantity": 4,
         "text": "Everyone loses 1 Junior Developer.",
-        "cardText": "Everyone discards 1 {JUNIOR}",
+        "cardText": "Everyone discards 1 {JUNIOR} (none: 1 {EMPLOYEE})",
         "persistent": false,
-        "effect": { "kind": "each_player_discards", "count": 1, "cardIds": ["junior_dev"], "chooser": "self" }
+        "effect": { "kind": "each_player_discards", "count": 1, "cardIds": ["junior_dev"], "chooser": "self", "ifNone": "any_role_card" },
+        "placeholders": ["P40"]
       },
       {
         "id": "technical_debt",
@@ -279,9 +282,10 @@
         "name": "Merge Conflict",
         "quantity": 3,
         "text": "If you have 2+ Senior, all Senior worth 0.",
-        "cardText": "2+ {SENIOR}: every {SENIOR} = 0",
+        "cardText": "Every {SENIOR} = 1",
         "persistent": true,
-        "effect": { "kind": "scoring_zero_if_count", "cardId": "senior_dev", "minCount": 2 }
+        "effect": { "kind": "scoring_set_points", "cardId": "senior_dev", "points": 1 },
+        "placeholders": ["P40"]
       },
       {
         "id": "underdog_bonus",
@@ -298,9 +302,10 @@
         "name": "Scope Creep",
         "quantity": 2,
         "text": "Coffee and Investors worth 0 points.",
-        "cardText": "{COFFEE} and {INVESTORS} = 0",
+        "cardText": "{COFFEE}, {FREELANCE} and {INVESTORS} = 0",
         "persistent": true,
-        "effect": { "kind": "disable_cards", "cardIds": ["coffee", "investors"] }
+        "effect": { "kind": "disable_cards", "cardIds": ["coffee", "freelance", "investors"] },
+        "placeholders": ["P40"]
       },
       {
         "id": "hostile_takeover",
@@ -327,19 +332,20 @@
         "name": "Unicorn Hype",
         "quantity": 1,
         "text": "+15 points if have all 4 roles and no bug.",
-        "cardText": "{FULLTEAM}{CLEAN} +15",
+        "cardText": "+3 per role type · {CLEAN} +3",
         "persistent": true,
-        "effect": { "kind": "conditional_bonus", "points": 15, "requires": { "roleGroups": 4, "maxCount": { "bug": 0 } } }
+        "effect": { "kind": "role_types_and_clean", "pointsPerRoleType": 3, "cleanPoints": 3 },
+        "placeholders": ["P40"]
       },
       {
         "id": "funding_round",
         "name": "Funding Round",
         "quantity": 2,
         "text": "Everyone picks 1 card from discard pile.",
-        "cardText": "Everyone takes 1 {CARD} from the discard pile",
+        "cardText": "Everyone takes 1 {CARD} from the discard pile (empty: the deck)",
         "persistent": false,
-        "effect": { "kind": "each_player_takes_from_discard", "count": 1, "ifEmpty": "nothing" },
-        "placeholders": ["P11"]
+        "effect": { "kind": "each_player_takes_from_discard", "count": 1, "ifEmpty": "main_deck" },
+        "placeholders": ["P11", "P40"]
       },
       {
         "id": "pivot_or_persevere",
@@ -362,17 +368,10 @@
         "name": "Product Launch",
         "quantity": 1,
         "text": "Complete team get +5 points (+3 for all 4 roles, +2 more if no bug).",
-        "cardText": "{FULLTEAM} +3 · {CLEAN} +2",
+        "cardText": "+1 per role type · {CLEAN} +1",
         "persistent": true,
-        "effect": {
-          "kind": "conditional_bonus_tiers",
-          "tiers": [
-            { "requires": { "roleGroups": 4 }, "points": 3 },
-            { "requires": { "roleGroups": 4, "maxCount": { "bug": 0 } }, "points": 2 }
-          ],
-          "stacksWith": ["unicorn_hype"]
-        },
-        "placeholders": ["P20"]
+        "effect": { "kind": "role_types_and_clean", "pointsPerRoleType": 1, "cleanPoints": 1, "stacksWith": ["unicorn_hype"] },
+        "placeholders": ["P20", "P40"]
       },
       {
         "id": "viral_success",
@@ -395,7 +394,7 @@
         "name": "Merger Offer",
         "quantity": 1,
         "text": "Two players negotiate card trade for +2 each.",
-        "cardText": "2 players agree on a {CARD} trade: +2 each",
+        "cardText": "Trade 1 {CARD} with a player who agrees: +2 each · no deal: you +2",
         "persistent": true,
         "effect": {
           "kind": "negotiated_trade",
@@ -403,9 +402,10 @@
           "cardsEach": 1,
           "pointsEachOnSuccess": 2,
           "timeLimitSeconds": 60,
-          "botAccepts": "if_own_score_not_lower"
+          "botAccepts": "if_own_score_not_lower",
+          "pointsIfNoDeal": 2
         },
-        "placeholders": ["P17"]
+        "placeholders": ["P17", "P40"]
       }
     ],
     "meta": [
@@ -419,7 +419,7 @@
       { "id": "quality_design_movement", "name": "Quality Design Movement", "quantity": 1, "text": "+3 per Designer if you have zero Bugs and zero Coffee.", "cardText": "{CLEAN}{LEAN}{COFFEE} +3 per {DESIGNER}", "effect": { "kind": "per_card_bonus", "cardId": "designer", "points": 3, "condition": { "maxCount": { "bug": 0, "coffee": 0 } } } },
       { "id": "design_thinking_boom", "name": "Design Thinking Boom", "quantity": 1, "text": "Designers worth +3 each but only if you have no Project Manager.", "cardText": "{LEAN}{PM} +3 per {DESIGNER}", "effect": { "kind": "per_card_bonus", "cardId": "designer", "points": 3, "condition": { "maxCount": { "project_manager": 0 } } } },
       { "id": "pixel_perfect_culture", "name": "Pixel Perfect Culture", "quantity": 1, "text": "+2 per Designer if you have fewest total cards among all players.", "cardText": "Fewest {CARD} of all players: +2 per {DESIGNER}", "effect": { "kind": "per_card_bonus", "cardId": "designer", "points": 2, "condition": { "fewestTotalCards": true } } },
-      { "id": "agile_at_scale", "name": "Agile at Scale", "quantity": 1, "text": "PM multiplier becomes x2.5 instead of x2, but only if you have 4+ Juniors.", "cardText": "{PM} and 4+ {JUNIOR}: {JUNIOR} = 17", "effect": { "kind": "override_multiplier", "target": "project_manager", "factor": 2.5, "condition": { "minCount": { "junior_dev": 4 } } } },
+      { "id": "agile_at_scale", "name": "Agile at Scale", "quantity": 1, "text": "PM multiplier becomes x2.5 instead of x2, but only if you have 4+ Juniors.", "cardText": "{PM} and 4+ {JUNIOR}: +3", "effect": { "kind": "flat_if", "points": 3, "condition": { "minCount": { "project_manager": 1, "junior_dev": 4 }, "maxCount": { "project_manager": 1 } } }, "placeholders": ["P40"] },
       { "id": "self_organizing_teams", "name": "Self-Organizing Teams", "quantity": 1, "text": "+2 per employee if you have no PM and no Investors.", "cardText": "{LEAN}{PM}{INVESTORS} +2 per {EMPLOYEE}", "effect": { "kind": "per_employee_bonus", "points": 2, "condition": { "maxCount": { "project_manager": 0, "investors": 0 } } } },
       { "id": "diverse_team_bonus", "name": "Diverse Team Bonus", "quantity": 1, "text": "+2 per role type you have (max +8 for 4 types).", "cardText": "+2 per role type you have (max +8)", "effect": { "kind": "per_role_group_bonus", "points": 2, "max": 8 } },
       { "id": "small_team_advantage", "name": "Small Team Advantage", "quantity": 1, "text": "+1 point per card slot not used.", "cardText": "+1 per unused card slot", "effect": { "kind": "per_unused_slot", "points": 1, "slotBaseline": "turns_in_game" }, "placeholders": ["P4"] },

@@ -90,6 +90,7 @@ export type DecisionKind =
   | 'refactor'
   | 'nda'
   | 'burnout'
+  | 'layoff'
   | 'poaching'
   | 'hostile_takeover'
   | 'steal_best_card'
@@ -101,12 +102,13 @@ export type DecisionKind =
 export type Choice =
   | { kind: 'headhunt'; opponent: number; give: string; take: string }
   | { kind: 'phone_screen'; opponent: number }
-  | { kind: 'refactor'; mode: 'bug_to_qa' | 'juniors_to_senior' }
+  | { kind: 'refactor'; mode: 'bug_to_qa' | 'juniors_to_senior' | 'points' }
   | { kind: 'nda'; protect: string }
   | { kind: 'discard'; uid: string }
   | { kind: 'take'; opponent: number; uid: string }
   | { kind: 'give'; to: number; uids: string[] }
   | { kind: 'take_discard'; uid: string }
+  | { kind: 'draw_main' }
   | { kind: 'persevere' }
   | { kind: 'pivot'; discard: string[] }
   | { kind: 'merger_decline' }

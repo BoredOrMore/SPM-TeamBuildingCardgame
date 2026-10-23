@@ -302,16 +302,14 @@ function drawCrisis(data: GameData, state: GameState): void {
         const p = state.players[seat]!;
         const junior = p.team.find((c) => c.id === 'junior_dev' && !p.protected.includes(c.uid));
         if (junior) moveToDiscard(state, p, junior.uid, 'layoff');
+        else enqueue(state, seat, 'layoff', card.id); // no Junior: discard any role card instead
       }
       break;
     case 'poaching': {
-      const eligible = state.players.filter((p) => p.team.some((c) => c.id === 'senior_dev'));
-      if (eligible.length === 0) {
-        emit(state, { type: 'no_effect', decision: 'poaching', source: card.id });
-        break;
-      }
-      const most = Math.max(...eligible.map((p) => p.team.length));
-      const winner = pickRandom(state, eligible.filter((p) => p.team.length === most)); // ties random [P6]
+      // The player with the most role cards takes; ties random [P6].
+      const roles = (p: PlayerState) => p.team.filter((c) => data.byId.get(c.id)?.type === 'role').length;
+      const most = Math.max(...state.players.map(roles));
+      const winner = pickRandom(state, state.players.filter((p) => roles(p) === most));
       enqueue(state, winner.seat, 'poaching', card.id);
       break;
     }
@@ -444,11 +442,13 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
       const out: Choice[] = [];
       if ((c.get('bug') ?? 0) > 0 && refactorSource(data, state, 'qa_tester')) out.push({ kind: 'refactor', mode: 'bug_to_qa' });
       if ((c.get('junior_dev') ?? 0) >= 2 && refactorSource(data, state, 'senior_dev')) out.push({ kind: 'refactor', mode: 'juniors_to_senior' });
+      out.push({ kind: 'refactor', mode: 'points' });
       return out;
     }
     case 'nda':
       return unprotected(me).filter((c) => c.uid !== d.source).map((c) => ({ kind: 'nda' as const, protect: c.uid })); // [P30]
     case 'burnout':
+    case 'layoff':
       return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
     case 'poaching':
       return opponents(state, d.player).flatMap((o) => distinctById(unprotected(o)).map((c) => ({ kind: 'take' as const, opponent: o.seat, uid: c.uid })));
@@ -463,6 +463,8 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
       return distinctById(unprotected(from)).map((c) => ({ kind: 'take' as const, opponent: from.seat, uid: c.uid }));
     }
     case 'funding_round':
+      // An empty discard pile falls back to the top of the main deck.
+      if (state.discard.length === 0) return state.mainRemaining.length > 0 ? [{ kind: 'draw_main' as const }] : [];
       return distinctById(state.discard).map((c) => ({ kind: 'take_discard' as const, uid: c.uid }));
     case 'pivot_or_persevere': {
       const k = Math.min(2, me.team.length);
@@ -544,6 +546,10 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
       break;
     }
     case 'refactor': {
+      if (choice.mode === 'points') {
+        me.bonuses.push({ source: 'Refactor', points: data.byId.get('refactor')!.effect!.fallbackPoints as number });
+        break;
+      }
       const [removeId, removeCount, addId] = choice.mode === 'bug_to_qa' ? ['bug', 1, 'qa_tester'] : ['junior_dev', 2, 'senior_dev'];
       for (let i = 0; i < removeCount; i++) {
         const card = me.team.find((c) => c.id === removeId)!;
@@ -585,6 +591,12 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
       emit(state, { type: 'card_gained', player: me.seat, card: { ...card }, reason: 'funding_round' });
       break;
     }
+    case 'draw_main': {
+      const card = drawFromMain(state)!;
+      me.team.push(card);
+      emit(state, { type: 'card_gained', player: me.seat, card: { ...card }, reason: 'funding_round' });
+      break;
+    }
     case 'persevere': {
       const eff = data.byId.get('pivot_or_persevere')!.effect!;
       const persevere = (eff.options as Array<{ id: string; points?: number }>).find((o) => o.id === 'persevere')!;
@@ -604,6 +616,7 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
       break;
     }
     case 'merger_decline':
+      mergerFallback(data, me);
       break;
     case 'merger_offer':
       enqueue(state, choice.target, 'merger_respond', d.source, { proposer: me.seat, offer: choice });
@@ -621,10 +634,16 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
         proposer.bonuses.push({ source: 'Merger Offer', points });
         me.bonuses.push({ source: 'Merger Offer', points });
         emit(state, { type: 'cards_swapped', players: [proposer.seat, me.seat], cards: [{ ...give }, { ...take }] });
-      }
+      } else mergerFallback(data, proposer);
       break;
     }
     case 'merger_reject':
+      mergerFallback(data, state.players[d.context!.proposer!]!);
       break;
   }
+}
+
+/** Merger Offer with no deal still gives the drawing player its fallback points. */
+function mergerFallback(data: GameData, drawer: PlayerState): void {
+  drawer.bonuses.push({ source: 'Merger Offer', points: data.byId.get('merger_offer')!.effect!.pointsIfNoDeal as number });
 }

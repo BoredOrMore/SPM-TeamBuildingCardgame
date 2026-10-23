@@ -187,7 +187,11 @@ function optionValues(data: GameData, state: GameState, seat: number, holder: { 
   const me = state.players[seat]!;
   // Refactor draws a named card from the hidden main deck, so it is judged on the team alone.
   if (decision.kind === 'refactor') {
-    return decision.options!.map((o) => scoreWith(data, state, seat, refactored(me.team, (o as Extract<Choice, { kind: 'refactor' }>).mode)));
+    const points = data.byId.get('refactor')!.effect!.fallbackPoints as number;
+    return decision.options!.map((o) => {
+      const mode = (o as Extract<Choice, { kind: 'refactor' }>).mode;
+      return mode === 'points' ? scoreWith(data, state, seat, me.team) + points : scoreWith(data, state, seat, refactored(me.team, mode));
+    });
   }
   const world = determinize(data, state, seat, holder);
   return decision.options!.map((_, option) => {

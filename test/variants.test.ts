@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DataError, parseGameData } from '../src/data.js';
-import { applyActionInPlace, createGame } from '../src/game.js';
+import { applyActionInPlace, createGame, currentDecision } from '../src/game.js';
 import { scorePlayer } from '../src/scoring.js';
 import type { CardsFile, GameData, RulesFile } from '../src/types.js';
 import { data, playRandomGame, team } from './helpers.js';
@@ -71,6 +71,9 @@ describe('balance knobs in data', () => {
       state.players[0]!.team = [{ uid: 'b', id: 'bug' }];
       state.players.forEach((p, i) => (p.hand[0] = { uid: `h${i}`, id: i === 0 ? 'refactor' : 'coffee' }));
       for (const p of state.players) applyActionInPlace(gameData, state, { type: 'pick', player: p.seat, cards: [p.hand[0]!.uid] });
+      // With a QA to fetch, Refactor offers it before the +1 fallback.
+      const d = currentDecision(state);
+      if (d?.kind === 'refactor') applyActionInPlace(gameData, state, { type: 'choose', player: 0, decisionId: d.id, option: 0 });
       return state.players[0]!.team.map((c) => c.id);
     };
     expect(play(data)).toEqual(['bug']);
