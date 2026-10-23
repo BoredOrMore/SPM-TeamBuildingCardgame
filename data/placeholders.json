@@ -380,6 +380,16 @@
         "Meta cards back to all-or-nothing if the Meta share grows too much"
       ],
       "status": "pending"
+    },
+    {
+      "id": "P41",
+      "topic": "Rounds",
+      "current": "Bored chose on 2026-10-23: 3 rounds; new 7-card hand each round (3p and 4p, 7 turns); teams start empty each round and score at round end; pass left, right, left; 3 new Meta cards each round, never repeated; Crisis after turns 2, 4, 6 of every round; winner has the most points over all rounds. Claude's choices, not yet confirmed: team cards go to the discard pile at round end; visible Crisis cards, bonuses and NDA protection clear at round end; the discard pile is shuffled into the main deck if a deal runs short; private Meta [P37] stays for the whole game; ties on total points go to the most role cards over all rounds",
+      "alternatives": [
+        "team cards leave the game at round end",
+        "persistent Crisis cards stay into the next round"
+      ],
+      "status": "pending"
     }
   ]
 }

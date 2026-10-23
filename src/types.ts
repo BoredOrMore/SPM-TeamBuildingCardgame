@@ -43,6 +43,7 @@ export interface RulesFile {
   players: { min: number; max: number };
   setup: { activeMetaCount: number; privateMetaPerPlayer: number; handSize: Record<string, number> };
   turns: { count: Record<string, number> };
+  rounds: { count: number; passDirection: Array<'left' | 'right'>; teamsAtRoundEnd: 'discard' | 'out_of_game' };
   crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean };
   scoring: { metaMultiplier: number };
   testCases: Array<{
@@ -131,6 +132,7 @@ export type Stage = 'pick' | 'actions' | 'nda' | 'crisis' | 'ended';
 
 export interface GameEvent {
   type: string;
+  round: number;
   turn: number;
   /** omitted = public; otherwise only these seats may see it */
   visibleTo?: number[];
@@ -152,7 +154,11 @@ export interface ScoreResult {
 
 export interface GameState {
   playerCount: number;
+  /** turns in one round */
   totalTurns: number;
+  /** 1-based round number [P41] */
+  round: number;
+  /** turn within the round, 1-based */
   turn: number;
   stage: Stage;
   picksRequired: number;
@@ -171,6 +177,11 @@ export interface GameState {
   nextDecisionId: number;
   rng: number;
   events: GameEvent[];
+  /** final scores of each finished round [P41] */
+  roundScores: ScoreResult[][];
+  /** role cards each seat ended each finished round with, for the tie-break */
+  roleCardsByRound: number[][];
+  /** `scores` holds each seat's game total with one line per round */
   result?: { scores: ScoreResult[]; winners: number[] };
 }
 

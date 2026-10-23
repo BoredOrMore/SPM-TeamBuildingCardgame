@@ -1,5 +1,5 @@
 // Computer players at three levels: Random, Greedy (with archetypes) and Monte Carlo.
-import { applyActionInPlace, createGame, currentDecision, currentScores } from './game.js';
+import { applyActionInPlace, createGame, currentDecision, gameTotals } from './game.js';
 import { nextRandom, randomInt, shuffle } from './rng.js';
 import { scorePlayer } from './scoring.js';
 import type { Action, Bot, CardInstance, Choice, GameData, GameState } from './types.js';
@@ -201,11 +201,10 @@ function optionValues(data: GameData, state: GameState, seat: number, holder: { 
   });
 }
 
-/** Own score minus the best other score, final if the game has ended. */
+/** Own game total minus the best other total, counting the round in progress [P41]. */
 function margin(data: GameData, state: GameState, seat: number): number {
-  const scores = state.result?.scores ?? currentScores(data, state);
-  const own = scores[seat]!.total;
-  return own - Math.max(...scores.filter((s) => s.seat !== seat).map((s) => s.total));
+  const totals = gameTotals(data, state);
+  return totals[seat]! - Math.max(...totals.filter((_, s) => s !== seat));
 }
 
 // ---------------------------------------------------------------- monte carlo
@@ -265,22 +264,29 @@ function candidateActions(data: GameData, state: GameState, seat: number, holder
   return pairs;
 }
 
-/** Plays `state` to the end with greedy picks and random decisions and returns `seat`'s win share plus a small margin tie-break. */
+/**
+ * Plays `state` to the end of the current round with greedy picks and random decisions and returns
+ * `seat`'s share of the lead in game totals plus a small margin tie-break. Later rounds deal new
+ * hands and Meta, so a rollout past the round would only add noise [P41].
+ */
 function playOut(data: GameData, state: GameState, seat: number, holder: { rng: number }): number {
-  for (let steps = 0; state.stage !== 'ended'; steps++) {
+  const round = state.round;
+  for (let steps = 0; state.stage !== 'ended' && state.round === round; steps++) {
     if (steps >= MAX_STEPS) throw new Error('rollout did not finish');
     const actor = actingSeat(state);
     const action: Action = currentDecision(state) ? randomAction(state, actor, holder) : { type: 'pick', player: actor, cards: greedyPick(data, state, actor, PLAIN) };
     applyActionInPlace(data, state, action);
   }
-  const { winners } = state.result!;
-  const share = winners.includes(seat) ? 1 / winners.length : 0;
+  const totals = gameTotals(data, state);
+  const top = Math.max(...totals);
+  const leaders = totals.filter((t) => t === top).length;
+  const share = totals[seat] === top ? 1 / leaders : 0;
   return share + MARGIN_TIEBREAK * margin(data, state, seat);
 }
 
 /**
  * A copy of `state` with everything `seat` cannot see re-dealt at random: other hands
- * (pooled with the undealt deck), their unrevealed picks, their private Meta [P37], the Crisis
+ * (pooled with the undealt deck), their unrevealed picks, their private Meta [P37], later rounds' Meta [P41], the Crisis
  * deck order below any previewed card [P36] and the game's random seed. The event log is dropped to keep copies cheap.
  */
 export function determinize(data: GameData, state: GameState, seat: number, holder: { rng: number }): GameState {
@@ -292,11 +298,10 @@ export function determinize(data: GameData, state: GameState, seat: number, hold
     p.picked = null;
   }
   sim.mainRemaining = pool;
-  if (others.some((p) => p.privateMeta.length)) {
-    const metaPool = shuffle(holder, [...others.flatMap((p) => p.privateMeta), ...sim.unusedMeta]);
-    for (const p of others) p.privateMeta = metaPool.splice(0, p.privateMeta.length);
-    sim.unusedMeta = metaPool;
-  }
+  // Other private Meta [P37] and the Meta of later rounds [P41] are hidden.
+  const metaPool = shuffle(holder, [...others.flatMap((p) => p.privateMeta), ...sim.unusedMeta]);
+  for (const p of others) p.privateMeta = metaPool.splice(0, p.privateMeta.length);
+  sim.unusedMeta = metaPool;
   // A previewed Crisis [P36] is public, so it stays on top.
   const previewed = data.rules.crisis.previewNext && data.rules.crisis.afterTurns.includes(sim.turn) ? sim.crisisDeck.slice(0, 1) : [];
   sim.crisisDeck = [...previewed, ...shuffle(holder, sim.crisisDeck.slice(previewed.length))];

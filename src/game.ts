@@ -1,5 +1,5 @@
 import { pickRandom, randomInt, shuffle } from './rng.js';
-import { countCards, scorePlayer, winners } from './scoring.js';
+import { countCards, scorePlayer, winnersBy } from './scoring.js';
 import type {
   Action,
   CardDef,
@@ -40,13 +40,11 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
   const main = shuffle(holder, buildDeck(data, 'main', 'm'));
   const crisisDeck = shuffle(holder, buildDeck(data, 'crisis', 'c'));
   const meta = shuffle(holder, buildDeck(data, 'meta', 'x'));
-  const handSize = data.rules.setup.handSize[opts.players]!;
-
   const players: PlayerState[] = [];
   for (let seat = 0; seat < opts.players; seat++) {
     players.push({
       seat,
-      hand: main.splice(0, handSize),
+      hand: [],
       team: [],
       protected: [],
       bonuses: [],
@@ -60,6 +58,7 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
   const state: GameState = {
     playerCount: opts.players,
     totalTurns: data.rules.turns.count[opts.players]!,
+    round: 1,
     turn: 1,
     stage: 'pick',
     picksRequired: 1,
@@ -77,12 +76,65 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
     nextDecisionId: 1,
     rng: holder.rng,
     events: [],
+    roundScores: [],
+    roleCardsByRound: [],
   };
   state.firstPlayer = randomInt(state, opts.players);
-  emit(state, { type: 'game_started', players: opts.players, activeMeta: state.activeMeta, firstPlayer: state.firstPlayer });
+  emit(state, { type: 'game_started', players: opts.players, rounds: data.rules.rounds.count, activeMeta: state.activeMeta, firstPlayer: state.firstPlayer });
   for (const p of players) if (p.privateMeta.length) emit(state, { type: 'private_meta_dealt', player: p.seat, meta: p.privateMeta, visibleTo: [p.seat] });
-  previewCrisis(data, state);
+  startRound(data, state);
   return state;
+}
+
+/** Deals a new hand to everyone and opens turn 1 of the current round [P41]. */
+function startRound(data: GameData, state: GameState): void {
+  const handSize = data.rules.setup.handSize[state.playerCount]!;
+  // A short main deck takes the discard pile back in, shuffled.
+  if (state.mainRemaining.length < handSize * state.playerCount) {
+    state.mainRemaining.push(...shuffle(state, state.discard.splice(0)));
+  }
+  if (state.mainRemaining.length < handSize * state.playerCount) throw new Error('not enough main cards to deal a round');
+  for (const p of state.players) p.hand = state.mainRemaining.splice(0, handSize);
+  state.turn = 1;
+  state.picksRequired = 1;
+  state.crunchNextTurn = false;
+  state.stage = 'pick';
+  emit(state, { type: 'round_started', round: state.round, direction: passDirection(data, state), activeMeta: state.activeMeta });
+  emit(state, { type: 'turn_started', picksRequired: state.picksRequired });
+  previewCrisis(data, state);
+}
+
+/** Direction hands travel this round. */
+function passDirection(data: GameData, state: GameState): 'left' | 'right' {
+  return data.rules.rounds.passDirection[state.round - 1]!;
+}
+
+/** Scores the round, clears teams and table, then starts the next round or ends the game [P41]. */
+function endRound(data: GameData, state: GameState): void {
+  const scores = currentScores(data, state);
+  state.roundScores.push(scores);
+  state.roleCardsByRound.push(state.players.map((p) => p.team.filter((c) => data.byId.get(c.id)?.type === 'role').length));
+  emit(state, { type: 'round_ended', round: state.round, scores, teams: state.players.map((p) => p.team.map((c) => ({ ...c }))) });
+  if (state.round >= data.rules.rounds.count) {
+    endGame(data, state);
+    return;
+  }
+  for (const p of state.players) {
+    if (data.rules.rounds.teamsAtRoundEnd === 'discard') state.discard.push(...p.team);
+    p.team = [];
+    p.protected = [];
+    p.bonuses = [];
+  }
+  state.crisisDiscard.push(...state.visibleCrisis.splice(0));
+  state.activeMeta = state.unusedMeta.splice(0, data.rules.setup.activeMetaCount);
+  state.round += 1;
+  startRound(data, state);
+}
+
+/** Each seat's points over all finished rounds plus the round in progress. */
+export function gameTotals(data: GameData, state: GameState): number[] {
+  const current = state.stage === 'ended' ? state.players.map(() => 0) : currentScores(data, state).map((s) => s.total);
+  return state.players.map((p) => state.roundScores.reduce((sum, r) => sum + r[p.seat]!.total, current[p.seat]!));
 }
 
 /** Applies one action to a copy of the state. Returns the new state and the events it produced. */
@@ -147,9 +199,9 @@ export function currentScores(data: GameData, state: GameState): ScoreResult[] {
 
 // ---------------------------------------------------------------- flow
 
-/** Appends an event stamped with the current turn. */
-function emit(state: GameState, event: Omit<GameEvent, 'turn'>): void {
-  state.events.push({ turn: state.turn, ...event } as GameEvent);
+/** Appends an event stamped with the current round and turn. */
+function emit(state: GameState, event: Omit<GameEvent, 'turn' | 'round'>): void {
+  state.events.push({ round: state.round, turn: state.turn, ...event } as GameEvent);
 }
 
 /** Seats in play order starting from `start`. */
@@ -210,7 +262,7 @@ function advance(data: GameData, state: GameState): void {
         endTurn(data, state);
         continue;
       case 'crisis':
-        if (state.players.every((p) => p.hand.length === 0)) endGame(data, state);
+        if (state.players.every((p) => p.hand.length === 0)) endRound(data, state);
         else startTurn(data, state);
         continue;
       default:
@@ -240,8 +292,8 @@ function addRevealedToTeams(data: GameData, state: GameState): void {
 
 /** Passes hands, moves to the next turn and draws a Crisis on crisis turns. */
 function endTurn(data: GameData, state: GameState): void {
-  // Odd turns pass left (clockwise, seat + 1), even turns pass right.
-  const step = state.turn % 2 === 1 ? 1 : -1;
+  // Hands travel one way for the whole round: left is clockwise, seat + 1 [P41].
+  const step = passDirection(data, state) === 'left' ? 1 : -1;
   const hands = state.players.map((p) => p.hand);
   state.players.forEach((p, i) => {
     p.hand = hands[(i - step + state.playerCount) % state.playerCount]!;
@@ -268,12 +320,16 @@ function previewCrisis(data: GameData, state: GameState): void {
   emit(state, { type: 'crisis_previewed', card: { ...nextCrisis(data, state) } });
 }
 
-/** Final scoring and winners. */
+/** Game totals over all rounds and winners; ties go to the most role cards over all rounds. */
 function endGame(data: GameData, state: GameState): void {
-  const scores = currentScores(data, state);
-  state.result = { scores, winners: winners(data, scores, state.players.map((p) => p.team)) };
+  const scores: ScoreResult[] = state.players.map((p) => {
+    const lines = state.roundScores.map((r, i) => ({ label: `Round ${i + 1}`, points: r[p.seat]!.total }));
+    return { seat: p.seat, total: lines.reduce((s, l) => s + l.points, 0), lines };
+  });
+  const roleCards = state.players.map((p) => state.roleCardsByRound.reduce((s, r) => s + r[p.seat]!, 0));
+  state.result = { scores, winners: winnersBy(scores, roleCards) };
   state.stage = 'ended';
-  emit(state, { type: 'game_ended', scores, winners: state.result.winners });
+  emit(state, { type: 'game_ended', scores, totals: scores.map((s) => s.total), rounds: state.roundScores, winners: state.result.winners });
 }
 
 // ---------------------------------------------------------------- crisis

@@ -276,12 +276,16 @@ export function checkCondition(cond: Condition | undefined, input: ScoringInput,
 
 /** Highest total wins; ties go to most role cards, then the victory is shared. */
 export function winners(data: GameData, scores: ScoreResult[], teams: CardInstance[][]): number[] {
+  return winnersBy(scores, scores.map((s) => employees(data, teams[s.seat] ?? [])));
+}
+
+/** Highest total wins; ties go to the most role cards (`roleCards` by seat), then the victory is shared. */
+export function winnersBy(scores: ScoreResult[], roleCards: number[]): number[] {
   const top = Math.max(...scores.map((s) => s.total));
   let tied = scores.filter((s) => s.total === top).map((s) => s.seat);
   if (tied.length > 1) {
-    const roles = (seat: number) => employees(data, teams[seat] ?? []);
-    const most = Math.max(...tied.map(roles));
-    tied = tied.filter((s) => roles(s) === most);
+    const most = Math.max(...tied.map((s) => roleCards[s]!));
+    tied = tied.filter((s) => roleCards[s] === most);
   }
   return tied;
 }

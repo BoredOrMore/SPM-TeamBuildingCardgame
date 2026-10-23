@@ -7,19 +7,16 @@
     "activeMetaCount": 3,
     "privateMetaPerPlayer": 0,
     "unusedMeta": "out_of_game",
-    "handSize": { "3": 10, "4": 8 },
+    "handSize": { "3": 7, "4": 7 },
     "firstPlayer": "random",
     "placeholders": ["P3", "P37"]
   },
   "turns": {
-    "count": { "3": 10, "4": 8 },
+    "count": { "3": 7, "4": 7 },
     "picksPerTurn": 1,
     "reveal": "simultaneous",
     "resolveOnReveal": ["action", "defense:on_reveal"],
-    "passDirection": {
-      "odd": "left_clockwise",
-      "even": "right_counterclockwise"
-    },
+    "passDirection": "same direction for a whole round, see rounds.passDirection",
     "steps": [
       "look_at_hand",
       "choose_one_card",
@@ -32,6 +29,15 @@
       "advance_tracker",
       "check_crisis"
     ]
+  },
+  "rounds": {
+    "count": 3,
+    "passDirection": ["left", "right", "left"],
+    "newHandEachRound": true,
+    "teamsAtRoundEnd": "discard",
+    "newMetaEachRound": true,
+    "winner": "most_points_over_all_rounds",
+    "placeholders": ["P41"]
   },
   "crisis": {
     "afterTurns": [2, 4, 6],

@@ -13,10 +13,10 @@ function mainCardsInPlay(state: GameState): string[] {
 }
 
 describe('setup', () => {
-  it('deals 10 cards to 3 players and 8 to 4 players, with 3 Meta cards', () => {
-    expect(createGame(data, { players: 3, seed: 1 }).players.map((p) => p.hand.length)).toEqual([10, 10, 10]);
+  it('deals 7 cards to 3 and 4 players, with 3 Meta cards', () => {
+    expect(createGame(data, { players: 3, seed: 1 }).players.map((p) => p.hand.length)).toEqual([7, 7, 7]);
     const four = createGame(data, { players: 4, seed: 1 });
-    expect(four.players.map((p) => p.hand.length)).toEqual([8, 8, 8, 8]);
+    expect(four.players.map((p) => p.hand.length)).toEqual([7, 7, 7, 7]);
     expect(four.activeMeta).toHaveLength(3);
   });
 
@@ -57,11 +57,20 @@ describe('turn flow', () => {
 
 describe('full games with random moves', () => {
   for (const players of [3, 4]) {
-    it(`${players} players: 200 games finish, draw 3 crises and conserve every main card`, () => {
+    it(`${players} players: 200 games finish, draw each round's crises and conserve every main card`, () => {
       for (let seed = 1; seed <= 200; seed++) {
         const end = playRandomGame(players, seed);
         expect(end.stage).toBe('ended');
-        expect(end.events.filter((e) => e.type === 'crisis_drawn')).toHaveLength(3);
+        expect(end.roundScores).toHaveLength(data.rules.rounds.count);
+        // Every round draws a Crisis after each listed turn it reaches; Deadline Crunch can end a round early [P12].
+        for (let round = 1; round <= data.rules.rounds.count; round++) {
+          const events = end.events.filter((e) => e.round === round);
+          // Events after a turn's picks carry the next turn number.
+          const lastTurn = Math.max(...events.map((e) => e.turn)) - 1;
+          const expected = data.rules.crisis.afterTurns.filter((t) => t <= lastTurn).length;
+          expect(events.filter((e) => e.type === 'crisis_drawn')).toHaveLength(expected);
+          expect(expected).toBeGreaterThanOrEqual(2);
+        }
         const uids = mainCardsInPlay(end);
         expect(uids).toHaveLength(deckSize(data, 'main'));
         expect(new Set(uids).size).toBe(uids.length);
