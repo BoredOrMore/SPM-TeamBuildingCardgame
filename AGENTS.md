@@ -29,7 +29,7 @@ Every card a player reads follows the keyword system in `data/keywords.json` [P3
    Codes are data only: a rendered card always shows the code's icon (`icon` in `keywords.json`, from `iconSet`), never the code as text. Every code needs an icon (test).
    Inline icons are always drawn in `iconInk`. An icon that stands for a card (`chip` in `keywords.json`) sits on a round chip tinted with that card type's frame color, so the icon tells which framed card it means; keywords and `{CARD}` have no chip (test).
 9. **Frame color comes from the card type** — `frameColors` in `keywords.json`, keyed by `type` for Main cards and by deck for Crisis and Meta (test). Every card keeps a timing slot top right for Onboard, Ongoing or Payday.
-10. **Every card does something whenever it comes into play.** Give a condition a graded reward (`+N per role type`) or a fallback (`or +1`, `no deal: you +2`) instead of all or nothing [P40]. A card cancelled by another card counts as that other card's effect. Check with the no-impact audit after changing a card.
+10. **Every card does something whenever it comes into play.** Give a condition a graded reward (`+N per role type`) or a fallback (`or +1`, `no deal: you +2`) instead of all or nothing, Meta cards included [P40]. A card cancelled by another card counts as that other card's effect. Check with the no-impact audit after changing a card.
 2. **Timing keywords live on the card frame, not in the text** — Onboard, Ongoing and Payday come from the card's `timing`, `persistent` and deck (every Meta card is Payday) (test).
 3. **At most 2 condition or interaction keywords per card**, each placed before the number it unlocks: `{CLEAN} +8` (test).
 4. **One line** — at most `maxTextChars`, counting each code as one icon (test).

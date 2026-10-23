@@ -98,8 +98,6 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
 
   const crisis = input.visibleCrisis.filter((x) => !cancelled.has(x.uid));
   const crisisCount = (id: string) => crisis.filter((x) => x.id === id).length;
-  const meta = new Set(input.activeMeta);
-  const metaEffect = (id: string) => (meta.has(id) ? effectOf(data, id) : null);
 
   // Step 1: pair QA with Bug. Paired Bugs no longer count as Bugs for "no bug" conditions [P26].
   const qaEff = effectOf(data, 'qa_tester');
@@ -151,10 +149,7 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const allGroups = Object.keys(data.cards.roleGroups).length;
   const fullTeam = groups >= allGroups;
   if (!scopeCreep) {
-    let perInvestor = groups * (invEff.pointsPerRoleType as number) + (fullTeam ? (invEff.fullTeamPoints as number) : 0);
-    // Venture Capital Boom raises a full-team Investor to its own value [P39].
-    const vc = metaEffect('venture_capital_boom');
-    if (fullTeam && vc && checkCondition(vc.condition, input, effective)) perInvestor = vc.points as number;
+    const perInvestor = groups * (invEff.pointsPerRoleType as number) + (fullTeam ? (invEff.fullTeamPoints as number) : 0);
     add('Investors', n(c, 'investors') * perInvestor);
   }
 
@@ -204,6 +199,26 @@ function metaPoints(id: string, eff: Effect, input: ScoringInput, c: Counts, gro
       return ok ? (eff.points as number) * employees(input.data, team) : 0;
     case 'per_role_group_bonus':
       return Math.min(eff.max as number, (eff.points as number) * groups);
+    case 'per_card_graded': {
+      // A base value per card (or per employee), plus more when the condition holds [P40].
+      const count = eff.per === 'employee' ? employees(input.data, team) : n(c, eff.per as string);
+      const bonusEach = ok ? ((eff.bonusEach as number | undefined) ?? 0) : 0;
+      const bonusFlat = ok ? ((eff.bonusFlat as number | undefined) ?? 0) : 0;
+      return count * ((eff.points as number) + bonusEach) + bonusFlat;
+    }
+    case 'employee_bands': {
+      const e = employees(input.data, team);
+      const band = (eff.bands as Array<{ min: number; max?: number; points: number }>).find((b) => e >= b.min && e <= (b.max ?? Infinity));
+      return band?.points ?? 0;
+    }
+    case 'employee_rank': {
+      // Strictly the most employees takes the first value; tied for most, or one player ahead, takes the second.
+      const mine = employees(input.data, team);
+      const ahead = input.teams.filter((t, i) => i !== input.seat && employees(input.data, t) > mine).length;
+      const tied = input.teams.some((t, i) => i !== input.seat && employees(input.data, t) === mine);
+      const rank = ahead === 0 && !tied ? 0 : ahead <= 1 ? 1 : -1;
+      return rank < 0 ? 0 : (eff.points as number[])[rank]!;
+    }
     case 'per_unused_slot':
       // Baseline = turns in this game [P4].
       return (eff.points as number) * Math.max(0, input.totalTurns - team.length);
@@ -213,9 +228,6 @@ function metaPoints(id: string, eff: Effect, input: ScoringInput, c: Counts, gro
       const bonus = ok && groups >= (eff.requires as { roleGroups: number }).roleGroups ? (eff.points as number) : 0;
       return bonus + penalty.pointsEach * n(c, penalty.cardId);
     }
-    case 'override_multiplier':
-    case 'override_points':
-      return 0; // applied inside the card they modify
     default:
       throw new Error(`unknown meta effect kind ${eff.kind} on ${id}`);
   }
