@@ -36,6 +36,38 @@ function Icon({ code, className = '' }: { code: IconCode; className?: string }) 
   );
 }
 
+/** Decks that have a printed card back. */
+type BackDeck = 'main' | 'crisis' | 'meta';
+
+/** Remix icon in the round badge of each deck's card back, as on the printed backs. */
+const BACK_ICONS: Record<BackDeck, string> = { main: 'ri-stack-line', crisis: 'ri-alarm-warning-line', meta: 'ri-global-line' };
+/** Card types whose frame colours make the stripe on the Main deck back. */
+const MAIN_STRIPE = ['role', 'event', 'action', 'defense', 'boost'];
+
+/** The back of a card from one deck: hides which card it is, only its deck shows. `mini` drops the badge for small rows. */
+export function CardBack({ deck, mini = false }: { deck: BackDeck; mini?: boolean }) {
+  const colour = deck === 'main' ? ICON_INK : FRAME_COLORS[deck];
+  if (!colour) throw new Error(`No frame colour for the ${deck} deck`);
+  return (
+    <div className={`card-back ${mini ? 'mini' : ''}`} style={{ '--back': colour } as React.CSSProperties} aria-hidden="true">
+      {!mini && (
+        <>
+          <span className="back-badge" style={deck === 'main' ? { boxShadow: `0 0 0 2px ${FRAME_COLORS.role}` } : undefined}>
+            <i className={BACK_ICONS[deck]} />
+          </span>
+          {deck === 'main' && (
+            <span className="back-stripe">
+              {MAIN_STRIPE.map((t) => (
+                <span key={t} style={{ background: FRAME_COLORS[t] }} />
+              ))}
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Display name of a card id. */
 export function cardName(id: string): string {
   return CARD_DEFS.get(id)?.name ?? id;

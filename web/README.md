@@ -34,6 +34,7 @@ npm run typecheck
 ## Following the game
 
 - The bar under the turn counter always says what the game is waiting for. It turns blue when it is waiting for you.
-- After everyone plays, the game shows what happened **one thing at a time**: each player's card, then each effect and Crisis, one large card with one line saying who did what. Each step moves on by itself after 1.5 seconds, and the card then flies to where it goes. Tap anywhere to skip to the end.
+- After everyone plays, the game shows what happened **one thing at a time**: each player's card, then each effect and Crisis, one large card with one line saying who did what. Each step moves on by itself after 1.5 seconds (0.75 seconds on **Fast**, set with the speed button at the top; this browser remembers it), and the card then flies to where it goes. Tap anywhere to skip to the end.
 - When a card asks **you** to choose, a sheet slides up over your hand. It shows the card that asks, then one button per choice with the cards that choice is about. Tap the title to hide the sheet and look at the table, and tap it again to bring it back. The sheet waits until the step-by-step replay has finished.
 - During a game the page fits on one screen. Your team and your hand stay at the bottom, and only the middle (other players and the log) scrolls. On a phone, the hand is one fanned row: swipe it sideways to see every card. "What happened" stays closed until you tap it.
+- Hidden cards show only their back: the Main and Crisis piles show how many cards are left, and each other player's hand is a row of small backs, one per card.
