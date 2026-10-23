@@ -1,6 +1,6 @@
 // Screens: home (create or join), lobby, game table, and final scores.
 
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import rulesJson from '../../../data/rules.json';
 import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
@@ -31,6 +31,10 @@ function savedSpeed(): Speed {
 }
 /** How long an error toast stays on screen. */
 const TOAST_MS = 3500;
+/** The table never shrinks below this share of its size; past it, it scrolls rather than become unreadable. */
+const MIN_TABLE_SCALE = 0.6;
+/** Halvings when searching for the table's scale: a smaller scale lays the content out wider and so shorter. */
+const TABLE_FIT_STEPS = 6;
 
 export function App() {
   const [conn, setConn] = useState<Connection>();
@@ -92,7 +96,11 @@ export function App() {
       ) : (
         <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} />
       )}
-      {!(shown?.phase === 'game' && !shown.result) && <SoundControls className="corner" />}
+      {!(shown?.phase === 'game' && !shown.result) && (
+        <div className="corner">
+          <SoundControls />
+        </div>
+      )}
       <PlaybackOverlay step={playback.step} speed={speed} onSkip={playback.skip} onNext={playback.next} />
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -222,6 +230,8 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
     if (yours) sfx('yourTurn');
   }, [yours]);
 
+  const table = useFitTable();
+
   if (view.result) return <Results view={view} conn={conn} />;
 
   return (
@@ -235,6 +245,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         <span className="score" title={`${view.yourTotal} over all rounds, ${view.yourScore.total} this round`}>
           <i className="ri-trophy-line" /> {view.yourTotal}
         </span>
+        <Log view={view} />
         <RulebookButton />
         <SoundControls />
       </header>
@@ -242,57 +253,56 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         {playing ? 'Showing what happened…' : nowLine(view)}
       </p>
 
-      <div className="table">
-        <section className="goals" data-zone="crisis">
-          <span className="pile" data-zone="deck" title="Main deck">
-            <CardBack deck="main" />
-            <b className="pile-count">{view.mainRemaining}</b>
-          </span>
-          <span className="pile" title="Crisis deck">
-            <CardBack deck="crisis" />
-            <b className="pile-count">{view.crisisRemaining}</b>
-          </span>
-          {view.visibleCrisis.map((c) => (
-            <Card key={c.uid} id={c.id} />
-          ))}
-          {view.activeMeta.map((id) => (
-            <Card key={id} id={id} />
-          ))}
-          {view.privateMeta.map((id) => (
-            <Card key={id} id={id} />
-          ))}
-        </section>
-        <section className="opponents">
-          {view.players
-            .filter((p) => p.seat !== view.you)
-            .map((p) => (
-              <div key={p.seat} data-zone={`seat-${p.seat}`} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
-                <div className="opp-head">
-                  <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
-                  <SeatScore score={p.score} round={view.round} />
-                  {!p.connected && <span className="tag warn">offline</span>}
-                  <span className="opp-hand" title={`${p.handCount} cards in hand`}>
-                    {Array.from({ length: p.handCount }, (_, i) => (
-                      <CardBack key={i} deck="main" mini />
-                    ))}
-                  </span>
-                  {view.stage === 'pick' &&
-                    (p.hasPicked ? (
-                      <span className="picked-back" title="Picked, face down">
-                        <CardBack deck="main" mini />
-                      </span>
-                    ) : (
-                      <span className="tag">picking…</span>
-                    ))}
-                </div>
-                <TeamChips team={p.team} protectedUids={p.protected} zone={`team-${p.seat}`} />
-              </div>
+      <div className="table" ref={table.box}>
+        <div className="table-fit" ref={table.content}>
+          <section className="goals" data-zone="crisis">
+            <span className="pile" data-zone="deck" title="Main deck">
+              <CardBack deck="main" />
+              <b className="pile-count">{view.mainRemaining}</b>
+            </span>
+            <span className="pile" title="Crisis deck">
+              <CardBack deck="crisis" />
+              <b className="pile-count">{view.crisisRemaining}</b>
+            </span>
+            {view.visibleCrisis.map((c) => (
+              <Card key={c.uid} id={c.id} />
             ))}
-        </section>
+            {view.activeMeta.map((id) => (
+              <Card key={id} id={id} />
+            ))}
+            {view.privateMeta.map((id) => (
+              <Card key={id} id={id} />
+            ))}
+          </section>
+          <section className="opponents">
+            {view.players
+              .filter((p) => p.seat !== view.you)
+              .map((p) => (
+                <div key={p.seat} data-zone={`seat-${p.seat}`} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
+                  <div className="opp-head">
+                    <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
+                    <SeatScore score={p.score} round={view.round} />
+                    {!p.connected && <span className="tag warn">offline</span>}
+                    <span className="opp-hand" title={`${p.handCount} cards in hand`}>
+                      <CardBack deck="main" mini />
+                      <b className="opp-hand-count">{p.handCount}</b>
+                    </span>
+                    {view.stage === 'pick' &&
+                      (p.hasPicked ? (
+                        <span className="picked-back" title="Picked, face down">
+                          <CardBack deck="main" mini />
+                        </span>
+                      ) : (
+                        <span className="tag">picking…</span>
+                      ))}
+                  </div>
+                  <TeamChips team={p.team} protectedUids={p.protected} zone={`team-${p.seat}`} />
+                </div>
+              ))}
+          </section>
 
-        {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
-
-        <Log view={view} />
+          {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
+        </div>
       </div>
 
       <section className="my-team" data-zone={`seat-${view.you}`}>
@@ -305,6 +315,48 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
       <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
     </main>
   );
+}
+
+/**
+ * Shrinks the table (Crisis, Meta, opponents) to the room it has, so it never scrolls (Bored, 2026-10-23).
+ * The content is laid out wider by the same factor it is scaled down, so it still fills the width.
+ */
+function useFitTable() {
+  const box = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const outer = box.current;
+    const inner = content.current;
+    if (!outer || !inner) return;
+    const apply = (scale: number) => {
+      inner.style.setProperty('--table-scale', String(scale));
+      // a transform keeps the layout size, so take back the space the scaled-down content no longer uses
+      inner.style.marginBottom = `${inner.offsetHeight * (scale - 1)}px`;
+    };
+    const fit = () => {
+      apply(1);
+      // a phone with the rules open lets the page scroll instead, so the table has no fixed room to fit
+      if (getComputedStyle(outer).overflowY === 'visible') return;
+      const room = outer.clientHeight;
+      if (inner.offsetHeight <= room) return;
+      // the largest scale at which the content fits
+      let fits = MIN_TABLE_SCALE;
+      let tooBig = 1;
+      for (let i = 0; i < TABLE_FIT_STEPS; i++) {
+        const scale = (fits + tooBig) / 2;
+        apply(scale);
+        if (inner.offsetHeight * scale <= room) fits = scale;
+        else tooBig = scale;
+      }
+      apply(fits);
+    };
+    fit();
+    const watch = new ResizeObserver(fit);
+    watch.observe(outer);
+    for (const child of inner.children) watch.observe(child);
+    return () => watch.disconnect();
+  });
+  return { box, content };
 }
 
 /** A team as one chip per card kind with a count, so a long team fits on one or two lines. */
@@ -509,7 +561,7 @@ function nowLine(view: GameView): string {
   return waiting.length ? `Waiting for ${waiting.join(', ')} to pick` : 'Revealing…';
 }
 
-/** Recent public (and your private) events in one section per turn, newest turn first, one row per event. */
+/** A topbar button that opens recent public (and your private) events: one section per turn, newest turn first, one row per event. */
 function Log({ view }: { view: GameView }) {
   const turns: Array<{ title: string; steps: Step[] }> = [];
   for (const e of view.events) {
@@ -519,22 +571,26 @@ function Log({ view }: { view: GameView }) {
   }
   return (
     <details className="log">
-      <summary>What happened</summary>
-      {turns
-        .filter((t) => t.steps.length)
-        .reverse()
-        .map((t) => (
-          <section key={t.title} className="log-turn">
-            <h3>{t.title}</h3>
-            <ul>
-              {t.steps.map((st) => (
-                <li key={st.key}>
-                  <i className={st.icon} /> {st.line}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+      <summary title="What happened" aria-label="What happened">
+        <i className="ri-history-line" /> <span className="label">What happened</span>
+      </summary>
+      <div className="log-body">
+        {turns
+          .filter((t) => t.steps.length)
+          .reverse()
+          .map((t) => (
+            <section key={t.title} className="log-turn">
+              <h3>{t.title}</h3>
+              <ul>
+                {t.steps.map((st) => (
+                  <li key={st.key}>
+                    <i className={st.icon} /> {st.line}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+      </div>
     </details>
   );
 }
