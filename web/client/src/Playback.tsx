@@ -7,10 +7,14 @@ import type { GameView, View } from '../../shared/protocol.js';
 import { Card, eventLine, idOfUid, isAction } from './cards.js';
 import { sfx, type Sfx } from './sound.js';
 
-/** How long one spotlight stays on screen before the next one. */
-const SPOTLIGHT_MS = 1500;
-/** How long a spotlight card takes to fly to its zone, at the end of its spotlight. */
-const FLIGHT_MS = 550;
+/** Spotlight speeds a player can pick. */
+export const SPEEDS = ['normal', 'fast'] as const;
+export type Speed = (typeof SPEEDS)[number];
+/** Per speed: how long one spotlight stays on screen, and how long its card takes to fly to its zone at the end of it. */
+const TIMING: Record<Speed, { spotlightMs: number; flightMs: number }> = {
+  normal: { spotlightMs: 1500, flightMs: 550 },
+  fast: { spotlightMs: 750, flightMs: 300 },
+};
 /** Events that change nothing a player needs to watch; the status bar already says whose turn it is. */
 const SILENT = new Set(['card_picked', 'teams_updated', 'decision_made', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
 
@@ -131,8 +135,10 @@ const lastSeqOf = (view: GameView) => view.events.reduce((m, e) => Math.max(m, e
  * The view to draw and the spotlight playing now. Incoming views wait in line: each one's new events
  * play over the previous board first, then the board catches up. `skip` jumps to the newest view.
  */
-export function usePlayback(view: View | undefined): { shown: View | undefined; step: Step | undefined; skip: () => void } {
+export function usePlayback(view: View | undefined, speed: Speed): { shown: View | undefined; step: Step | undefined; skip: () => void } {
   const [shown, setShown] = useState(view);
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
   const [step, setStep] = useState<Step>();
   const queue = useRef<View[]>([]);
   const lastSeq = useRef(-1);
@@ -156,7 +162,7 @@ export function usePlayback(view: View | undefined): { shown: View | undefined; 
           setStep(s);
           if (s.sound) sfx(s.sound);
           await new Promise<void>((resolve) => {
-            const timer = setTimeout(resolve, SPOTLIGHT_MS);
+            const timer = setTimeout(resolve, TIMING[speedRef.current].spotlightMs);
             wake.current = () => {
               clearTimeout(timer);
               resolve();
@@ -208,7 +214,7 @@ function centreOf(selector: string): { x: number; y: number } | undefined {
 }
 
 /** The spotlight for the step playing now, with seat pulses and bonus numbers. Tap to skip. */
-export function PlaybackOverlay({ step, onSkip }: { step: Step | undefined; onSkip: () => void }) {
+export function PlaybackOverlay({ step, speed, onSkip }: { step: Step | undefined; speed: Speed; onSkip: () => void }) {
   const cards = useRef<HTMLDivElement>(null);
   const [bonusAt, setBonusAt] = useState<{ x: number; y: number }>();
 
@@ -218,8 +224,9 @@ export function PlaybackOverlay({ step, onSkip }: { step: Step | undefined; onSk
     const els = step.seats.map((s) => document.querySelector(zone(`seat-${s}`))).filter((el): el is Element => !!el);
     els.forEach((el) => el.classList.add('pulse'));
     setBonusAt(step.bonus && centreOf(zone(`seat-${step.bonus.seat}`)));
+    const { spotlightMs, flightMs } = TIMING[speed];
     // the swish as cards leave for their zones
-    if (step.cards.some((c) => c.to)) sfx('whoosh', (SPOTLIGHT_MS - FLIGHT_MS) / 1000);
+    if (step.cards.some((c) => c.to)) sfx('whoosh', (spotlightMs - flightMs) / 1000);
     if (cards.current && !reducedMotion()) {
       cards.current.querySelectorAll<HTMLElement>('.spot-card').forEach((el, i) => {
         const to = step.cards[i]?.to;
@@ -229,14 +236,15 @@ export function PlaybackOverlay({ step, onSkip }: { step: Step | undefined; onSk
         const dx = end.x - (r.left + r.width / 2);
         const dy = end.y - (r.top + r.height / 2);
         el.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(0.25)`, opacity: 0.4 }], {
-          duration: FLIGHT_MS,
-          delay: SPOTLIGHT_MS - FLIGHT_MS,
+          duration: flightMs,
+          delay: spotlightMs - flightMs,
           easing: 'cubic-bezier(.5,0,.7,.4)',
           fill: 'forwards',
         });
       });
     }
     return () => els.forEach((el) => el.classList.remove('pulse'));
+    // speed is read when a step starts; changing it mid-step does not restart the step
   }, [step]);
 
   if (!step) return null;
