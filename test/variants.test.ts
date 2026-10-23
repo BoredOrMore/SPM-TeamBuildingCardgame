@@ -83,7 +83,7 @@ describe('balance knobs in data', () => {
   it('scales Meta bonuses by metaMultiplier, rounding down [P35]', () => {
     const half = variant((_, rules) => (rules.scoring.metaMultiplier = 0.5));
     const meta = (gameData: GameData) =>
-      scorePlayer({ data: gameData, teams: [team({ junior_dev: 3 })], seat: 0, activeMeta: ['developer_shortage'], visibleCrisis: [], bonuses: [], totalTurns: 10 })
+      scorePlayer({ data: gameData, teams: [team({ junior_dev: 6 })], seat: 0, activeMeta: ['developer_shortage'], visibleCrisis: [], bonuses: [], totalTurns: 10 })
         .lines.find((l) => l.label.startsWith('Meta'))!.points;
     expect(meta(data)).toBe(6);
     expect(meta(half)).toBe(3);

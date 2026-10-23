@@ -79,8 +79,8 @@ describe('crisis bonuses', () => {
     expect(score({ designer: 1 }, { crisis: ['product_launch', 'unicorn_hype'] }).total).toBe(2 + 2 + 6);
   });
 
-  it('Unicorn Rush: +8 with 3 roles and no Bug, Coffee -2 always [P39]', () => {
-    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 3 + 1 + 8 - 2);
+  it('Unicorn Rush: +6 with 3 roles and no Bug, Coffee -2 always [P39]', () => {
+    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 3 + 1 + 6 - 2);
     expect(score({ junior_dev: 1, designer: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 1 - 2);
     expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, bug: 2 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 - 3);
   });
@@ -103,12 +103,12 @@ describe('printed card text matches scoring', () => {
 });
 
 describe('meta cards', () => {
-  it('Developer Shortage adds 2 per Junior', () => {
-    expect(score({ junior_dev: 3 }, { meta: ['developer_shortage'] }).total).toBe(7 + 6);
+  it('Developer Shortage adds 1 per Junior', () => {
+    expect(score({ junior_dev: 3 }, { meta: ['developer_shortage'] }).total).toBe(7 + 3);
   });
 
-  it('Zero Defect Premium: +8 clean, -5 per Bug otherwise', () => {
-    expect(score({ junior_dev: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(1 + 8);
+  it('Zero Defect Premium: +4 clean, -5 per Bug otherwise', () => {
+    expect(score({ junior_dev: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(1 + 4);
     expect(score({ bug: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(-5);
   });
 
@@ -119,23 +119,24 @@ describe('meta cards', () => {
   });
 
   it('graded Meta cards give a base per card and more when the condition holds [P40]', () => {
-    expect(score({ designer: 2 }, { meta: ['design_thinking_boom'] }).total).toBe(5 + 2 * 3);
+    expect(score({ designer: 2 }, { meta: ['design_thinking_boom'] }).total).toBe(5 + 2 * 2);
     expect(score({ designer: 2, project_manager: 1 }, { meta: ['design_thinking_boom'] }).total).toBe(5 + 1 + 2);
-    expect(score({ junior_dev: 1, designer: 1 }, { meta: ['self_organizing_teams'] }).total).toBe(1 + 2 + 2 * 2);
+    expect(score({ junior_dev: 1, designer: 1 }, { meta: ['self_organizing_teams'] }).total).toBe(1 + 2 + 2);
+    expect(score({ junior_dev: 1, designer: 1, investors: 1 }, { meta: ['self_organizing_teams'] }).total).toBe(1 + 2 + 2 + 2);
     expect(score({ designer: 3, bug: 1 }, { meta: ['user_experience_premium'] }).total).toBe(12 - 4 + 3 + 4);
   });
 
-  it('Startup Accelerator: +7 for 3-4 employees, +3 for 5 or more', () => {
-    expect([2, 3, 5].map((k) => score({ designer: k }, { meta: ['startup_accelerator'] }).total - score({ designer: k }).total)).toEqual([0, 7, 3]);
+  it('Startup Accelerator: +4 for 3-4 employees, +1 for 5 or more', () => {
+    expect([2, 3, 5].map((k) => score({ designer: k }, { meta: ['startup_accelerator'] }).total - score({ designer: k }).total)).toEqual([0, 4, 1]);
   });
 
   it('Small Team Advantage counts unused slots against the turn count', () => {
     expect(score({ designer: 1 }, { meta: ['small_team_advantage'], turns: 8 }).total).toBe(2 + 7);
   });
 
-  it('Tech Giant Poaching: +6 for strictly the most employees, +3 when tied or second', () => {
-    expect(score({ junior_dev: 2 }, { meta: ['tech_giant_poaching'], others: [{ junior_dev: 1 }] }).total).toBe(3 + 6);
-    expect(score({ junior_dev: 2 }, { meta: ['tech_giant_poaching'], others: [{ junior_dev: 2 }] }).total).toBe(3 + 3);
+  it('Tech Giant Poaching: +4 for strictly the most employees, +2 when tied or second', () => {
+    expect(score({ junior_dev: 2 }, { meta: ['tech_giant_poaching'], others: [{ junior_dev: 1 }] }).total).toBe(3 + 4);
+    expect(score({ junior_dev: 2 }, { meta: ['tech_giant_poaching'], others: [{ junior_dev: 2 }] }).total).toBe(3 + 2);
     expect(score({ junior_dev: 1 }, { meta: ['tech_giant_poaching'], others: [{ junior_dev: 2 }, { junior_dev: 3 }] }).total).toBe(1);
   });
 });

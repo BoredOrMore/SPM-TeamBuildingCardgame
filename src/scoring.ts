@@ -200,11 +200,12 @@ function metaPoints(id: string, eff: Effect, input: ScoringInput, c: Counts, gro
     case 'per_role_group_bonus':
       return Math.min(eff.max as number, (eff.points as number) * groups);
     case 'per_card_graded': {
-      // A base value per card (or per employee), plus more when the condition holds [P40].
+      // A base value per card (or per employee), plus more when the condition holds, or a flat `otherwise` [P40].
       const count = eff.per === 'employee' ? employees(input.data, team) : n(c, eff.per as string);
       const bonusEach = ok ? ((eff.bonusEach as number | undefined) ?? 0) : 0;
       const bonusFlat = ok ? ((eff.bonusFlat as number | undefined) ?? 0) : 0;
-      return count * ((eff.points as number) + bonusEach) + bonusFlat;
+      const otherwise = ok ? 0 : ((eff.otherwise as number | undefined) ?? 0);
+      return count * ((eff.points as number) + bonusEach) + bonusFlat + otherwise;
     }
     case 'employee_bands': {
       const e = employees(input.data, team);

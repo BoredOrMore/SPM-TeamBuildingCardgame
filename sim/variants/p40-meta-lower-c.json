@@ -1,0 +1,42 @@
+{
+ "effects": {
+  "bootstrap_success": {
+   "points": 0,
+   "bonusEach": 1,
+   "bonusFlat": 0,
+   "otherwise": 2
+  },
+  "self_organizing_teams": {
+   "points": 0,
+   "bonusEach": 1,
+   "bonusFlat": 0,
+   "otherwise": 2
+  },
+  "startup_accelerator": {
+   "bands": [
+    {
+     "min": 3,
+     "max": 4,
+     "points": 5
+    },
+    {
+     "min": 5,
+     "points": 2
+    }
+   ]
+  },
+  "tech_giant_poaching": {
+   "points": [
+    4,
+    2
+   ]
+  },
+  "diverse_team_bonus": {
+   "points": 1,
+   "max": 4
+  },
+  "zero_defect_premium": {
+   "points": 5
+  }
+ }
+}
