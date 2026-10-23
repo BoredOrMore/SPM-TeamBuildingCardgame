@@ -122,8 +122,8 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 /* the whole hand fits the row: cards shrink below 168px when there are more of them than room (--n is the hand size) */
 .app.in-game .hand-cards .card { flex: none; width: min(168px, calc((100cqw + 20px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
 .app.in-game .hand-cards .card + .card { margin-left: -20px; }
-/* the next card covers this card's right edge, so its text stops short of it */
 .app.in-game .hand-cards .card .card-text { padding-right: 24px; }
+/* the next card covers this card's right edge, so its text stops short of it */
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
 @media (max-width: 600px) {
@@ -290,7 +290,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 /* keyword boxes: hover tooltip (mouse) and big preview (touch) */
 /* hovering a card shows it full size with its keyword boxes beside it */
-.card-tooltip { position: fixed; z-index: 25; pointer-events: none; display: flex; gap: 8px; align-items: flex-start; }
+.card-tooltip { position: fixed; z-index: 50; pointer-events: none; transform-origin: top left; display: flex; gap: 8px; align-items: flex-start; }
 .card-tooltip.flip { flex-direction: row-reverse; }
 .card-tooltip .preview-keywords { width: 220px; }
 .card-tooltip > .card { flex: none; }
