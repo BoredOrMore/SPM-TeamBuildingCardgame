@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CardInstance, GameEvent, ScoreResult } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
 import { Card, CardBack, cardName, eventLine, idOfUid, isAction, isCrisis, type BackDeck } from './cards.js';
+import { t } from './i18n.js';
 import { sfx, type Sfx } from './sound.js';
 
 /** Spotlight speeds a player can pick. */
@@ -141,11 +142,11 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
       const round = e.round as number;
       const standings = (e.scores as ScoreResult[]).map((s) => ({
         seat: s.seat,
-        name: s.seat === view.you ? 'You' : (view.players[s.seat]?.name ?? '?'),
+        name: s.seat === view.you ? t('You') : (view.players[s.seat]?.name ?? '?'),
         round: s.total,
         total: view.roundScores.slice(0, round).reduce((sum, r) => sum + r[s.seat]!.total, 0),
       }));
-      const goOn = round < view.totalRounds ? `Start round ${round + 1}` : 'See final results';
+      const goOn = round < view.totalRounds ? t('Start round {round}', { round: round + 1 }) : t('See final results');
       return { icon: 'ri-flag-line', seats: [], cards: [], standings: standings.sort((a, b) => b.total - a.total), goOn };
     }
     case 'crisis_previewed':
@@ -168,12 +169,12 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
 
 /** A seat as the spotlight names it: "You" for the viewer. */
 function seatName(view: GameView, seat: number): string {
-  return seat === view.you ? 'You' : (view.players[seat]?.name ?? `Seat ${seat + 1}`);
+  return seat === view.you ? t('You') : (view.players[seat]?.name ?? t('Seat {n}', { n: seat + 1 }));
 }
 
 /** Names joined for a sentence: "A", "A and B", "A, B and C". */
 function listNames(names: string[]): string {
-  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  return names.length < 2 ? names.join('') : t('{names} and {last}', { names: names.slice(0, -1).join(', '), last: names[names.length - 1]! });
 }
 
 /** The card a decision belongs to: its kind is the card id, except for a few named in DECISION_CARD. */
@@ -188,10 +189,10 @@ function causeOf(view: GameView, e: SeqEvent): string | undefined {
     if (x.seq >= e.seq) continue;
     if (x.type === 'decision_made') {
       const card = cardOfDecision(String(x.decision));
-      if (isCrisis(card)) return `Crisis: ${cardName(card)}`;
-      return `${x.player === view.you ? 'Your' : `${seatName(view, x.player as number)}’s`} ${cardName(card)}`;
+      if (isCrisis(card)) return t('Crisis: {card}', { card: cardName(card) });
+      return x.player === view.you ? t('Your {card}', { card: cardName(card) }) : t('{who}’s {card}', { who: seatName(view, x.player as number), card: cardName(card) });
     }
-    if (x.type === 'crisis_drawn') return `Crisis: ${cardName((x.card as CardInstance).id)}`;
+    if (x.type === 'crisis_drawn') return t('Crisis: {card}', { card: cardName((x.card as CardInstance).id) });
     if (CAUSE_BOUNDARY.has(x.type)) return undefined;
   }
   return undefined;
@@ -210,7 +211,7 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
       // and only Action cards, which do something now, then get a spotlight of their own
       steps.push({
         key: `${e.seq}-flip`,
-        line: 'Everyone reveals',
+        line: t('Everyone reveals'),
         icon: 'ri-eye-line',
         seats: reveals.map((r) => r.player),
         cards: reveals.flatMap((r, seatOrder) =>
@@ -239,7 +240,7 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
       const card = cardOfDecision(String(e.decision));
       if (!isCrisis(card)) {
         const to = isAction(card) ? zone('deck') : undefined;
-        steps.push({ key: String(e.seq), line: `${seatName(view, e.player as number)} used ${cardName(card)}`, icon: 'ri-magic-line', seats: [e.player as number], cards: [{ id: card, to }] });
+        steps.push({ key: String(e.seq), line: t('{who} used {card}', { who: seatName(view, e.player as number), card: cardName(card) }), icon: 'ri-magic-line', seats: [e.player as number], cards: [{ id: card, to }] });
       }
       continue;
     }
@@ -251,7 +252,7 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
       gains.players.push(e.player as number);
       gains.step.cards.push(...more.cards);
       gains.step.seats.push(...more.seats);
-      gains.step.line = `${listNames(gains.players.map((seat) => seatName(view, seat)))} each added a card`;
+      gains.step.line = t('{who} each added a card', { who: listNames(gains.players.map((seat) => seatName(view, seat))) });
       continue;
     }
     steps.push({ key: String(e.seq), line, sound: SOUND_OF[e.type], cause, ...stepFor(view, e) });
@@ -406,8 +407,8 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
               <thead>
                 <tr>
                   <th />
-                  <th>This round</th>
-                  <th>Total</th>
+                  <th>{t('This round')}</th>
+                  <th>{t('Total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -471,7 +472,7 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
           +{step.bonus.points}
         </div>
       )}
-      {!step.standings && <span className="skip-hint">tap to skip</span>}
+      {!step.standings && <span className="skip-hint">{t('tap to skip')}</span>}
     </div>
   );
 }

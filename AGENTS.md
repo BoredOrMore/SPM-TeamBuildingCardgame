@@ -37,6 +37,7 @@ Every card a player reads follows the keyword system in `data/keywords.json` [P3
 6. **Same effect, same words** across cards: `+N per {X}`, `{X} = 0`, `Everyone discards 1 {X}`, `Leader` and `Last place`.
 7. **`cardText` must mean exactly what `text` and `effect` do.** A change in meaning is a rule change: edit `effect`, then rerun the balance simulation.
 8. **Adding, renaming or removing a code** means updating `keywords.json` (including its `icon`), every card that uses it, and the icon mapping in `/mnt/project-files/graphics/icon-mapping.md`.
+11. **Every `cardText` has a Thai line** in `web/client/src/locales/cards.th.json` with the same codes and numbers, and every keyword `reminder` and `meaning` has Thai in `web/client/src/locales/th.json` (test). Change the Thai together with the English.
 
 ## Card face rules
 

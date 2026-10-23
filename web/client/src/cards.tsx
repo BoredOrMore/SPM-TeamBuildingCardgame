@@ -5,8 +5,12 @@ import cardsJson from '../../../data/cards.json';
 import keywordsJson from '../../../data/keywords.json';
 import type { CardDef, CardInstance, CardsFile, Choice, GameEvent } from '../../../src/index.js';
 import type { DecisionView, GameView } from '../../shared/protocol.js';
+import { lang, t } from './i18n.js';
+import cardsTh from './locales/cards.th.json';
 
 const cards = cardsJson as unknown as CardsFile;
+/** Thai card text by card id, with the same {CODES} and numbers as the English. */
+const CARD_TEXT_TH = cardsTh as Record<string, string>;
 type Deck = keyof CardsFile['decks'];
 
 /** Every card definition by id, with the deck it comes from. */
@@ -121,6 +125,14 @@ function frameColor(def: (CardDef & { deck: Deck }) | undefined): string {
   return FRAME_COLORS[def.type ?? def.deck] ?? FRAME_COLORS.meta ?? '#888';
 }
 
+/** A card's text in the current language; card names and codes stay as they are. */
+function cardTextOf(def: CardDef): string | undefined {
+  if (!def.cardText || lang() === 'en') return def.cardText;
+  const th = CARD_TEXT_TH[def.id];
+  if (th === undefined) throw new Error(`No Thai card text for ${def.id}`);
+  return th;
+}
+
 /** Card text with every {CODE} drawn as its icon. */
 export function CardText({ text }: { text: string }) {
   return (
@@ -149,7 +161,7 @@ const TEXT_SCALE_STEP = 0.05;
 const POINTS = /([+-]\d+|(?<== )-?\d+(?:\/\d+)*|\b\d+(?:\/\d+)+\b(?![+/\d]))/;
 
 /** Shrinks a card's text until it fits the space the card leaves for it, so a card never grows to fit its words. */
-function useFitText() {
+function useFitText(text: string | undefined) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -173,7 +185,8 @@ function useFitText() {
       live = false;
       watch.disconnect();
     };
-  }, []);
+    // a new text (another language) fits again from full size
+  }, [text]);
   return ref;
 }
 
@@ -249,9 +262,9 @@ function KeywordBoxes({ codes }: { codes: IconCode[] }) {
         <div key={k.code} className="kw-box" style={{ '--box': k.chip ? (FRAME_COLORS[k.chip] ?? ICON_INK) : ICON_INK } as React.CSSProperties}>
           {/* keywords show their name and rule; icons (roles, events) are named by what they stand for */}
           <div className="kw-title">
-            <Icon code={k} /> {k.reminder ? k.code.charAt(0) + k.code.slice(1).toLowerCase() : k.meaning}
+            <Icon code={k} /> {k.reminder ? k.code.charAt(0) + k.code.slice(1).toLowerCase() : k.meaning && t(k.meaning)}
           </div>
-          {k.reminder && <div className="kw-text">{k.reminder}</div>}
+          {k.reminder && <div className="kw-text">{t(k.reminder)}</div>}
         </div>
       ))}
     </>
@@ -348,7 +361,7 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
       <>
         <img className="card-art" src={art} alt={def?.name ?? id} draggable={false} />
         {def && <i className={`chip-type ri-${badgeIcon(def)}-line`} aria-hidden />}
-        {shield && <i className="chip-shield ri-shield-line" aria-label="protected" />}
+        {shield && <i className="chip-shield ri-shield-line" aria-label={t('protected')} />}
       </>
     );
   }
@@ -358,9 +371,9 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
         {!small && art && <img className="card-art" src={art} alt="" draggable={false} />}
         <span className="card-name">
           {def?.name ?? id}
-          {shield && <i className="ri-shield-line" aria-label="protected" />}
+          {shield && <i className="ri-shield-line" aria-label={t('protected')} />}
         </span>
-        {!small && <span className="card-text">{def?.cardText ? <CardText text={def.cardText} /> : def?.text}</span>}
+        {!small && <span className="card-text">{def?.cardText ? <CardText text={cardTextOf(def)!} /> : def?.text}</span>}
       </>
     );
   }
@@ -369,7 +382,8 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
 
 /** The printed card (CARD_SPEC.md): fixed shape, so its text shrinks rather than the card growing. */
 function PrintedFace({ def, art, shield }: { def: CardDef & { deck: Deck }; art: string | undefined; shield?: boolean }) {
-  const textRef = useFitText();
+  const text = cardTextOf(def);
+  const textRef = useFitText(text ?? def.text);
   // the printed card: art with a type badge top left and a timing badge top right, the name on the art's edge, text, type label
   const timing = timingCode(def);
   return (
@@ -381,10 +395,10 @@ function PrintedFace({ def, art, shield }: { def: CardDef & { deck: Deck }; art:
       </span>
       <span className="card-name">
         {def.name}
-        {shield && <i className="ri-shield-line" aria-label="protected" />}
+        {shield && <i className="ri-shield-line" aria-label={t('protected')} />}
       </span>
       <span ref={textRef} className="card-text">
-        {def.cardText ? <CardText text={def.cardText} /> : def.text}
+        {text ? <CardText text={text} /> : def.text}
       </span>
       <span className="card-footer">{(def.type ?? def.deck).toUpperCase()}</span>
     </>
@@ -486,116 +500,128 @@ export function idOfUid(view: GameView, uid: string): string {
   return all.find((c) => c.uid === uid)?.id ?? uid;
 }
 
-const DECISION_TITLES: Record<DecisionView['kind'], string> = {
-  headhunt: 'Headhunt: swap one of your cards for one of theirs',
-  phone_screen: 'Phone Screen: look at a player’s hand',
-  refactor: 'Refactor: choose how to clean up',
-  nda: 'NDA: protect one card',
-  burnout: 'Burnout: discard one employee',
-  layoff: 'Layoff: discard',
-  poaching: 'Poaching: take a card',
-  hostile_takeover: 'Hostile Takeover: take a card',
-  steal_best_card: 'Take a card',
-  funding_round: 'Funding Round: choose',
-  pivot_or_persevere: 'Pivot or Persevere',
-  merger_propose: 'Merger: propose a swap',
-  merger_respond: 'Merger: accept the offer?',
+const DECISION_TITLES: Record<DecisionView['kind'], () => string> = {
+  headhunt: () => t('Headhunt: swap one of your cards for one of theirs'),
+  phone_screen: () => t('Phone Screen: look at a player’s hand'),
+  refactor: () => t('Refactor: choose how to clean up'),
+  nda: () => t('NDA: protect one card'),
+  burnout: () => t('Burnout: discard one employee'),
+  layoff: () => t('Layoff: discard'),
+  poaching: () => t('Poaching: take a card'),
+  hostile_takeover: () => t('Hostile Takeover: take a card'),
+  steal_best_card: () => t('Take a card'),
+  funding_round: () => t('Funding Round: choose'),
+  pivot_or_persevere: () => t('Pivot or Persevere'),
+  merger_propose: () => t('Merger: propose a swap'),
+  merger_respond: () => t('Merger: accept the offer?'),
 };
 
 /** Heading for a decision. */
 export function decisionTitle(d: DecisionView): string {
-  return DECISION_TITLES[d.kind] ?? d.kind;
+  const title = DECISION_TITLES[d.kind];
+  if (!title) throw new Error(`No title for decision ${d.kind}`);
+  return title();
+}
+
+/** "left" or "right" in the current language. */
+function direction(dir: unknown): string {
+  if (dir === 'left') return t('left');
+  if (dir === 'right') return t('right');
+  throw new Error(`Unknown direction ${String(dir)}`);
 }
 
 /** One-line label for a decision option. */
 export function choiceLabel(view: GameView, c: Choice): string {
   const name = (uid: string) => cardName(idOfUid(view, uid));
-  const who = (seat: number) => view.players[seat]?.name ?? `Seat ${seat + 1}`;
+  const who = (seat: number) => view.players[seat]?.name ?? t('Seat {n}', { n: seat + 1 });
   switch (c.kind) {
     case 'headhunt':
-      return `Give ${name(c.give)}, take ${name(c.take)} from ${who(c.opponent)}`;
+      return t('Give {give}, take {take} from {who}', { give: name(c.give), take: name(c.take), who: who(c.opponent) });
     case 'phone_screen':
-      return `Look at ${who(c.opponent)}’s hand`;
+      return t('Look at {who}’s hand', { who: who(c.opponent) });
     case 'refactor':
-      return { bug_to_qa: 'Turn a Bug into a QA Tester', juniors_to_senior: 'Turn Juniors into a Senior', points: 'Take the points' }[c.mode];
+      return { bug_to_qa: () => t('Turn a Bug into a QA Tester'), juniors_to_senior: () => t('Turn Juniors into a Senior'), points: () => t('Take the points') }[c.mode]();
     case 'nda':
-      return `Protect ${name(c.protect)}`;
+      return t('Protect {card}', { card: name(c.protect) });
     case 'discard':
-      return `Discard ${name(c.uid)}`;
+      return t('Discard {card}', { card: name(c.uid) });
     case 'take':
-      return `Take ${name(c.uid)} from ${who(c.opponent)}`;
+      return t('Take {card} from {who}', { card: name(c.uid), who: who(c.opponent) });
     case 'give':
-      return `Give ${c.uids.map(name).join(', ')} to ${who(c.to)}`;
+      return t('Give {cards} to {who}', { cards: c.uids.map(name).join(', '), who: who(c.to) });
     case 'take_discard':
-      return `Take ${name(c.uid)} from the discard pile`;
+      return t('Take {card} from the discard pile', { card: name(c.uid) });
     case 'draw_main':
-      return 'Draw from the deck';
+      return t('Draw from the deck');
     case 'persevere':
-      return 'Persevere: keep your team';
+      return t('Persevere: keep your team');
     case 'pivot':
-      return c.discard.length ? `Pivot: discard ${c.discard.map(name).join(', ')}` : 'Pivot';
+      return c.discard.length ? t('Pivot: discard {cards}', { cards: c.discard.map(name).join(', ') }) : t('Pivot');
     case 'merger_decline':
-      return 'No merger';
+      return t('No merger');
     case 'merger_offer':
-      return `Offer ${name(c.give)} to ${who(c.target)} for ${name(c.take)}`;
+      return t('Offer {give} to {who} for {take}', { give: name(c.give), who: who(c.target), take: name(c.take) });
     case 'merger_accept':
-      return 'Accept';
+      return t('Accept');
     case 'merger_reject':
-      return 'Reject';
+      return t('Reject');
   }
 }
 
 /** One line for the play log, or undefined for events not worth showing. */
 export function eventLine(view: GameView, e: GameEvent): string | undefined {
-  const who = (seat: unknown) => (seat === view.you ? 'You' : (view.players[seat as number]?.name ?? '?'));
+  const who = (seat: unknown) => (seat === view.you ? t('You') : (view.players[seat as number]?.name ?? '?'));
   // the same person after a verb or preposition
-  const whom = (seat: unknown) => (seat === view.you ? 'you' : who(seat));
-  const plural = (n: unknown) => (n === 1 ? '1 card' : `${n} cards`);
+  const whom = (seat: unknown) => (seat === view.you ? t('you') : who(seat));
   const card = (c: unknown) => cardName((c as CardInstance).id);
   switch (e.type) {
     case 'turn_started':
-      return `Turn ${e.turn}: pick ${plural(e.picksRequired)}`;
+      return e.picksRequired === 1 ? t('Turn {turn}: pick 1 card', { turn: String(e.turn) }) : t('Turn {turn}: pick {n} cards', { turn: String(e.turn), n: String(e.picksRequired) });
     case 'cards_revealed':
       return (e.cards as Array<{ player: number; cards: CardInstance[] }>)
-        .map((r) => `${who(r.player)} played ${r.cards.map(card).join(' + ')}`)
+        .map((r) => t('{who} played {cards}', { who: who(r.player), cards: r.cards.map(card).join(' + ') }))
         .join(' · ');
     case 'card_gained':
-      return `${who(e.player)} added ${card(e.card)}`;
+      return t('{who} added {card}', { who: who(e.player), card: card(e.card) });
     case 'card_stolen':
-      return `${who(e.to)} took ${card(e.card)} from ${whom(e.from)}`;
+      return t('{who} took {card} from {from}', { who: who(e.to), card: card(e.card), from: whom(e.from) });
     case 'card_given':
-      return `${who(e.from)} gave ${card(e.card)} to ${whom(e.to)}`;
+      return t('{who} gave {card} to {to}', { who: who(e.from), card: card(e.card), to: whom(e.to) });
     case 'card_discarded':
-      return `${who(e.player)} discarded ${card(e.card)}`;
+      return t('{who} discarded {card}', { who: who(e.player), card: card(e.card) });
     case 'card_protected':
-      return `${who(e.player)} protected a card`;
+      return t('{who} protected a card', { who: who(e.player) });
     case 'cards_swapped': {
       const [a, b] = e.players as number[];
       const [x, y] = e.cards as CardInstance[];
-      return `${who(a)} swapped ${card(x)} for ${b === view.you ? 'your' : `${who(b)}’s`} ${card(y)}`;
+      return b === view.you
+        ? t('{who} swapped {card} for your {other}', { who: who(a), card: card(x), other: card(y) })
+        : t('{who} swapped {card} for {whose}’s {other}', { who: who(a), card: card(x), whose: who(b), other: card(y) });
     }
     case 'bonus_gained':
-      return `${who(e.player)} gained ${e.points} point(s) from ${cardName(String(e.source))}`;
+      return t('{who} gained {points} point(s) from {card}', { who: who(e.player), points: String(e.points), card: cardName(String(e.source)) });
     case 'crisis_drawn':
-      return `Crisis: ${card(e.card)}`;
+      return t('Crisis: {card}', { card: card(e.card) });
     case 'crisis_previewed':
-      return `Next crisis: ${card(e.card)}`;
+      return t('Next crisis: {card}', { card: card(e.card) });
     case 'hands_passed':
-      return `Everyone passed their hand ${e.direction}`;
+      return t('Everyone passed their hand {dir}', { dir: direction(e.direction) });
     case 'round_started':
-      return `Round ${e.round}: new hands, passing ${e.direction}`;
+      return t('Round {round}: new hands, passing {dir}', { round: String(e.round), dir: direction(e.direction) });
     case 'round_ended':
-      return `Round ${e.round} over`;
+      return t('Round {round} over', { round: String(e.round) });
     case 'hands_swapped':
-      return `${who((e.players as number[])[0])} and ${whom((e.players as number[])[1])} swapped hands`;
-    case 'hand_revealed':
-      return `${e.player === view.you ? 'Your' : `${who(e.player)}’s`} hand: ${(e.cards as CardInstance[]).map(card).join(', ')}`;
+      return t('{who} and {other} swapped hands', { who: who((e.players as number[])[0]), other: whom((e.players as number[])[1]) });
+    case 'hand_revealed': {
+      const cards = (e.cards as CardInstance[]).map(card).join(', ');
+      return e.player === view.you ? t('Your hand: {cards}', { cards }) : t('{who}’s hand: {cards}', { who: who(e.player), cards });
+    }
     case 'private_meta_dealt':
-      return `Your secret goal: ${(e.meta as string[]).map(cardName).join(', ')}`;
+      return t('Your secret goal: {cards}', { cards: (e.meta as string[]).map(cardName).join(', ') });
     case 'no_effect':
-      return `${cardName(idOfUid(view, String(e.source)))} had no effect`;
+      return t('{card} had no effect', { card: cardName(idOfUid(view, String(e.source))) });
     case 'game_ended':
-      return 'Game over';
+      return t('Game over');
     default:
       return undefined;
   }
