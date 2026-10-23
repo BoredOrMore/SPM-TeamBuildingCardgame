@@ -26,14 +26,14 @@
       "code": "ONGOING",
       "icon": "infinity",
       "group": "timing",
-      "reminder": "Stays face up and keeps working until the game ends.",
+      "reminder": "Stays face up and keeps working until the round ends.",
       "hearthstone": "Aura"
     },
     {
       "code": "PAYDAY",
       "icon": "coin",
       "group": "timing",
-      "reminder": "Counts only at final scoring.",
+      "reminder": "Counts only when the round is scored.",
       "hearthstone": "Deathrattle (resolves later)"
     },
     {
