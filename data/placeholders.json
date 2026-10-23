@@ -354,6 +354,22 @@
         "deal each player N unused Meta cards face down; they score only for their owner (balance experiment)"
       ],
       "status": "pending"
+    },
+    {
+      "id": "P38",
+      "topic": "Card keyword names and icon codes in data/keywords.json",
+      "current": "proposal: Onboard, Ongoing, Payday, Synergy, Full Team, Clean, Lean, Poach, Shield",
+      "alternatives": ["other names chosen by the team"],
+      "status": "pending"
+    },
+    {
+      "id": "P39",
+      "topic": "Cards whose text still needs a multiplier or an 'instead of' override",
+      "current": "keep the report's rules (listed in keywords.json pendingSimplify)",
+      "alternatives": [
+        "rewrite them with plain + and - bonuses (changes scoring; needs a new balance run)"
+      ],
+      "status": "pending"
     }
   ]
 }

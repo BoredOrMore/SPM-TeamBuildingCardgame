@@ -1,0 +1,128 @@
+{
+  "maxConditionKeywordsPerCard": 2,
+  "maxTextChars": 70,
+  "bannedPatterns": [
+    "instead of",
+    "\\bx\\d",
+    "×"
+  ],
+  "placeholders": [
+    "P38",
+    "P39"
+  ],
+  "keywords": [
+    {
+      "code": "ONBOARD",
+      "group": "timing",
+      "reminder": "Happens once, as soon as this card is revealed.",
+      "hearthstone": "Battlecry"
+    },
+    {
+      "code": "ONGOING",
+      "group": "timing",
+      "reminder": "Stays face up and keeps working until the game ends.",
+      "hearthstone": "Aura"
+    },
+    {
+      "code": "PAYDAY",
+      "group": "timing",
+      "reminder": "Counts only at final scoring.",
+      "hearthstone": "Deathrattle (resolves later)"
+    },
+    {
+      "code": "SYNERGY",
+      "group": "condition",
+      "reminder": "Bonus if your team has at least 1 of the card shown.",
+      "hearthstone": "Combo"
+    },
+    {
+      "code": "FULLTEAM",
+      "group": "condition",
+      "reminder": "Bonus if your team has all 4 role types.",
+      "hearthstone": "-"
+    },
+    {
+      "code": "CLEAN",
+      "group": "condition",
+      "reminder": "Bonus if your team has no Bug left after QA fixes.",
+      "hearthstone": "-"
+    },
+    {
+      "code": "LEAN",
+      "group": "condition",
+      "reminder": "Bonus if your team has none of the cards shown.",
+      "hearthstone": "-"
+    },
+    {
+      "code": "POACH",
+      "group": "interaction",
+      "reminder": "Takes, swaps or gives cards between teams.",
+      "hearthstone": "Steal"
+    },
+    {
+      "code": "SHIELD",
+      "group": "interaction",
+      "reminder": "This card cannot be poached or discarded.",
+      "hearthstone": "Divine Shield"
+    }
+  ],
+  "icons": [
+    {
+      "code": "JUNIOR",
+      "meaning": "Junior Developer"
+    },
+    {
+      "code": "SENIOR",
+      "meaning": "Senior Developer"
+    },
+    {
+      "code": "PM",
+      "meaning": "Project Manager"
+    },
+    {
+      "code": "DESIGNER",
+      "meaning": "UX/UI Designer"
+    },
+    {
+      "code": "QA",
+      "meaning": "QA Tester"
+    },
+    {
+      "code": "BUG",
+      "meaning": "Bug"
+    },
+    {
+      "code": "COFFEE",
+      "meaning": "Coffee"
+    },
+    {
+      "code": "FREELANCE",
+      "meaning": "Freelance"
+    },
+    {
+      "code": "INVESTORS",
+      "meaning": "Investors"
+    },
+    {
+      "code": "EMPLOYEE",
+      "meaning": "any role card"
+    },
+    {
+      "code": "CARD",
+      "meaning": "any card"
+    },
+    {
+      "code": "CRISIS",
+      "meaning": "a Crisis card"
+    }
+  ],
+  "pendingSimplify": [
+    "junior_dev",
+    "project_manager",
+    "agile_at_scale",
+    "zero_defect_premium",
+    "user_experience_premium",
+    "venture_capital_boom",
+    "unicorn_rush"
+  ]
+}

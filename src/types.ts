@@ -24,6 +24,8 @@ export interface CardDef {
   type?: CardType;
   quantity: number;
   text: string;
+  /** Printed text with keyword and icon codes such as {POACH} (data/keywords.json) */
+  cardText?: string;
   timing?: 'on_reveal' | 'scoring';
   persistent?: boolean;
   effect?: Effect;

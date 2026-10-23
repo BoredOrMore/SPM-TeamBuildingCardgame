@@ -6,6 +6,7 @@ Single source of truth for card numbers and rules. The simulator and the web app
 |---|---|
 | `cards.json` | Every card: id, quantity, original text, structured `effect`. Main 89, Crisis 45, Meta 20, Support 2 |
 | `rules.json` | Setup, turn flow, crisis timing, scoring order, and test cases taken from the report |
+| `keywords.json` | Keywords and icon codes used in each card's `cardText`, and the limits the card text rules in AGENTS.md check |
 | `placeholders.json` | P1-P22: ambiguous rules with the value used now and the alternatives |
 
 Sources: the Head Hunter report is primary. Meta effects and some crisis resolution come from the older Dream Team V3 rulebook because the report does not define them.
