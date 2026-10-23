@@ -18,9 +18,23 @@ interface IconCode {
   icon: string;
   reminder?: string;
   meaning?: string;
+  /** card type whose frame colour tints this icon's chip; keywords have none */
+  chip?: string;
 }
 const ICONS = new Map<string, IconCode>([...keywordsJson.keywords, ...keywordsJson.icons].map((k) => [k.code, k as IconCode]));
 const FRAME_COLORS = keywordsJson.frameColors as Record<string, string>;
+const ICON_INK = keywordsJson.iconInk;
+
+/** An icon in ink; one that stands for a card sits on a round chip tinted with that card type's frame colour. */
+function Icon({ code, className = '' }: { code: IconCode; className?: string }) {
+  const icon = <i className={`ri-${code.icon}-line ${className}`} aria-label={code.code} />;
+  if (!code.chip) return icon;
+  return (
+    <span className="chip" style={{ '--chip': FRAME_COLORS[code.chip] ?? ICON_INK } as React.CSSProperties}>
+      {icon}
+    </span>
+  );
+}
 
 /** Display name of a card id. */
 export function cardName(id: string): string {
@@ -41,7 +55,7 @@ export function CardText({ text }: { text: string }) {
       {parts.map((part, i) => {
         const icon = ICONS.get(part.slice(1, -1));
         if (!part.startsWith('{') || !icon) return <span key={i}>{part}</span>;
-        return <i key={i} className={`ri-${icon.icon}-line kw`} aria-label={icon.code} />;
+        return <Icon key={i} code={icon} className="kw" />;
       })}
     </>
   );
@@ -113,10 +127,10 @@ function KeywordBoxes({ id }: { id: string }) {
   return (
     <>
       {codesOf(id).map((k) => (
-        <div key={k.code} className="kw-box">
+        <div key={k.code} className="kw-box" style={{ '--box': k.chip ? (FRAME_COLORS[k.chip] ?? ICON_INK) : ICON_INK } as React.CSSProperties}>
           {/* keywords show their name and rule; icons (roles, events) are named by what they stand for */}
           <div className="kw-title">
-            <i className={`ri-${k.icon}-line`} /> {k.reminder ? k.code.charAt(0) + k.code.slice(1).toLowerCase() : k.meaning}
+            <Icon code={k} /> {k.reminder ? k.code.charAt(0) + k.code.slice(1).toLowerCase() : k.meaning}
           </div>
           {k.reminder && <div className="kw-text">{k.reminder}</div>}
         </div>
