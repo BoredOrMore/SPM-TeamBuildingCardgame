@@ -55,7 +55,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 |---|---|---|---|
 | Full (a popup of 1 or 2 cards, preview, hover, rules gallery) | 240 (2 cards: up to 44% of the screen each) | 300 | everything, always in the Figma card's shape (548 × 768) and with the art always the same share of it: a longer text shrinks to fit, so every full card is the same size |
 | Popup row (3 or 4 cards turning over together: the reveal, a round's Meta) | 96 or less, so 4 fit one row | 140 | art, badges and name, in the Figma card's shape, so every card in the row is the same size |
-| Hand | a quarter of the row (about 84), 4 a row, a second row for the rest | 168, less when the hand would not fit one row | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same size; on wider screens they overlap a little |
+| Hand | a quarter of the row (about 84), 4 a row, a second row for the rest | 168, less when the hand would not fit one row | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same size, 6 px apart and never overlapping |
 | Table (Crisis and Meta in play) | 210 | 250 | a tile: square art left, name and effect right, no badges or footer |
 | Team chip | 36 | 44 | round art face only, ring in frame color |
 | Pile back | 56 (40 during a game) | 72 | card back by deck |
