@@ -1,6 +1,6 @@
 // Card faces and the text helpers that name cards, decisions and events.
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import cardsJson from '../../../data/cards.json';
 import keywordsJson from '../../../data/keywords.json';
 import type { CardDef, CardInstance, CardsFile, Choice, GameEvent } from '../../../src/index.js';
@@ -123,16 +123,52 @@ function frameColor(def: (CardDef & { deck: Deck }) | undefined): string {
 
 /** Card text with every {CODE} drawn as its icon. */
 export function CardText({ text }: { text: string }) {
-  const parts = text.split(/(\{[A-Z]+\})/);
   return (
     <>
-      {parts.map((part, i) => {
-        const icon = ICONS.get(part.slice(1, -1));
-        if (!part.startsWith('{') || !icon) return <span key={i}>{part}</span>;
-        return <Icon key={i} code={icon} className="kw" />;
-      })}
+      {text.split(' · ').map((line, l) => (
+        <span key={l} className="text-line">
+          {line.split(/(\{[A-Z]+\})/).map((part, i) => {
+            const icon = ICONS.get(part.slice(1, -1));
+            if (part.startsWith('{') && icon) return <Icon key={i} code={icon} className="kw" />;
+            return part.split(POINTS).map((bit, j) => (j % 2 ? <b key={`${i}-${j}`}>{bit}</b> : bit));
+          })}
+        </span>
+      ))}
     </>
   );
+}
+
+/** How small a card's text may shrink, as a share of its normal size, and how much each try shrinks it. */
+const MIN_TEXT_SCALE = 0.55;
+const TEXT_SCALE_STEP = 0.05;
+
+/**
+ * The points in a card's text, shown bold so they stand apart from the conditions: signed numbers (+3, -2),
+ * a value after "=" (= 0), and point tiers (2/5/12) but not count tiers (1/2/3+).
+ */
+const POINTS = /([+-]\d+|(?<== )-?\d+(?:\/\d+)*|\b\d+(?:\/\d+)+\b(?![+/\d]))/;
+
+/** Shrinks a card's text until it fits the space the card leaves for it, so a card never grows to fit its words. */
+function useFitText() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      let scale = 1;
+      el.style.setProperty('--fit', '1');
+      // hidden text (a phone's hand) has no height to fit into
+      while (el.clientHeight > 0 && el.scrollHeight > el.clientHeight + 1 && scale > MIN_TEXT_SCALE) {
+        scale -= TEXT_SCALE_STEP;
+        el.style.setProperty('--fit', String(scale));
+      }
+    };
+    fit();
+    const watch = new ResizeObserver(fit);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+  return ref;
 }
 
 /** How long a press must last to count as a hold. */
@@ -289,6 +325,12 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
       </>
     );
   }
+  return <PrintedFace def={def} art={art} shield={shield} />;
+}
+
+/** The printed card (CARD_SPEC.md): fixed shape, so its text shrinks rather than the card growing. */
+function PrintedFace({ def, art, shield }: { def: CardDef & { deck: Deck }; art: string | undefined; shield?: boolean }) {
+  const textRef = useFitText();
   // the printed card: art with a type badge top left and a timing badge top right, the name on the art's edge, text, type label
   const timing = timingCode(def);
   return (
@@ -302,7 +344,9 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
         {def.name}
         {shield && <i className="ri-shield-line" aria-label="protected" />}
       </span>
-      <span className="card-text">{def.cardText ? <CardText text={def.cardText} /> : def.text}</span>
+      <span ref={textRef} className="card-text">
+        {def.cardText ? <CardText text={def.cardText} /> : def.text}
+      </span>
       <span className="card-footer">{(def.type ?? def.deck).toUpperCase()}</span>
     </>
   );
