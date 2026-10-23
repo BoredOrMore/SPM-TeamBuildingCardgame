@@ -127,9 +127,10 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
 @media (max-width: 600px) {
-  /* a fanned hand: each card overlaps the one before it, the name stays readable */
-  .app.in-game .hand-cards .card { width: 108px; }
-  .app.in-game .hand-cards .card + .card { margin-left: -14px; }
+  /* every card in view: up to 4 cards a row, a second row for the rest (Bored, 2026-10-23) */
+  .app.in-game .hand-cards { flex-wrap: wrap; overflow: visible; gap: 6px 4px; }
+  .app.in-game .hand-cards .card { width: calc((100cqw - 3 * 4px) / 4); }
+  .app.in-game .hand-cards .card + .card { margin-left: 0; }
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text, .app.in-game .hand-cards .card .card-footer { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
