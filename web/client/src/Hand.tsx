@@ -167,14 +167,8 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
           )}
         </div>
       )}
-      <h2>
-        Your hand{' '}
-        {picking ? (
-          <span className="muted">drag a card up to play it</span>
-        ) : view.stage === 'pick' ? (
-          <span className="muted">waiting for others…</span>
-        ) : null}
-      </h2>
+      {/* what to do now is in the status bar at the top */}
+      <h2>Your hand</h2>
       <div className="hand-cards" data-zone="hand">
         {view.hand.map((c) => (
           <Card

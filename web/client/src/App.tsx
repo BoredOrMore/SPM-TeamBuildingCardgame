@@ -1,7 +1,7 @@
 // Screens: home (create or join), lobby, game table, and final scores.
 
 import { useEffect, useRef, useState } from 'react';
-import type { Choice } from '../../../src/index.js';
+import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
 import { PlaybackOverlay, usePlayback } from './Playback.js';
@@ -48,7 +48,7 @@ export function App() {
 
   return (
     <PreviewProvider>
-    <div className={`app ${playback.step ? 'playing' : ''}`}>
+    <div className={`app ${playback.step ? 'playing' : ''} ${shown?.phase === 'game' && !shown.result ? 'in-game' : ''}`}>
       {!conn || !shown ? (
         <Home busy={!!conn} onCreate={(name) => connect(() => createRoom(name, handlers.current))} onJoin={(code, name) => connect(() => joinRoom(code, name, handlers.current))} />
       ) : shown.phase === 'lobby' ? (
@@ -169,42 +169,63 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
         </span>
       </section>
 
-      <section className="opponents">
-        {view.players
-          .filter((p) => p.seat !== view.you)
-          .map((p) => (
-            <div key={p.seat} data-zone={`seat-${p.seat}`} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
-              <div className="opp-head">
-                <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
-                {!p.connected && <span className="tag warn">offline</span>}
-                <span className="muted">
-                  {' '}
-                  <i className="ri-stack-line" /> {p.handCount}
-                </span>
-                {view.stage === 'pick' && <span className="tag">{p.hasPicked ? 'ready' : 'picking…'}</span>}
+      <div className="table">
+        <section className="opponents">
+          {view.players
+            .filter((p) => p.seat !== view.you)
+            .map((p) => (
+              <div key={p.seat} data-zone={`seat-${p.seat}`} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
+                <div className="opp-head">
+                  <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
+                  {!p.connected && <span className="tag warn">offline</span>}
+                  <span className="muted">
+                    {' '}
+                    <i className="ri-stack-line" /> {p.handCount}
+                  </span>
+                  {view.stage === 'pick' && <span className="tag">{p.hasPicked ? 'ready' : 'picking…'}</span>}
+                </div>
+                <TeamChips team={p.team} protectedUids={p.protected} zone={`team-${p.seat}`} />
               </div>
-              <div className="mini-team" data-zone={`team-${p.seat}`}>
-                {p.team.map((c) => (
-                  <Card key={c.uid} uid={c.uid} id={c.id} small shield={p.protected.includes(c.uid)} />
-                ))}
-              </div>
-            </div>
-          ))}
-      </section>
+            ))}
+        </section>
+
+        {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
+
+        <Log view={view} />
+      </div>
 
       <section className="my-team" data-zone={`seat-${view.you}`}>
         <h2>Your team</h2>
-        <div className="mini-team" data-zone={`team-${view.you}`}>
-          {me.team.length ? me.team.map((c) => <Card key={c.uid} uid={c.uid} id={c.id} small shield={me.protected.includes(c.uid)} />) : <span className="muted">No one hired yet</span>}
-        </div>
+        <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
       </section>
 
-      {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
-
       <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
-
-      <Log view={view} />
     </main>
+  );
+}
+
+/** A team as one chip per card kind with a count, so a long team fits on one or two lines. */
+function TeamChips({ team, protectedUids, zone }: { team: CardInstance[]; protectedUids: string[]; zone: string }) {
+  const groups: Array<{ id: string; uid: string; count: number; shield: boolean }> = [];
+  for (const c of team) {
+    const shield = protectedUids.includes(c.uid);
+    const g = groups.find((x) => x.id === c.id && x.shield === shield);
+    if (g) g.count += 1;
+    else groups.push({ id: c.id, uid: c.uid, count: 1, shield });
+  }
+  return (
+    <div className="mini-team" data-zone={zone}>
+      {groups.length ? (
+        groups.map((g) => (
+          <span key={g.uid} className="team-chip">
+            <Card uid={g.uid} id={g.id} small shield={g.shield} />
+            {g.count > 1 && <b className="count">×{g.count}</b>}
+          </span>
+        ))
+      ) : (
+        <span className="muted">No one hired yet</span>
+      )}
+    </div>
   );
 }
 
@@ -292,7 +313,7 @@ function Log({ view }: { view: GameView }) {
     .filter((l): l is string => !!l)
     .reverse();
   return (
-    <details className="log" open>
+    <details className="log">
       <summary>What happened</summary>
       <ul>
         {lines.slice(0, 12).map((l, i) => (
