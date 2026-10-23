@@ -55,6 +55,28 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .opponent, .my-team, .hand, .log { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
 .opponent.acting { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .opp-head { margin-bottom: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+/* one screen during a game: the middle scrolls, your team and hand stay at the bottom */
+.app.in-game { height: 100dvh; padding: 8px 12px env(safe-area-inset-bottom); overflow: hidden; }
+.app.in-game .game { height: 100%; gap: 8px; }
+.app.in-game .goals { flex: none; flex-wrap: nowrap; overflow-x: auto; }
+.app.in-game .goals > * { flex: none; white-space: nowrap; }
+.table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.my-team, .hand { flex: none; }
+.my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
+.team-chip { display: inline-flex; align-items: center; gap: 2px; }
+.team-chip .count { font-size: 0.8rem; }
+.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; padding: 10px 4px 4px; }
+.app.in-game .hand-cards .card { flex: none; width: 120px; min-height: 120px; position: relative; }
+.app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
+.app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
+@media (max-width: 600px) {
+  /* a fanned hand: each card overlaps the one before it, the name stays readable */
+  .app.in-game .hand-cards .card + .card { margin-left: -28px; }
+}
+@media (min-width: 900px) {
+  .app.in-game .hand-cards { flex-wrap: wrap; overflow-x: visible; }
+}
+
 /* your decision, as a sheet over the hand */
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
