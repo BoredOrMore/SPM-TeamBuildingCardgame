@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CardInstance, GameEvent, ScoreResult } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
-import { Card, CardBack, cardName, eventLine, idOfUid, isAction, type BackDeck } from './cards.js';
+import { Card, CardBack, cardName, eventLine, idOfUid, isAction, isCrisis, type BackDeck } from './cards.js';
 import { sfx, type Sfx } from './sound.js';
 
 /** Spotlight speeds a player can pick. */
@@ -186,7 +186,8 @@ function causeOf(view: GameView, e: SeqEvent): string | undefined {
     if (x.seq >= e.seq) continue;
     if (x.type === 'decision_made') {
       const card = cardOfDecision(String(x.decision));
-      return isAction(card) ? `${seatName(view, x.player as number)}’s ${cardName(card)}` : `Crisis: ${cardName(card)}`;
+      if (isCrisis(card)) return `Crisis: ${cardName(card)}`;
+      return `${x.player === view.you ? 'Your' : `${seatName(view, x.player as number)}’s`} ${cardName(card)}`;
     }
     if (x.type === 'crisis_drawn') return `Crisis: ${cardName((x.card as CardInstance).id)}`;
     if (CAUSE_BOUNDARY.has(x.type)) return undefined;
@@ -219,7 +220,7 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
       });
       for (const r of reveals) {
         steps.push({
-          // an Action card gets its spotlight when it is used, right before what it does
+          // a card that does something now gets its spotlight when it is used, right before what it does
           logOnly: true,
           key: `${e.seq}-${r.player}`,
           line: eventLine(view, { ...e, cards: [r] })!,
@@ -231,10 +232,12 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
       continue;
     }
     if (e.type === 'decision_made') {
-      // an Action card shows as it is used, then flies to the discard pile; its effects follow with it named as their cause
+      // a played card that asks a choice (an Action, or NDA) shows as it is used, right before its effects, which name it as their cause;
+      // an Action then flies to the discard pile, other cards stay in the team
       const card = cardOfDecision(String(e.decision));
-      if (isAction(card)) {
-        steps.push({ key: String(e.seq), line: `${seatName(view, e.player as number)} used ${cardName(card)}`, icon: 'ri-magic-line', seats: [e.player as number], cards: [{ id: card, to: zone('deck') }] });
+      if (!isCrisis(card)) {
+        const to = isAction(card) ? zone('deck') : undefined;
+        steps.push({ key: String(e.seq), line: `${seatName(view, e.player as number)} used ${cardName(card)}`, icon: 'ri-magic-line', seats: [e.player as number], cards: [{ id: card, to }] });
       }
       continue;
     }
