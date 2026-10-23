@@ -18,9 +18,23 @@ interface IconCode {
   icon: string;
   reminder?: string;
   meaning?: string;
+  /** card type whose frame colour tints this icon's chip; keywords have none */
+  chip?: string;
 }
 const ICONS = new Map<string, IconCode>([...keywordsJson.keywords, ...keywordsJson.icons].map((k) => [k.code, k as IconCode]));
 const FRAME_COLORS = keywordsJson.frameColors as Record<string, string>;
+const ICON_INK = keywordsJson.iconInk;
+
+/** An icon in ink; one that stands for a card sits on a round chip tinted with that card type's frame colour. */
+function Icon({ code, className = '' }: { code: IconCode; className?: string }) {
+  const icon = <i className={`ri-${code.icon}-line ${className}`} aria-label={code.code} />;
+  if (!code.chip) return icon;
+  return (
+    <span className="chip" style={{ '--chip': FRAME_COLORS[code.chip] ?? ICON_INK } as React.CSSProperties}>
+      {icon}
+    </span>
+  );
+}
 
 /** Display name of a card id. */
 export function cardName(id: string): string {
@@ -33,7 +47,7 @@ function frameColor(def: (CardDef & { deck: Deck }) | undefined): string {
   return FRAME_COLORS[def.type ?? def.deck] ?? FRAME_COLORS.meta ?? '#888';
 }
 
-/** Card text with every {CODE} drawn as its icon; hovering an icon shows what it means. */
+/** Card text with every {CODE} drawn as its icon. */
 export function CardText({ text }: { text: string }) {
   const parts = text.split(/(\{[A-Z]+\})/);
   return (
@@ -41,7 +55,7 @@ export function CardText({ text }: { text: string }) {
       {parts.map((part, i) => {
         const icon = ICONS.get(part.slice(1, -1));
         if (!part.startsWith('{') || !icon) return <span key={i}>{part}</span>;
-        return <i key={i} className={`ri-${icon.icon}-line kw`} title={`${icon.code}: ${icon.reminder ?? icon.meaning ?? ''}`} aria-label={icon.code} />;
+        return <Icon key={i} code={icon} className="kw" />;
       })}
     </>
   );
@@ -54,13 +68,32 @@ export const STILL_PX = 8;
 
 /** Opens the big preview of a card; set by PreviewProvider. */
 const PreviewContext = createContext<(id: string | undefined) => void>(() => {});
+/** Shows or hides the hover tooltip beside a card; set by PreviewProvider. */
+const TooltipContext = createContext<(tip: Tip | undefined) => void>(() => {});
 
-/** Opens or closes the big card preview. */
+interface Tip {
+  id: string;
+  rect: DOMRect;
+}
+
+/** Opens or closes the big card preview (touch hold). */
 export const usePreview = () => useContext(PreviewContext);
 
-/** Shows a large card with its keyword meanings while a card is held. */
+/** Gap in px between a card and its tooltip, and the tooltip's width. */
+const TIP_GAP = 8;
+const TIP_WIDTH = 220;
+
+/** Hosts the hover tooltip (mouse) and the big preview (touch hold) for every card on screen. */
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const [id, setId] = useState<string>();
+  const [tip, setTip] = useState<Tip>();
+  useEffect(() => {
+    if (!tip) return;
+    // the tooltip is placed from the card's position when hovered, so scrolling would leave it behind
+    const close = () => setTip(undefined);
+    window.addEventListener('scroll', close, true);
+    return () => window.removeEventListener('scroll', close, true);
+  }, [tip]);
   useEffect(() => {
     if (!id) return;
     const close = () => setId(undefined);
@@ -73,32 +106,63 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   }, [id]);
   return (
     <PreviewContext.Provider value={setId}>
-      {children}
-      {id && <CardPreview id={id} />}
+      <TooltipContext.Provider value={setTip}>
+        {children}
+        {tip && <CardTooltip tip={tip} />}
+        {id && <CardPreview id={id} />}
+      </TooltipContext.Provider>
     </PreviewContext.Provider>
   );
 }
 
-/** The big card and one line per keyword or icon it uses. */
+/** Keyword and icon codes on a card, in order of first use. */
+function codesOf(id: string): IconCode[] {
+  const text = CARD_DEFS.get(id)?.cardText ?? '';
+  const codes = [...new Set([...text.matchAll(/\{([A-Z]+)\}/g)].map((m) => m[1]!))];
+  return codes.map((c) => ICONS.get(c)).filter((k): k is IconCode => !!k);
+}
+
+/** One box per keyword: icon, name, and what it means. */
+function KeywordBoxes({ id }: { id: string }) {
+  return (
+    <>
+      {codesOf(id).map((k) => (
+        <div key={k.code} className="kw-box" style={{ '--box': k.chip ? (FRAME_COLORS[k.chip] ?? ICON_INK) : ICON_INK } as React.CSSProperties}>
+          {/* keywords show their name and rule; icons (roles, events) are named by what they stand for */}
+          <div className="kw-title">
+            <Icon code={k} /> {k.reminder ? k.code.charAt(0) + k.code.slice(1).toLowerCase() : k.meaning}
+          </div>
+          {k.reminder && <div className="kw-text">{k.reminder}</div>}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Keyword boxes beside the hovered card: on its right, or its left when there is no room. */
+function CardTooltip({ tip }: { tip: Tip }) {
+  if (!codesOf(tip.id).length) return null;
+  const right = tip.rect.right + TIP_GAP + TIP_WIDTH <= window.innerWidth;
+  const left = right ? tip.rect.right + TIP_GAP : Math.max(TIP_GAP, tip.rect.left - TIP_GAP - TIP_WIDTH);
+  return (
+    <div className="card-tooltip" role="tooltip" style={{ left, top: tip.rect.top, width: TIP_WIDTH }}>
+      <KeywordBoxes id={tip.id} />
+    </div>
+  );
+}
+
+/** The big card and its keyword boxes, shown while a card is held on a touch screen. */
 function CardPreview({ id }: { id: string }) {
   const def = CARD_DEFS.get(id);
-  const codes = [...new Set([...(def?.cardText ?? '').matchAll(/\{([A-Z]+)\}/g)].map((m) => m[1]!))];
   return (
     <div className="preview" aria-live="polite">
       <div className="preview-card" style={{ '--frame': frameColor(def) } as React.CSSProperties}>
         <CardFace id={id} />
       </div>
-      {codes.length > 0 && (
-        <ul className="preview-keywords">
-          {codes.map((code) => {
-            const icon = ICONS.get(code);
-            return icon ? (
-              <li key={code}>
-                <i className={`ri-${icon.icon}-line kw`} /> <b>{code}</b> {icon.reminder ?? icon.meaning}
-              </li>
-            ) : null;
-          })}
-        </ul>
+      {codesOf(id).length > 0 && (
+        <div className="preview-keywords">
+          <KeywordBoxes id={id} />
+        </div>
       )}
     </div>
   );
@@ -119,8 +183,8 @@ function CardFace({ id, small, shield }: { id: string; small?: boolean; shield?:
 }
 
 /**
- * One card face. Holding it still opens the big preview, unless `onPointerDown` is given:
- * then the caller owns the gestures (the hand uses this for drag-and-hold).
+ * One card face. With a mouse, hovering shows its keyword tooltip; on touch, holding it still
+ * opens the big preview, unless `onPointerDown` is given: then the caller owns the press (the hand uses this for drag-and-hold).
  */
 export function Card(props: {
   id: string;
@@ -133,6 +197,10 @@ export function Card(props: {
   onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }) {
   const preview = usePreview();
+  const tooltip = useContext(TooltipContext);
+  const hovered = useRef(false);
+  // a card that leaves the table while hovered (played, taken) never gets pointerleave
+  useEffect(() => () => void (hovered.current && tooltip(undefined)), [tooltip]);
   const hold = useRef<{ timer: number; x: number; y: number; fired: boolean }>(undefined);
   const def = CARD_DEFS.get(props.id);
   const classes = ['card', props.small && 'small', props.selected && 'selected', props.dim && 'dim', props.lifted && 'lifted', props.onClick && 'clickable']
@@ -143,8 +211,10 @@ export function Card(props: {
     if (hold.current) clearTimeout(hold.current.timer);
   };
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    tooltip(undefined);
     if (props.onPointerDown) return props.onPointerDown(e);
     cancelHold();
+    if (e.pointerType === 'mouse') return;
     const h = { x: e.clientX, y: e.clientY, fired: false, timer: 0 };
     h.timer = window.setTimeout(() => {
       h.fired = true;
@@ -163,7 +233,15 @@ export function Card(props: {
       tabIndex={props.onClick ? 0 : undefined}
       className={classes}
       style={{ '--frame': frameColor(def) } as React.CSSProperties}
-      title={def?.text}
+      onPointerEnter={(e) => {
+        if (e.pointerType !== 'mouse' || e.buttons !== 0) return;
+        hovered.current = true;
+        tooltip({ id: props.id, rect: e.currentTarget.getBoundingClientRect() });
+      }}
+      onPointerLeave={() => {
+        hovered.current = false;
+        tooltip(undefined);
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={cancelHold}

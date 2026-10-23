@@ -21,7 +21,7 @@ Open http://localhost:5173, create a room, and share the code. Phones and iPads 
 
 ## Playing a card
 
-- **Hold** a card (about a third of a second) to see it large with what each icon means.
+- **Point** at any card with the mouse to see what each of its icons means, beside the card. On a phone or iPad, **hold** the card instead to see it large with the same boxes.
 - **Drag** it onto the dashed play zone and let go to play it. When a turn asks for 2 cards, the play goes out once both are in the zone.
 - Tapping a card and pressing **Play** also works, for keyboards and anyone who prefers it.
 - On a phone, a quick swipe over the hand still scrolls the page; only a hold picks a card up.

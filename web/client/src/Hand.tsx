@@ -133,7 +133,8 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       if (cur !== d || cur.dragging) return;
       cur.held = true;
       navigator.vibrate?.(10);
-      preview(cur.id);
+      // a mouse sees keywords by hovering, so only touch opens the big preview
+      if (cur.isTouch) preview(cur.id);
       update(cur);
     }, HOLD_MS);
     update(d);
@@ -169,7 +170,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       <h2>
         Your hand{' '}
         {picking ? (
-          <span className="muted">hold to look · drag up to play</span>
+          <span className="muted">drag a card up to play it</span>
         ) : view.stage === 'pick' ? (
           <span className="muted">waiting for others…</span>
         ) : null}
