@@ -55,16 +55,16 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 |---|---|---|---|
 | Full (a popup of 1 or 2 cards, preview, hover, rules gallery) | 240 (2 cards: up to 44% of the screen each) | 300 | everything, always in the Figma card's shape (548 × 768) and with the art always the same share of it: a longer text shrinks to fit, so every full card is the same size |
 | Popup row (3 or 4 cards turning over together: the reveal, a round's Meta) | 96 or less, so 4 fit one row | 140 | art, badges and name, in the Figma card's shape, so every card in the row is the same size |
-| Hand | a quarter of the row (about 84), 4 a row, a second row for the rest | 168, less when the hand would not fit one row | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same size; on wider screens they overlap a little |
+| Hand | a quarter of the row (about 84), 4 a row, a second row for the rest | 168, less when the hand would not fit one row | everything on wider screens; on phones art, badges and name only. All cards in the hand are the same size, 6 px apart and never overlapping |
 | Table (Crisis and Meta in play) | 210 | 250 | a tile: square art left, name and effect right, no badges or footer |
-| Team chip | 36 | 44 | round art face only, ring in frame color |
+| Team chip | 36 | 44 | round art face, ring in frame color, the type badge icon top left so the card is known at a glance |
 | Pile back | 56 (40 during a game) | 72 | card back by deck |
 | Opponent hand back | 20 | 28 | card back by deck |
 
 ## Behaviour
 
 - Hidden cards always show the back of their deck (Main, Crisis, Meta), never their type.
-- Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it. On touch, holding the card does the same.
+- Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it, on top of everything (the rules panel and playback included) and whole inside the window, 12 px from the card and the window edge; it shrinks to fit rather than being cut off. On touch, holding the card does the same.
 - A card being dragged keeps the size it has in the hand.
 - A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
 - In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
@@ -78,4 +78,8 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 5. Card text is centered, uses icons for every code and chips for card icons, shows points bold and conditions plain, and puts each ` · ` part on its own line.
 6. The footer shows the type label.
 7. The card keeps the size in Sizes for where it is shown whatever its content, and every card in a row has the same size.
-8. Hover (mouse) and hold (touch) show the full card with Tooltips.
+8. Hover (mouse) and hold (touch) show the full card with Tooltips, on top of everything and whole on screen.
+9. Nothing covers anything else: cards, panels, buttons and text keep at least 6 px apart, also with the rules panel open.
+10. Every card shows at its size in Sizes, and its text is the app font, whole, never cut off.
+
+Check 7 to 10 in a browser at a phone width (390 × 844), a small laptop (1024 × 640) and a desktop (1280 × 800), with the rules panel closed and open, after every change to the web app's layout or card faces.

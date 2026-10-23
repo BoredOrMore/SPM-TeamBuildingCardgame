@@ -195,12 +195,10 @@ interface Tip {
 /** Opens or closes the big card preview (touch hold). */
 export const usePreview = () => useContext(PreviewContext);
 
-/** Gap in px between a card and its tooltip, and the width of the keyword boxes. */
-const TIP_GAP = 8;
-const TIP_WIDTH = 220;
-/** Width and rough height in px of the full card in the tooltip (CARD_SPEC.md, Sizes: Full on wider screens). */
-const TIP_CARD_WIDTH = 300;
-const TIP_CARD_HEIGHT = 470;
+/** Gap in px between a card and its tooltip, and between the tooltip and the window edge. */
+const TIP_GAP = 12;
+/** Smallest scale the tooltip shrinks to beside the card; below it, it may cover the card rather than shrink further. */
+const TIP_MIN_SCALE = 0.6;
 
 /** Hosts the hover tooltip (mouse) and the big preview (touch hold) for every card on screen. */
 export function PreviewProvider({ children }: { children: ReactNode }) {
@@ -265,14 +263,48 @@ export function IconGlossary() {
   return <KeywordBoxes codes={[...ICONS.values()]} />;
 }
 
-/** The hovered card at full size with its keyword boxes: on its right, or its left when there is no room. */
+/** Where the tooltip goes and how much it shrinks so all of it is on screen. */
+interface TipPlace {
+  left: number;
+  top: number;
+  scale: number;
+  flip: boolean;
+}
+
+/**
+ * The hovered card at full size with its keyword boxes, on top of everything: on its right, or its left when there is more room,
+ * shrunk to fit the window when it would not fit whole.
+ */
 function CardTooltip({ tip }: { tip: Tip }) {
-  const width = TIP_CARD_WIDTH + (codesOf(tip.id).length ? TIP_GAP + TIP_WIDTH : 0);
-  const right = tip.rect.right + TIP_GAP + width <= window.innerWidth;
-  const left = right ? tip.rect.right + TIP_GAP : Math.max(TIP_GAP, tip.rect.left - TIP_GAP - width);
-  const top = Math.max(TIP_GAP, Math.min(tip.rect.top, window.innerHeight - TIP_CARD_HEIGHT - TIP_GAP));
+  const ref = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<TipPlace>();
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) throw new Error('Tooltip not rendered');
+    // offset sizes ignore the scale transform, so this is the tooltip at full size
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    const roomRight = window.innerWidth - tip.rect.right - 2 * TIP_GAP;
+    const roomLeft = tip.rect.left - 2 * TIP_GAP;
+    const flip = roomRight < width && roomLeft > roomRight;
+    const fitHeight = (window.innerHeight - 2 * TIP_GAP) / height;
+    const beside = Math.min(1, Math.max(roomRight, roomLeft) / width, fitHeight);
+    const scale = beside >= TIP_MIN_SCALE ? beside : Math.min(1, (window.innerWidth - 2 * TIP_GAP) / width, fitHeight);
+    const left = flip ? tip.rect.left - TIP_GAP - width * scale : tip.rect.right + TIP_GAP;
+    setPlace({
+      left: Math.max(TIP_GAP, Math.min(left, window.innerWidth - TIP_GAP - width * scale)),
+      top: Math.max(TIP_GAP, Math.min(tip.rect.top, window.innerHeight - TIP_GAP - height * scale)),
+      scale,
+      flip,
+    });
+  }, [tip]);
   return (
-    <div className={`card-tooltip ${right ? '' : 'flip'}`} role="tooltip" style={{ left, top }}>
+    <div
+      ref={ref}
+      className={`card-tooltip ${place?.flip ? 'flip' : ''}`}
+      role="tooltip"
+      style={place ? { left: place.left, top: place.top, transform: `scale(${place.scale})` } : { left: 0, top: 0, visibility: 'hidden' }}
+    >
       <FullCard id={tip.id} />
       {codesOf(tip.id).length > 0 && (
         <div className="preview-keywords">
@@ -315,6 +347,7 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
     return (
       <>
         <img className="card-art" src={art} alt={def?.name ?? id} draggable={false} />
+        {def && <i className={`chip-type ri-${badgeIcon(def)}-line`} aria-hidden />}
         {shield && <i className="chip-shield ri-shield-line" aria-label="protected" />}
       </>
     );

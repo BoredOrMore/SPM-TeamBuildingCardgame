@@ -40,7 +40,7 @@ Every card a player reads follows the keyword system in `data/keywords.json` [P3
 
 ## Card face rules
 
-Every card face in the web app follows `web/CARD_SPEC.md`, taken from the Figma Card component: frame color, type badge top left, timing badge top right, name pill, centered text, footer label, and the size for each place a card is shown. **Check every change to card-face code against the checklist at the end of that file**, and update the spec first when the design changes.
+Every card face in the web app follows `web/CARD_SPEC.md`, taken from the Figma Card component: frame color, type badge top left, timing badge top right, name pill, centered text, footer label, and the size for each place a card is shown. **Check every change to card-face or layout code against the checklist at the end of that file**, in a browser at the widths it names: the hovered card on top of everything and whole on screen, nothing covered, objects spaced apart, card sizes and fonts. Update the spec first when the design changes.
 
 ## Mandatory rules
 

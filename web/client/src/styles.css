@@ -47,7 +47,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 
 /* table */
 .game { display: flex; flex-direction: column; gap: 12px; }
-.topbar { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
 .topbar button.speed { padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 /* phones: the room code is in the lobby, the round and turn stay on one line */
 @media (max-width: 600px) { .topbar .room { display: none; } }
@@ -117,20 +117,16 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .hand-cards.from-left { animation: hand-in-left 400ms ease-out; }
 @keyframes hand-in-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
 @keyframes hand-in-left { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
-/* every card in the hand is the same size; neighbours overlap a little */
-.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 0; padding: 12px 8px 8px; align-items: stretch; container-type: inline-size; }
-/* the whole hand fits the row: cards shrink below 168px when there are more of them than room (--n is the hand size) */
-.app.in-game .hand-cards .card { flex: none; width: min(168px, calc((100cqw + 20px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; box-shadow: -2px 0 6px rgb(0 0 0 / 0.12); }
-.app.in-game .hand-cards .card + .card { margin-left: -20px; }
-/* the next card covers this card's right edge, so its text stops short of it */
-.app.in-game .hand-cards .card .card-text { padding-right: 24px; }
+/* every card in the hand is the same size, 6px apart */
+.app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 12px 8px 8px; align-items: stretch; container-type: inline-size; }
+/* the whole hand fits the row side by side, never overlapping: cards shrink below 168px when there are more of them than room (--n is the hand size) */
+.app.in-game .hand-cards .card { flex: none; width: min(168px, calc((100cqw - 6px * (var(--n) - 1)) / var(--n))); min-height: 0; position: relative; }
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
 @media (max-width: 600px) {
   /* every card in view: up to 4 cards a row, a second row for the rest (Bored, 2026-10-23) */
   .app.in-game .hand-cards { flex-wrap: wrap; overflow: visible; gap: 6px 4px; }
   .app.in-game .hand-cards .card { width: calc((100cqw - 3 * 4px) / 4); }
-  .app.in-game .hand-cards .card + .card { margin-left: 0; }
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text, .app.in-game .hand-cards .card .card-footer { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
@@ -245,6 +241,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 /* a team member: a round face in the card type's frame colour */
 .card.chip { position: relative; width: 36px; height: 36px; min-height: 0; padding: 0; border-radius: 50%; overflow: visible; }
 .card.chip .card-art { aspect-ratio: 1; border-radius: 50%; object-position: 50% 20%; }
+.chip-type { position: absolute; left: -4px; top: -4px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1.5px solid var(--frame); color: var(--frame); font-size: 0.7rem; font-style: normal; }
 .chip-shield { position: absolute; right: -4px; bottom: -4px; font-size: 0.8rem; background: var(--panel); border-radius: 50%; }
 @media (min-width: 601px) { .card.chip { width: 44px; height: 44px; } }
 .card.small .card-name { font-size: 0.75rem; padding: 4px 8px; }
@@ -290,7 +287,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 /* keyword boxes: hover tooltip (mouse) and big preview (touch) */
 /* hovering a card shows it full size with its keyword boxes beside it */
-.card-tooltip { position: fixed; z-index: 25; pointer-events: none; display: flex; gap: 8px; align-items: flex-start; }
+.card-tooltip { position: fixed; z-index: 50; pointer-events: none; transform-origin: top left; display: flex; gap: 8px; align-items: flex-start; }
 .card-tooltip.flip { flex-direction: row-reverse; }
 .card-tooltip .preview-keywords { width: 220px; }
 .card-tooltip > .card { flex: none; }
