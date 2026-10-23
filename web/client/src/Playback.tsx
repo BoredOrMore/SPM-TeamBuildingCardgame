@@ -19,6 +19,8 @@ const TIMING: Record<Speed, { spotlightMs: number; flightMs: number; flipMs: num
   fast: { spotlightMs: 750, flightMs: 300, flipMs: 250, flipStaggerMs: 50 },
 };
 /** Events that change nothing a player needs to watch; the status bar already says whose turn it is. */
+/** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
+const REVEAL_HOLD = 1.6;
 const SILENT = new Set(['card_picked', 'teams_updated', 'decision_made', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
 
 type SeqEvent = GameEvent & { seq: number };
@@ -51,6 +53,8 @@ interface SpotCard {
   seatOrder?: number;
   /** on a flip step, the deck back it starts as; Main unless set */
   back?: BackDeck;
+  /** on a flip step, who played it, shown under the card */
+  owner?: string;
 }
 
 /** One row of the standings shown when a round ends. */
@@ -75,6 +79,10 @@ export interface Step {
   sound?: Sfx;
   /** every card starts face down and turns over, as when the table reveals together */
   flip?: boolean;
+  /** how many spotlight lengths the step stays, for steps with more to read; 1 unless set */
+  hold?: number;
+  /** a line for the play log only; the spotlight does not play it */
+  logOnly?: boolean;
   /** the round's scores, shown until the player taps the button that says `goOn` */
   standings?: Standing[];
   goOn?: string;
@@ -145,6 +153,11 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
   }
 }
 
+/** A seat as the spotlight names it: "You" for the viewer. */
+function seatName(view: GameView, seat: number): string {
+  return seat === view.you ? 'You' : (view.players[seat]?.name ?? `Seat ${seat + 1}`);
+}
+
 /** Turns new events into spotlights, one per event and one per player for a reveal. */
 export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
   const steps: Step[] = [];
@@ -152,24 +165,29 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
     if (SILENT.has(e.type)) continue;
     if (e.type === 'cards_revealed') {
       const reveals = e.cards as Array<{ player: number; cards: CardInstance[] }>;
-      // everyone's picks turn over together first, then each player's play is shown on its own
+      // everyone's picks turn over together, named by who played them; hires fly to their teams at once,
+      // and only Action cards, which do something now, then get a spotlight of their own
       steps.push({
         key: `${e.seq}-flip`,
         line: 'Everyone reveals',
         icon: 'ri-eye-line',
         seats: reveals.map((r) => r.player),
-        cards: reveals.flatMap((r, seatOrder) => r.cards.map((c) => ({ id: c.id, seatOrder }))),
+        cards: reveals.flatMap((r, seatOrder) =>
+          r.cards.map((c) => ({ id: c.id, seatOrder, owner: seatName(view, r.player), to: isAction(c.id) ? undefined : zone(`team-${r.player}`) })),
+        ),
         sound: SOUND_OF[e.type],
         flip: true,
+        hold: REVEAL_HOLD,
       });
       for (const r of reveals) {
         steps.push({
+          logOnly: !r.cards.some((c) => isAction(c.id)),
           key: `${e.seq}-${r.player}`,
           line: eventLine(view, { ...e, cards: [r] })!,
           icon: 'ri-eye-line',
           seats: [r.player],
           // played Action cards go to the discard pile, the rest join the team
-          cards: r.cards.map((c) => ({ id: c.id, to: isAction(c.id) ? zone('deck') : zone(`team-${r.player}`) })),
+          cards: r.cards.filter((c) => isAction(c.id)).map((c) => ({ id: c.id, to: zone('deck') })),
         });
       }
       continue;
@@ -220,11 +238,11 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
         // labels and positions come from the board still on screen, where the cards are now
         for (const s of stepsFor(next, fresh)) {
           // skipping passes everything but a round's standings, which wait for a tap
-          if (skipping.current && !s.standings) continue;
+          if ((skipping.current && !s.standings) || s.logOnly) continue;
           setStep(s);
           if (s.sound) sfx(s.sound);
           await new Promise<void>((resolve) => {
-            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs);
+            const timer = s.standings ? undefined : setTimeout(resolve, TIMING[speedRef.current].spotlightMs * (s.hold ?? 1));
             wake.current = () => {
               clearTimeout(timer);
               resolve();
@@ -287,7 +305,8 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
     const els = step.seats.map((s) => document.querySelector(zone(`seat-${s}`))).filter((el): el is Element => !!el);
     els.forEach((el) => el.classList.add('pulse'));
     setBonusAt(step.bonus && centreOf(zone(`seat-${step.bonus.seat}`)));
-    const { spotlightMs, flightMs } = TIMING[speed];
+    const { flightMs } = TIMING[speed];
+    const spotlightMs = TIMING[speed].spotlightMs * (step.hold ?? 1);
     // the swish as cards leave for their zones
     if (step.cards.some((c) => c.to)) sfx('whoosh', (spotlightMs - flightMs) / 1000);
     if (cards.current && !reducedMotion()) {
@@ -359,6 +378,7 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
                     <Card id={c.id} />
                   </div>
                 </div>
+                {c.owner && <span className="flip-owner">{c.owner}</span>}
               </div>
             ))}
           </div>
