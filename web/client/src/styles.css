@@ -77,6 +77,15 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 }
 .table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .my-team, .hand { flex: none; }
+/* every opponent board stays in full view: the middle never shrinks below them, and the open log scrolls inside itself */
+.app.in-game .table { flex: 1 0 auto; }
+.app.in-game .log[open] { max-height: 30vh; overflow-y: auto; }
+/* on a short screen the hand gives way instead, and scrolls to show the rest of its cards */
+.app.in-game .hand { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+/* your team is one row, heading then chips, so the hand keeps its room */
+.app.in-game .my-team { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
+.app.in-game .my-team h2 { flex: none; margin: 0; }
+.app.in-game .my-team .mini-team { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
