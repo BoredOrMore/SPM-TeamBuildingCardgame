@@ -193,3 +193,17 @@ button.option:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .spotlight, .bonus-float, .pulse, .sheet { animation: none; }
 }
+
+/* sound settings */
+.sound { position: relative; }
+.sound.corner { position: fixed; top: 10px; right: 10px; z-index: 30; }
+.sound-btn { min-height: 40px; min-width: 40px; padding: 6px; border-radius: 999px; font-size: 1.15rem; line-height: 1; }
+.sound-panel {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: 220px;
+  display: flex; flex-direction: column; gap: 10px; padding: 12px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  font-weight: normal;
+}
+.sound-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.sound-row input[type='range'] { flex: 1; min-width: 0; padding: 0; }
+.sound-row input[type='checkbox'] { width: auto; }

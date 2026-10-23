@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameView } from '../../shared/protocol.js';
 import { Card, HOLD_MS, STILL_PX, cardName, usePreview } from './cards.js';
+import { sfx } from './sound.js';
 
 /** A mouse drag starts after this many px; touch needs a hold first so the page can still scroll. */
 const MOUSE_DRAG_PX = 4;
@@ -44,11 +45,20 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
   const stage = (uid: string) => {
     const next = staged.includes(uid) ? staged : need === 1 ? [uid] : [...staged, uid].slice(0, need);
     setStaged(next);
-    if (next.length === need) onPlay(next);
+    if (next.length === need) play(next);
+    else sfx('drop');
+  };
+
+  const play = (uids: string[]) => {
+    sfx('play');
+    onPlay(uids);
   };
 
   /** Tap: toggle a card in or out of the zone without playing. */
-  const toggle = (uid: string) => setStaged((s) => (s.includes(uid) ? s.filter((x) => x !== uid) : need === 1 ? [uid] : s.length < need ? [...s, uid] : s));
+  const toggle = (uid: string) => {
+    sfx('tap');
+    setStaged((s) => (s.includes(uid) ? s.filter((x) => x !== uid) : need === 1 ? [uid] : s.length < need ? [...s, uid] : s));
+  };
 
   const isOverZone = (x: number, y: number) => {
     const r = zoneRef.current?.getBoundingClientRect();
@@ -79,6 +89,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
         if (!picking || dist <= (d.isTouch ? STILL_PX : MOUSE_DRAG_PX)) return;
         clearTimeout(d.timer);
         d.dragging = true;
+        if (!d.held) sfx('pickup');
         preview(undefined);
       }
       d.x = e.clientX;
@@ -92,6 +103,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       clearTimeout(d.timer);
       if (d.dragging || d.held) suppressClick.current = true;
       if (d.dragging && isOverZone(e.clientX, e.clientY)) stage(d.uid);
+      else if (d.dragging) sfx('cancel');
       setOverZone(false);
       update(undefined);
     };
@@ -133,6 +145,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       if (cur !== d || cur.dragging) return;
       cur.held = true;
       navigator.vibrate?.(10);
+      sfx('pickup');
       // a mouse sees keywords by hovering, so only touch opens the big preview
       if (cur.isTouch) preview(cur.id);
       update(cur);
@@ -185,7 +198,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
       </div>
       {picking && staged.length > 0 && staged.length < need && <p className="muted">{need - staged.length} more to go</p>}
       {picking && need > 0 && staged.length === need && (
-        <button className="primary play" onClick={() => onPlay(staged)}>
+        <button className="primary play" onClick={() => play(staged)}>
           Play {need === 1 ? cardName(view.hand.find((c) => c.uid === staged[0])?.id ?? '') : `${need} cards`}
         </button>
       )}

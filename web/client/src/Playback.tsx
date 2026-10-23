@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CardInstance, GameEvent } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
 import { Card, eventLine, idOfUid, isAction } from './cards.js';
+import { sfx, type Sfx } from './sound.js';
 
 /** How long one spotlight stays on screen before the next one. */
 const SPOTLIGHT_MS = 1500;
@@ -14,6 +15,26 @@ const FLIGHT_MS = 550;
 const SILENT = new Set(['card_picked', 'teams_updated', 'decision_made', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
 
 type SeqEvent = GameEvent & { seq: number };
+
+/** The effect each spotlight plays when it appears. */
+const SOUND_OF: Record<string, Sfx> = {
+  card_gained: 'gain',
+  card_stolen: 'steal',
+  card_given: 'give',
+  cards_swapped: 'swap',
+  card_discarded: 'discard',
+  crisis_drawn: 'crisis',
+  crisis_previewed: 'preview',
+  bonus_gained: 'bonus',
+  card_protected: 'protect',
+  no_effect: 'noEffect',
+  hands_passed: 'shuffle',
+  hands_swapped: 'shuffle',
+  hand_revealed: 'reveal',
+  cards_revealed: 'reveal',
+  round_started: 'roundStart',
+  round_ended: 'roundEnd',
+};
 
 interface SpotCard {
   id: string;
@@ -30,6 +51,7 @@ export interface Step {
   seats: number[];
   /** floating "+N" by a seat */
   bonus?: { seat: number; points: number };
+  sound?: Sfx;
 }
 
 const zone = (name: string) => `[data-zone="${name}"]`;
@@ -90,13 +112,14 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
           seats: [r.player],
           // played Action cards go to the discard pile, the rest join the team
           cards: r.cards.map((c) => ({ id: c.id, to: isAction(c.id) ? zone('deck') : zone(`team-${r.player}`) })),
+          sound: SOUND_OF[e.type],
         });
       }
       continue;
     }
     const line = eventLine(view, e);
     if (!line) continue;
-    steps.push({ key: String(e.seq), line, ...stepFor(view, e) });
+    steps.push({ key: String(e.seq), line, sound: SOUND_OF[e.type], ...stepFor(view, e) });
   }
   return steps;
 }
@@ -131,6 +154,7 @@ export function usePlayback(view: View | undefined): { shown: View | undefined; 
         for (const s of stepsFor(next, fresh)) {
           if (skipping.current) break;
           setStep(s);
+          if (s.sound) sfx(s.sound);
           await new Promise<void>((resolve) => {
             const timer = setTimeout(resolve, SPOTLIGHT_MS);
             wake.current = () => {
@@ -194,6 +218,8 @@ export function PlaybackOverlay({ step, onSkip }: { step: Step | undefined; onSk
     const els = step.seats.map((s) => document.querySelector(zone(`seat-${s}`))).filter((el): el is Element => !!el);
     els.forEach((el) => el.classList.add('pulse'));
     setBonusAt(step.bonus && centreOf(zone(`seat-${step.bonus.seat}`)));
+    // the swish as cards leave for their zones
+    if (step.cards.some((c) => c.to)) sfx('whoosh', (SPOTLIGHT_MS - FLIGHT_MS) / 1000);
     if (cards.current && !reducedMotion()) {
       cards.current.querySelectorAll<HTMLElement>('.spot-card').forEach((el, i) => {
         const to = step.cards[i]?.to;
