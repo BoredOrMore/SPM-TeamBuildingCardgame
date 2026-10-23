@@ -77,6 +77,16 @@ describe('crisis bonuses', () => {
   });
 });
 
+describe('printed card text matches scoring', () => {
+  it('Junior with one PM scores the printed PM row 2/6/14', () => {
+    expect([1, 2, 3, 5].map((j) => score({ junior_dev: j, project_manager: 1 }).total)).toEqual([2, 6, 14, 14]);
+  });
+
+  it('Agile at Scale sets Junior to 17 with a PM and 4+ Juniors', () => {
+    expect(score({ junior_dev: 5, project_manager: 1 }, { meta: ['agile_at_scale'] }).total).toBe(17);
+  });
+});
+
 describe('meta cards', () => {
   it('Developer Shortage adds 2 per Junior', () => {
     expect(score({ junior_dev: 3 }, { meta: ['developer_shortage'] }).total).toBe(7 + 6);
