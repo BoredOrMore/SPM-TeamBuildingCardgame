@@ -124,6 +124,12 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 button.option { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 52px; }
 button.option:hover { border-color: var(--accent); }
 .option-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+.card-picker { display: flex; flex-direction: column; gap: 8px; }
+.picker-prompt { font-weight: 600; }
+.picker-tiles { display: flex; gap: 8px; flex-wrap: wrap; }
+button.picker-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px; border: 2px solid transparent; }
+button.picker-tile.picked { border-color: var(--accent); }
+.picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .play { width: 100%; margin-top: 10px; }
 .log-turn h3 { margin: 10px 0 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
