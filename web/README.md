@@ -42,4 +42,6 @@ npm run typecheck
 - A game has 3 rounds of 7 turns. The top bar shows the round, the turn and which way hands pass this round (left, right, left). Each round starts with its 3 new Meta cards turning over. When a round ends, a table shows each player's points for the round and in total, and waits until you tap to start the next round.
 - The results screen shows every player's points per round and in total, and a tab per round with each player's team and score breakdown for that round.
 - A Crisis turns over from its red back at full size before it goes to the table.
+- Cards look like the printed card (see [CARD_SPEC.md](CARD_SPEC.md)): an icon top left for the card's role or type, an icon top right for when it takes effect (Onboard, Ongoing or Payday; Role and Event cards leave it empty), and the type at the bottom. Point at any card with the mouse to see it full size with what each of its icons means.
+- The Crisis and Meta cards in play sit at the top as small tiles with their art and effect. On a phone every other player is one row, so all boards stay on screen together.
 - Hidden cards show only their back: the Main and Crisis piles show how many cards are left, and each other player's hand is a row of small backs, one per card.

@@ -210,13 +210,13 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
           <b className="pile-count">{view.crisisRemaining}</b>
         </span>
         {view.visibleCrisis.map((c) => (
-          <Card key={c.uid} id={c.id} small />
+          <Card key={c.uid} id={c.id} />
         ))}
         {view.activeMeta.map((id) => (
-          <Card key={id} id={id} small />
+          <Card key={id} id={id} />
         ))}
         {view.privateMeta.map((id) => (
-          <Card key={id} id={id} small />
+          <Card key={id} id={id} />
         ))}
       </section>
 
