@@ -6,6 +6,8 @@ import type { DecisionView, GameView, LobbyView, View } from '../../shared/proto
 import { Hand } from './Hand.js';
 import { PlaybackOverlay, stepsFor, usePlayback, type Step } from './Playback.js';
 import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
+import { SoundControls } from './SoundControls.js';
+import { setMusic, sfx } from './sound.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 const NAME_KEY = 'hh_name';
@@ -31,8 +33,13 @@ export function App() {
     void rejoin(handlers.current).then((c) => c && setConn(c));
   }, []);
 
+  // music plays in the lobby and at the table; the results screen has its own fanfare
+  const inRoom = !!conn && !!shown && (shown.phase === 'lobby' || !shown.result);
+  useEffect(() => setMusic(inRoom), [inRoom]);
+
   useEffect(() => {
     if (!toast) return;
+    sfx('error');
     const t = setTimeout(() => setToast(undefined), TOAST_MS);
     return () => clearTimeout(t);
   }, [toast]);
@@ -56,6 +63,7 @@ export function App() {
       ) : (
         <Game view={shown} conn={conn} playing={!!playback.step} />
       )}
+      {!(shown?.phase === 'game' && !shown.result) && <SoundControls className="corner" />}
       <PlaybackOverlay step={playback.step} onSkip={playback.skip} />
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -93,6 +101,12 @@ function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: 
 function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
   const isHost = view.seats[view.you]?.isHost ?? false;
   const canStart = view.seats.length >= view.minPlayers;
+  // a pop each time someone sits down
+  const seats = useRef(view.seats.length);
+  useEffect(() => {
+    if (view.seats.length > seats.current) sfx('join');
+    seats.current = view.seats.length;
+  }, [view.seats.length]);
   return (
     <main className="lobby">
       <p className="muted">Room code</p>
@@ -136,6 +150,11 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
 function Game({ view, conn, playing }: { view: GameView; conn: Connection; playing: boolean }) {
   const me = view.players[view.you]!;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
+  const yours = !playing && !view.result && (!!myDecision || (view.stage === 'pick' && !view.picked));
+  // a ding when it becomes this player's move
+  useEffect(() => {
+    if (yours) sfx('yourTurn');
+  }, [yours]);
 
   if (view.result) return <Results view={view} conn={conn} />;
 
@@ -149,8 +168,9 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
         <span className="score">
           <i className="ri-trophy-line" /> {view.yourScore.total}
         </span>
+        <SoundControls />
       </header>
-      <p className={`now ${!playing && (myDecision || (view.stage === 'pick' && !view.picked)) ? 'yours' : ''}`} role="status">
+      <p className={`now ${yours ? 'yours' : ''}`} role="status">
         {playing ? 'Showing what happened…' : nowLine(view)}
       </p>
 
@@ -345,6 +365,8 @@ function Log({ view }: { view: GameView }) {
 function Results({ view, conn }: { view: GameView; conn: Connection }) {
   const isHost = view.players[view.you]?.isHost;
   const scores = [...view.result!.scores].sort((a, b) => b.total - a.total);
+  const won = view.result!.winners.includes(view.you);
+  useEffect(() => sfx(won ? 'win' : 'lose'), [won]);
   return (
     <main className="results">
       <h1>Game over</h1>
