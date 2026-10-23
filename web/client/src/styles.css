@@ -202,7 +202,9 @@ button.option:hover { border-color: var(--accent); }
 .chip {
   --chip: var(--ink);
   display: inline-flex; align-items: center; justify-content: center; width: 1.45em; height: 1.45em; margin: 0 1px;
-  border-radius: 50%; border: 1px solid var(--chip); background: color-mix(in srgb, var(--chip) 18%, white); vertical-align: -0.35em;
+  border-radius: 50%; border: 1px solid var(--chip); background: color-mix(in srgb, var(--chip) 18%, white);
+  /* centred on the middle of the text line: an inline-flex box would otherwise sit on its icon's baseline and drop low */
+  vertical-align: middle;
 }
 .chip .kw { margin: 0; font-size: 0.95em; vertical-align: 0; }
 
