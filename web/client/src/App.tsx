@@ -98,6 +98,7 @@ export function App() {
       )}
       {!(shown?.phase === 'game' && !shown.result) && (
         <div className="corner">
+          <FullscreenButton />
           <SoundControls />
         </div>
       )}
@@ -247,6 +248,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         </span>
         <Log view={view} />
         <RulebookButton />
+        <FullscreenButton />
         <SoundControls />
       </header>
       <p className={`now ${yours ? 'yours' : ''}`} role="status">
@@ -357,6 +359,28 @@ function useFitTable() {
     return () => watch.disconnect();
   });
   return { box, content };
+}
+
+/** Enters or leaves full screen. Hidden where the browser has no full screen for pages (iPhone): there, Add to Home Screen opens the game without the browser bar. */
+function FullscreenButton() {
+  const [full, setFull] = useState(!!document.fullscreenElement);
+  useEffect(() => {
+    const onChange = () => setFull(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+  if (!document.fullscreenEnabled) return null;
+  return (
+    <button
+      className="fullscreen-button"
+      onClick={() => void (full ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
+      title={full ? 'Leave full screen' : 'Full screen'}
+      aria-label={full ? 'Leave full screen' : 'Full screen'}
+      aria-pressed={full}
+    >
+      <i className={full ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'} />
+    </button>
+  );
 }
 
 /** A team as one chip per card kind with a count, so a long team fits on one or two lines. */
