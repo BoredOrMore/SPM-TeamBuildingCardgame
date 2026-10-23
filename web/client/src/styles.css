@@ -46,6 +46,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 /* table */
 .game { display: flex; flex-direction: column; gap: 12px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.topbar button.speed { padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 .score { font-size: 1.2rem; }
 .now { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--line); font-weight: 600; text-align: center; }
 .now.yours { background: var(--accent); color: #fff; }

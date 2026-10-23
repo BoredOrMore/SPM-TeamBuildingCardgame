@@ -4,18 +4,40 @@ import { useEffect, useRef, useState } from 'react';
 import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
-import { PlaybackOverlay, stepsFor, usePlayback, type Step } from './Playback.js';
+import { PlaybackOverlay, SPEEDS, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
 import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 const NAME_KEY = 'hh_name';
+const SPEED_KEY = 'hh_speed';
+
+/** The spotlight speed this browser saved, or normal when none or an unknown value is saved. */
+function savedSpeed(): Speed {
+  try {
+    const v = localStorage.getItem(SPEED_KEY);
+    return SPEEDS.find((s) => s === v) ?? 'normal';
+  } catch {
+    return 'normal';
+  }
+}
 /** How long an error toast stays on screen. */
 const TOAST_MS = 3500;
 
 export function App() {
   const [conn, setConn] = useState<Connection>();
   const [view, setView] = useState<View>();
-  const playback = usePlayback(view);
+  const [speed, setSpeed] = useState(savedSpeed);
+  const playback = usePlayback(view, speed);
+  /** Switches between normal and fast spotlights and remembers the choice in this browser. */
+  const toggleSpeed = () => {
+    const next: Speed = speed === 'normal' ? 'fast' : 'normal';
+    setSpeed(next);
+    try {
+      localStorage.setItem(SPEED_KEY, next);
+    } catch {
+      // private windows may block storage; the choice still holds for this visit
+    }
+  };
   const shown = playback.shown;
   const [toast, setToast] = useState<string>();
   const handlers = useRef<Handlers>({
@@ -54,9 +76,9 @@ export function App() {
       ) : shown.phase === 'lobby' ? (
         <Lobby view={shown} conn={conn} />
       ) : (
-        <Game view={shown} conn={conn} playing={!!playback.step} />
+        <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} />
       )}
-      <PlaybackOverlay step={playback.step} onSkip={playback.skip} />
+      <PlaybackOverlay step={playback.step} speed={speed} onSkip={playback.skip} />
       {toast && <div className="toast">{toast}</div>}
     </div>
     </PreviewProvider>
@@ -133,7 +155,7 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
 }
 
 /** The table: crisis and goals, other players, your team, your hand, and the current decision. */
-function Game({ view, conn, playing }: { view: GameView; conn: Connection; playing: boolean }) {
+function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; conn: Connection; playing: boolean; speed: Speed; onToggleSpeed: () => void }) {
   const me = view.players[view.you]!;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
 
@@ -146,6 +168,9 @@ function Game({ view, conn, playing }: { view: GameView; conn: Connection; playi
           Turn {view.turn}/{view.totalTurns}
         </span>
         <span className="muted">Room {view.code}</span>
+        <button className="speed" onClick={onToggleSpeed} title="Spotlight speed">
+          <i className="ri-speed-line" /> {speed === 'fast' ? 'Fast' : 'Normal'}
+        </button>
         <span className="score">
           <i className="ri-trophy-line" /> {view.yourScore.total}
         </span>
