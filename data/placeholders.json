@@ -374,7 +374,7 @@
     {
       "id": "P40",
       "topic": "Fallback values so every Main, Action and Crisis card has an effect",
-      "current": "Bored chose on 2026-10-23 that every card must have an effect. Starting values: Unicorn Hype +3 per role type and +3 clean; Product Launch +1/+1; Investors +1 per role type, +1 full team; Tech Debt Payoff or +2; Refactor or +1; Merger Offer no deal +2; Merge Conflict Senior = 1; Junior +1 each after 3; PM +1; Agile at Scale +3 flat; Scope Creep also zeroes Freelance; Layoff with no Junior discards a role card; Poaching goes to most role cards; Funding Round falls back to the main deck",
+      "current": "Bored chose on 2026-10-23 that every card must have an effect. Starting values: Unicorn Hype +3 per role type and +3 clean; Product Launch +1/+1; Investors +1 per role type, +1 full team; Tech Debt Payoff or +2; Refactor +3 only when nothing can be converted (tuned 2026-10-23: +1 always on offer was +5.8pp); Merger Offer no deal +2; Merge Conflict Senior = 1; Junior +1 each after 3; PM +1; Agile at Scale +3 flat; Scope Creep also zeroes Freelance; Layoff with no Junior discards a role card; Poaching goes to most role cards; Funding Round falls back to the main deck",
       "alternatives": [
         "tune each value after playtests",
         "Meta cards get the same treatment in a later round"

@@ -71,7 +71,7 @@ describe('balance knobs in data', () => {
       state.players[0]!.team = [{ uid: 'b', id: 'bug' }];
       state.players.forEach((p, i) => (p.hand[0] = { uid: `h${i}`, id: i === 0 ? 'refactor' : 'coffee' }));
       for (const p of state.players) applyActionInPlace(gameData, state, { type: 'pick', player: p.seat, cards: [p.hand[0]!.uid] });
-      // With a QA to fetch, Refactor offers it before the +1 fallback.
+      // Refactor may wait on a choice when it can convert more than one way.
       const d = currentDecision(state);
       if (d?.kind === 'refactor') applyActionInPlace(gameData, state, { type: 'choose', player: 0, decisionId: d.id, option: 0 });
       return state.players[0]!.team.map((c) => c.id);

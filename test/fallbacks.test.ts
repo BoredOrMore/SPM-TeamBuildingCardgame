@@ -59,10 +59,10 @@ describe('every card has an effect when it comes into play', () => {
     expect(state.players[d.player]!.bonuses).toEqual([{ source: 'Merger Offer', points: 2 }]);
   });
 
-  it('Refactor with nothing to convert gives +1', () => {
+  it('Refactor with nothing to convert gives +3', () => {
     const state = createGame(data, { players: 3, seed: 3 });
     state.players.forEach((p, seat) => (p.hand[0] = { uid: `h${seat}`, id: seat === 0 ? 'refactor' : 'coffee' }));
     for (const p of state.players) applyActionInPlace(data, state, { type: 'pick', player: p.seat, cards: [`h${p.seat}`] });
-    expect(state.players[0]!.bonuses).toEqual([{ source: 'Refactor', points: 1 }]);
+    expect(state.players[0]!.bonuses).toEqual([{ source: 'Refactor', points: 3 }]);
   });
 });

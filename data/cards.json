@@ -138,7 +138,7 @@
         "type": "action",
         "quantity": 2,
         "text": "Convert Bug to QA or 2 Junior to 1 Senior.",
-        "cardText": "{BUG} → {QA}, {JUNIOR}{JUNIOR} → {SENIOR}, or +1",
+        "cardText": "{BUG} → {QA} or {JUNIOR}{JUNIOR} → {SENIOR} · neither: +3",
         "timing": "on_reveal",
         "effect": {
           "kind": "convert",
@@ -148,7 +148,8 @@
           ],
           "removedCardsGoTo": "discard",
           "addFrom": ["main_deck"],
-          "fallbackPoints": 1
+          "fallbackPoints": 3,
+          "fallbackOnlyIfNoConvert": true
         },
         "placeholders": ["P8", "P11", "P27", "P40"]
       },

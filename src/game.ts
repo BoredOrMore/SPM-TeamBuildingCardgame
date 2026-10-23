@@ -442,7 +442,8 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
       const out: Choice[] = [];
       if ((c.get('bug') ?? 0) > 0 && refactorSource(data, state, 'qa_tester')) out.push({ kind: 'refactor', mode: 'bug_to_qa' });
       if ((c.get('junior_dev') ?? 0) >= 2 && refactorSource(data, state, 'senior_dev')) out.push({ kind: 'refactor', mode: 'juniors_to_senior' });
-      out.push({ kind: 'refactor', mode: 'points' });
+      // The points fallback is offered always, or only when nothing can be converted [P40].
+      if (out.length === 0 || !data.byId.get('refactor')!.effect!.fallbackOnlyIfNoConvert) out.push({ kind: 'refactor', mode: 'points' });
       return out;
     }
     case 'nda':
