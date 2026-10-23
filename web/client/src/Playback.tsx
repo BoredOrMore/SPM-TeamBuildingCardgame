@@ -4,16 +4,19 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CardInstance, GameEvent } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
-import { Card, eventLine, idOfUid, isAction } from './cards.js';
+import { Card, CardBack, eventLine, idOfUid, isAction } from './cards.js';
 import { sfx, type Sfx } from './sound.js';
 
 /** Spotlight speeds a player can pick. */
 export const SPEEDS = ['normal', 'fast'] as const;
 export type Speed = (typeof SPEEDS)[number];
-/** Per speed: how long one spotlight stays on screen, and how long its card takes to fly to its zone at the end of it. */
-const TIMING: Record<Speed, { spotlightMs: number; flightMs: number }> = {
-  normal: { spotlightMs: 1500, flightMs: 550 },
-  fast: { spotlightMs: 750, flightMs: 300 },
+/**
+ * Per speed: how long one spotlight stays on screen, how long its card takes to fly to its zone at the end of it,
+ * and how long the reveal flips each card, one seat after another `flipStaggerMs` apart.
+ */
+const TIMING: Record<Speed, { spotlightMs: number; flightMs: number; flipMs: number; flipStaggerMs: number }> = {
+  normal: { spotlightMs: 1500, flightMs: 550, flipMs: 400, flipStaggerMs: 80 },
+  fast: { spotlightMs: 750, flightMs: 300, flipMs: 250, flipStaggerMs: 50 },
 };
 /** Events that change nothing a player needs to watch; the status bar already says whose turn it is. */
 const SILENT = new Set(['card_picked', 'teams_updated', 'decision_made', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
@@ -44,6 +47,8 @@ interface SpotCard {
   id: string;
   /** zone (data-zone selector) the card flies to; none keeps it in place */
   to?: string;
+  /** on a flip step, the order of the seat that played it, which sets when it turns over */
+  seatOrder?: number;
 }
 
 export interface Step {
@@ -56,6 +61,8 @@ export interface Step {
   /** floating "+N" by a seat */
   bonus?: { seat: number; points: number };
   sound?: Sfx;
+  /** every card starts face down and turns over, as when the table reveals together */
+  flip?: boolean;
 }
 
 const zone = (name: string) => `[data-zone="${name}"]`;
@@ -108,7 +115,18 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
   for (const e of events) {
     if (SILENT.has(e.type)) continue;
     if (e.type === 'cards_revealed') {
-      for (const r of e.cards as Array<{ player: number; cards: CardInstance[] }>) {
+      const reveals = e.cards as Array<{ player: number; cards: CardInstance[] }>;
+      // everyone's picks turn over together first, then each player's play is shown on its own
+      steps.push({
+        key: `${e.seq}-flip`,
+        line: 'Everyone reveals',
+        icon: 'ri-eye-line',
+        seats: reveals.map((r) => r.player),
+        cards: reveals.flatMap((r, seatOrder) => r.cards.map((c) => ({ id: c.id, seatOrder }))),
+        sound: SOUND_OF[e.type],
+        flip: true,
+      });
+      for (const r of reveals) {
         steps.push({
           key: `${e.seq}-${r.player}`,
           line: eventLine(view, { ...e, cards: [r] })!,
@@ -116,7 +134,6 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
           seats: [r.player],
           // played Action cards go to the discard pile, the rest join the team
           cards: r.cards.map((c) => ({ id: c.id, to: isAction(c.id) ? zone('deck') : zone(`team-${r.player}`) })),
-          sound: SOUND_OF[e.type],
         });
       }
       continue;
@@ -251,7 +268,26 @@ export function PlaybackOverlay({ step, speed, onSkip }: { step: Step | undefine
   return (
     <div className="playback" onClick={onSkip}>
       <div key={step.key} className="spotlight" role="status">
-        {step.cards.length > 0 ? (
+        {step.flip ? (
+          <div className="spot-cards flip-row">
+            {step.cards.map((c, i) => (
+              <div
+                key={i}
+                className="flip-card"
+                style={{ '--flip-ms': `${TIMING[speed].flipMs}ms`, '--flip-delay': `${(c.seatOrder ?? 0) * TIMING[speed].flipStaggerMs}ms` } as React.CSSProperties}
+              >
+                <div className="flip-inner">
+                  <div className="flip-back">
+                    <CardBack deck="main" />
+                  </div>
+                  <div className="flip-front">
+                    <Card id={c.id} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : step.cards.length > 0 ? (
           <div ref={cards} className="spot-cards">
             {step.cards.map((c, i) => (
               <div key={i} className="spot-card">
