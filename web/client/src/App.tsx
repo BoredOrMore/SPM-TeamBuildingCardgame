@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { GameView, LobbyView, View } from '../../shared/protocol.js';
-import { Card, CardText, cardName, choiceLabel, decisionTitle, eventLine, idOfUid } from './cards.js';
+import { Hand } from './Hand.js';
+import { Card, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, eventLine, idOfUid } from './cards.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 const NAME_KEY = 'hh_name';
@@ -42,6 +43,7 @@ export function App() {
   };
 
   return (
+    <PreviewProvider>
     <div className="app">
       {!conn || !view ? (
         <Home busy={!!conn} onCreate={(name) => connect(() => createRoom(name, handlers.current))} onJoin={(code, name) => connect(() => joinRoom(code, name, handlers.current))} />
@@ -52,6 +54,7 @@ export function App() {
       )}
       {toast && <div className="toast">{toast}</div>}
     </div>
+    </PreviewProvider>
   );
 }
 
@@ -126,18 +129,8 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
 
 /** The table: crisis and goals, other players, your team, your hand, and the current decision. */
 function Game({ view, conn }: { view: GameView; conn: Connection }) {
-  const [selected, setSelected] = useState<string[]>([]);
   const me = view.players[view.you]!;
-  const need = Math.min(view.picksRequired, view.hand.length);
-  const picking = view.stage === 'pick' && !view.picked;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
-
-  // a new turn or a new hand clears any half-made selection
-  const handKey = view.hand.map((c) => c.uid).join();
-  useEffect(() => setSelected([]), [handKey, view.turn]);
-
-  const toggle = (uid: string) =>
-    setSelected((s) => (s.includes(uid) ? s.filter((x) => x !== uid) : need === 1 ? [uid] : s.length < need ? [...s, uid] : s));
 
   if (view.result) return <Results view={view} conn={conn} />;
 
@@ -218,34 +211,7 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
         )
       )}
 
-      <section className="hand">
-        <h2>
-          Your hand{' '}
-          {picking ? (
-            <span className="muted">
-              pick {need} ({selected.length}/{need})
-            </span>
-          ) : view.stage === 'pick' ? (
-            <span className="muted">waiting for others…</span>
-          ) : null}
-        </h2>
-        <div className="hand-cards">
-          {view.hand.map((c) => (
-            <Card
-              key={c.uid}
-              id={c.id}
-              selected={selected.includes(c.uid) || !!view.picked?.includes(c.uid)}
-              dim={!picking && !view.picked?.includes(c.uid)}
-              onClick={picking ? () => toggle(c.uid) : undefined}
-            />
-          ))}
-        </div>
-        {picking && (
-          <button className="primary play" disabled={selected.length !== need} onClick={() => conn.send('pick', { cards: selected })}>
-            Play {selected.length === 1 ? cardName(view.hand.find((c) => c.uid === selected[0])?.id ?? '') : `${selected.length} cards`}
-          </button>
-        )}
-      </section>
+      <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
 
       <Log view={view} />
     </main>

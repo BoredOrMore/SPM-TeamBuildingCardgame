@@ -19,6 +19,13 @@ npm run dev        # room server on :2567 + web app on :5173
 
 Open http://localhost:5173, create a room, and share the code. Phones and iPads on the same Wi-Fi open `http://<your computer's IP>:5173` (Vite prints it as "Network"). The host can add bots to fill seats.
 
+## Playing a card
+
+- **Hold** a card (about a third of a second) to see it large with what each icon means.
+- **Drag** it onto the dashed play zone and let go to play it. When a turn asks for 2 cards, the play goes out once both are in the zone.
+- Tapping a card and pressing **Play** also works, for keyboards and anyone who prefers it.
+- On a phone, a quick swipe over the hand still scrolls the page; only a hold picks a card up.
+
 ```bash
 npm test
 npm run typecheck
