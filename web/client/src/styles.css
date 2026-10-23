@@ -73,12 +73,39 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .card .card-text { padding: 0 8px; font-size: 0.8rem; line-height: 1.35; }
 .card.small { width: auto; min-height: 0; padding: 0; }
 .card.small .card-name { font-size: 0.75rem; padding: 4px 8px; }
+.card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .card.clickable { cursor: pointer; }
+.hand-cards .card { cursor: grab; }
+.card.lifted { transform: translateY(-10px) scale(1.04); box-shadow: 0 10px 24px rgb(0 0 0 / 0.2); }
 .card.clickable:hover { transform: translateY(-4px); }
 .card.selected { transform: translateY(-8px); box-shadow: 0 0 0 3px var(--accent); }
 .card.dim { opacity: 0.55; }
 .card:disabled { cursor: default; }
 .kw { font-size: 1.05em; vertical-align: -0.15em; margin: 0 1px; color: var(--ink); }
+
+/* drag-and-hold */
+.play-zone {
+  min-height: 64px; margin-bottom: 10px; padding: 10px; border: 2px dashed var(--line); border-radius: 12px;
+  display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;
+  /* stays on screen while you scroll down a long hand on a phone */
+  position: sticky; top: 8px; z-index: 10; background: var(--panel);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.play-zone.armed { border-color: var(--accent); background: #eef4fa; }
+.play-zone.over { border-style: solid; background: #d9e7f4; }
+.zone-count { position: absolute; right: 10px; top: 6px; font-size: 0.8rem; color: var(--muted); }
+.drag-ghost { position: fixed; z-index: 20; pointer-events: none; transform: translate(-50%, -60%) rotate(-3deg) scale(1.05); filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.25)); }
+.drag-ghost .card { width: 132px; }
+.preview {
+  position: fixed; inset: 0; z-index: 30; pointer-events: none; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; background: rgb(43 42 51 / 0.45); padding: 16px;
+}
+.preview-card { width: min(260px, 70vw); }
+.preview-card .card-name { display: block; }
+.preview-card { background: var(--panel); border-radius: 14px; overflow: hidden; border: 3px solid var(--frame); font-size: 1.25rem; }
+.preview-card .card-name { background: var(--frame); color: #fff; font-weight: 700; padding: 10px 12px; }
+.preview-card .card-text { display: block; padding: 12px; min-height: 120px; line-height: 1.4; }
+.preview-keywords { list-style: none; margin: 0; padding: 10px 12px; background: var(--panel); border-radius: 12px; max-width: min(420px, 100%); font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%);

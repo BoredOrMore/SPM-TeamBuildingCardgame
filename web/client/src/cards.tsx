@@ -1,5 +1,6 @@
 // Card faces and the text helpers that name cards, decisions and events.
 
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import cardsJson from '../../../data/cards.json';
 import keywordsJson from '../../../data/keywords.json';
 import type { CardDef, CardInstance, CardsFile, Choice, GameEvent } from '../../../src/index.js';
@@ -46,18 +47,142 @@ export function CardText({ text }: { text: string }) {
   );
 }
 
-/** One card face. */
-export function Card(props: { id: string; selected?: boolean; dim?: boolean; small?: boolean; shield?: boolean; onClick?: () => void }) {
-  const def = CARD_DEFS.get(props.id);
-  const classes = ['card', props.small && 'small', props.selected && 'selected', props.dim && 'dim', props.onClick && 'clickable'].filter(Boolean).join(' ');
+/** How long a press must last to count as a hold. */
+export const HOLD_MS = 350;
+/** How far a pointer may wander, in px, and still count as holding still. */
+export const STILL_PX = 8;
+
+/** Opens the big preview of a card; set by PreviewProvider. */
+const PreviewContext = createContext<(id: string | undefined) => void>(() => {});
+
+/** Opens or closes the big card preview. */
+export const usePreview = () => useContext(PreviewContext);
+
+/** Shows a large card with its keyword meanings while a card is held. */
+export function PreviewProvider({ children }: { children: ReactNode }) {
+  const [id, setId] = useState<string>();
+  useEffect(() => {
+    if (!id) return;
+    const close = () => setId(undefined);
+    window.addEventListener('pointerup', close);
+    window.addEventListener('pointercancel', close);
+    return () => {
+      window.removeEventListener('pointerup', close);
+      window.removeEventListener('pointercancel', close);
+    };
+  }, [id]);
   return (
-    <button type="button" className={classes} style={{ '--frame': frameColor(def) } as React.CSSProperties} onClick={props.onClick} disabled={!props.onClick} title={def?.text}>
+    <PreviewContext.Provider value={setId}>
+      {children}
+      {id && <CardPreview id={id} />}
+    </PreviewContext.Provider>
+  );
+}
+
+/** The big card and one line per keyword or icon it uses. */
+function CardPreview({ id }: { id: string }) {
+  const def = CARD_DEFS.get(id);
+  const codes = [...new Set([...(def?.cardText ?? '').matchAll(/\{([A-Z]+)\}/g)].map((m) => m[1]!))];
+  return (
+    <div className="preview" aria-live="polite">
+      <div className="preview-card" style={{ '--frame': frameColor(def) } as React.CSSProperties}>
+        <CardFace id={id} />
+      </div>
+      {codes.length > 0 && (
+        <ul className="preview-keywords">
+          {codes.map((code) => {
+            const icon = ICONS.get(code);
+            return icon ? (
+              <li key={code}>
+                <i className={`ri-${icon.icon}-line kw`} /> <b>{code}</b> {icon.reminder ?? icon.meaning}
+              </li>
+            ) : null;
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Name bar and text of a card, without any behaviour. */
+function CardFace({ id, small, shield }: { id: string; small?: boolean; shield?: boolean }) {
+  const def = CARD_DEFS.get(id);
+  return (
+    <>
       <span className="card-name">
-        {def?.name ?? props.id}
-        {props.shield && <i className="ri-shield-line" aria-label="protected" />}
+        {def?.name ?? id}
+        {shield && <i className="ri-shield-line" aria-label="protected" />}
       </span>
-      {!props.small && <span className="card-text">{def?.cardText ? <CardText text={def.cardText} /> : def?.text}</span>}
-    </button>
+      {!small && <span className="card-text">{def?.cardText ? <CardText text={def.cardText} /> : def?.text}</span>}
+    </>
+  );
+}
+
+/**
+ * One card face. Holding it still opens the big preview, unless `onPointerDown` is given:
+ * then the caller owns the gestures (the hand uses this for drag-and-hold).
+ */
+export function Card(props: {
+  id: string;
+  selected?: boolean;
+  dim?: boolean;
+  small?: boolean;
+  shield?: boolean;
+  lifted?: boolean;
+  onClick?: () => void;
+  onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
+}) {
+  const preview = usePreview();
+  const hold = useRef<{ timer: number; x: number; y: number; fired: boolean }>(undefined);
+  const def = CARD_DEFS.get(props.id);
+  const classes = ['card', props.small && 'small', props.selected && 'selected', props.dim && 'dim', props.lifted && 'lifted', props.onClick && 'clickable']
+    .filter(Boolean)
+    .join(' ');
+
+  const cancelHold = () => {
+    if (hold.current) clearTimeout(hold.current.timer);
+  };
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (props.onPointerDown) return props.onPointerDown(e);
+    cancelHold();
+    const h = { x: e.clientX, y: e.clientY, fired: false, timer: 0 };
+    h.timer = window.setTimeout(() => {
+      h.fired = true;
+      preview(props.id);
+    }, HOLD_MS);
+    hold.current = h;
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const h = hold.current;
+    if (h && !h.fired && Math.hypot(e.clientX - h.x, e.clientY - h.y) > STILL_PX) cancelHold();
+  };
+
+  return (
+    <div
+      role={props.onClick ? 'button' : undefined}
+      tabIndex={props.onClick ? 0 : undefined}
+      className={classes}
+      style={{ '--frame': frameColor(def) } as React.CSSProperties}
+      title={def?.text}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={cancelHold}
+      onPointerCancel={cancelHold}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => {
+        // a hold that opened the preview is not also a tap
+        if (hold.current?.fired) return void (hold.current = undefined);
+        props.onClick?.();
+      }}
+      onKeyDown={(e) => {
+        if (props.onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          props.onClick();
+        }
+      }}
+    >
+      <CardFace id={props.id} small={props.small} shield={props.shield} />
+    </div>
   );
 }
 
