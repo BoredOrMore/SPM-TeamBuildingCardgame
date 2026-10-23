@@ -248,7 +248,7 @@
     {
       "id": "P26",
       "topic": "QA/Bug pairing side effects",
-      "current": "paired Bugs do not count for 'no bug' conditions; paired QA still counts as a role type",
+      "current": "QA keeps its points when it fixes a Bug; fixed Bugs score 0 and do not count for 'no bug' conditions; QA still counts as a role type",
       "alternatives": [
         "paired cards vanish from every check"
       ],

@@ -69,8 +69,8 @@ describe('crisis bonuses', () => {
   it('Unicorn Hype: +3 per role type, +3 more with no unpaired Bug', () => {
     const full = { junior_dev: 1, project_manager: 1, designer: 1, qa_tester: 1 };
     expect(score(full, { crisis: ['unicorn_hype'] }).total).toBe(2 + 1 + 2 + 3 + 15);
-    expect(score({ ...full, bug: 1 }, { crisis: ['unicorn_hype'] }).total).toBe(2 + 1 + 2 + 15); // QA pairs with the Bug
-    expect(score({ ...full, bug: 2 }, { crisis: ['unicorn_hype'] }).total).toBe(2 + 1 + 2 - 3 + 12);
+    expect(score({ ...full, bug: 1 }, { crisis: ['unicorn_hype'] }).total).toBe(2 + 1 + 2 + 3 + 15); // QA fixes the Bug and keeps its points
+    expect(score({ ...full, bug: 2 }, { crisis: ['unicorn_hype'] }).total).toBe(2 + 1 + 2 + 3 - 3 + 12);
     expect(score({ designer: 1, bug: 1 }, { crisis: ['unicorn_hype'] }).total).toBe(2 - 3 + 3);
   });
 
@@ -82,7 +82,7 @@ describe('crisis bonuses', () => {
   it('Unicorn Rush: +6 with 3 roles and no Bug, Coffee -2 always [P39]', () => {
     expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 3 + 1 + 6 - 2);
     expect(score({ junior_dev: 1, designer: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 1 - 2);
-    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, bug: 2 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 - 3);
+    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, bug: 2 }, { meta: ['unicorn_rush'] }).total).toBe(1 + 2 + 3 - 3);
   });
 
   it('Viral Success: most Designers +2, others +1', () => {

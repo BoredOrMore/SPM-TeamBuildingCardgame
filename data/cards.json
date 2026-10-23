@@ -70,7 +70,7 @@
         "quantity": 8,
         "text": "3 points each. Can fix 1 Bug per QA.",
         "cardText": "+3 · Fixes 1 {BUG}",
-        "effect": { "kind": "per_card", "points": 3, "pairsWith": "bug", "pairResult": "both_removed" }
+        "effect": { "kind": "per_card", "points": 3, "pairsWith": "bug", "pairResult": "bug_removed" }
       },
       {
         "id": "coffee",
@@ -88,7 +88,7 @@
         "quantity": 10,
         "text": "-3 points each. Can be fixed by QA Tester.",
         "cardText": "-3 · {QA} can fix it",
-        "effect": { "kind": "per_card", "points": -3, "pairsWith": "qa_tester", "pairResult": "both_removed" }
+        "effect": { "kind": "per_card", "points": -3, "pairsWith": "qa_tester", "pairResult": "bug_removed" }
       },
       {
         "id": "freelance",
