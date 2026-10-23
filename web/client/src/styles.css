@@ -132,3 +132,26 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .card { width: calc(50% - 3px); min-height: 96px; }
   .card.small { width: auto; }
 }
+
+/* event playback */
+.playback { position: fixed; inset: 0; z-index: 40; cursor: pointer; }
+.banner {
+  position: fixed; left: 50%; top: 22%; transform: translateX(-50%); max-width: calc(100% - 32px); width: max-content;
+  display: flex; gap: 12px; align-items: center; padding: 14px 20px; border-radius: 14px;
+  background: var(--ink); color: #fff; font-weight: 600; font-size: 1.05rem; box-shadow: 0 12px 32px rgb(0 0 0 / 0.3);
+  animation: banner-in 220ms ease-out;
+}
+.banner > i { font-size: 1.8rem; }
+.flight { position: fixed; left: 0; top: 0; z-index: 41; pointer-events: none; transform: translate(-200vw, 0); }
+.bonus-float { position: fixed; z-index: 42; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 800; color: #2e8b57; animation: bonus-up 1200ms ease-out forwards; }
+.app.playing .play { visibility: hidden; }
+.skip-hint { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: var(--muted); }
+.pulse { animation: pulse 900ms ease-in-out 1; box-shadow: 0 0 0 3px #e9a23b; }
+
+@keyframes banner-in { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes bonus-up { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -160%); } }
+@keyframes pulse { 50% { transform: scale(1.02); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .banner, .bonus-float, .pulse { animation: none; }
+}

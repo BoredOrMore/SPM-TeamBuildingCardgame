@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
+import { PlaybackOverlay, usePlayback } from './Playback.js';
 import { Card, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, eventLine, idOfUid } from './cards.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
@@ -13,6 +14,8 @@ const TOAST_MS = 3500;
 export function App() {
   const [conn, setConn] = useState<Connection>();
   const [view, setView] = useState<View>();
+  const playback = usePlayback(view);
+  const shown = playback.shown;
   const [toast, setToast] = useState<string>();
   const handlers = useRef<Handlers>({
     onView: setView,
@@ -44,14 +47,15 @@ export function App() {
 
   return (
     <PreviewProvider>
-    <div className="app">
-      {!conn || !view ? (
+    <div className={`app ${playback.step ? 'playing' : ''}`}>
+      {!conn || !shown ? (
         <Home busy={!!conn} onCreate={(name) => connect(() => createRoom(name, handlers.current))} onJoin={(code, name) => connect(() => joinRoom(code, name, handlers.current))} />
-      ) : view.phase === 'lobby' ? (
-        <Lobby view={view} conn={conn} />
+      ) : shown.phase === 'lobby' ? (
+        <Lobby view={shown} conn={conn} />
       ) : (
-        <Game view={view} conn={conn} />
+        <Game view={shown} conn={conn} />
       )}
+      <PlaybackOverlay step={playback.step} onSkip={playback.skip} />
       {toast && <div className="toast">{toast}</div>}
     </div>
     </PreviewProvider>
@@ -146,7 +150,7 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
         </span>
       </header>
 
-      <section className="goals">
+      <section className="goals" data-zone="crisis">
         {view.visibleCrisis.map((c) => (
           <Card key={c.uid} id={c.id} small />
         ))}
@@ -156,7 +160,7 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
         {view.privateMeta.map((id) => (
           <Card key={id} id={id} small />
         ))}
-        <span className="muted deck-count">
+        <span className="muted deck-count" data-zone="deck">
           Deck {view.mainRemaining} · Crisis {view.crisisRemaining}
         </span>
       </section>
@@ -165,7 +169,7 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
         {view.players
           .filter((p) => p.seat !== view.you)
           .map((p) => (
-            <div key={p.seat} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
+            <div key={p.seat} data-zone={`seat-${p.seat}`} className={`opponent ${view.decision?.player === p.seat ? 'acting' : ''}`}>
               <div className="opp-head">
                 <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
                 {!p.connected && <span className="tag warn">offline</span>}
@@ -175,19 +179,19 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
                 </span>
                 {view.stage === 'pick' && <span className="tag">{p.hasPicked ? 'ready' : 'picking…'}</span>}
               </div>
-              <div className="mini-team">
+              <div className="mini-team" data-zone={`team-${p.seat}`}>
                 {p.team.map((c) => (
-                  <Card key={c.uid} id={c.id} small shield={p.protected.includes(c.uid)} />
+                  <Card key={c.uid} uid={c.uid} id={c.id} small shield={p.protected.includes(c.uid)} />
                 ))}
               </div>
             </div>
           ))}
       </section>
 
-      <section className="my-team">
+      <section className="my-team" data-zone={`seat-${view.you}`}>
         <h2>Your team</h2>
-        <div className="mini-team">
-          {me.team.length ? me.team.map((c) => <Card key={c.uid} id={c.id} small shield={me.protected.includes(c.uid)} />) : <span className="muted">No one hired yet</span>}
+        <div className="mini-team" data-zone={`team-${view.you}`}>
+          {me.team.length ? me.team.map((c) => <Card key={c.uid} uid={c.uid} id={c.id} small shield={me.protected.includes(c.uid)} />) : <span className="muted">No one hired yet</span>}
         </div>
       </section>
 

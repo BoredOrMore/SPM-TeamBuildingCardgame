@@ -175,10 +175,11 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
           <span className="muted">waiting for others…</span>
         ) : null}
       </h2>
-      <div className="hand-cards">
+      <div className="hand-cards" data-zone="hand">
         {view.hand.map((c) => (
           <Card
             key={c.uid}
+            uid={c.uid}
             id={c.id}
             selected={staged.includes(c.uid) || !!view.picked?.includes(c.uid)}
             dim={(!picking && !view.picked?.includes(c.uid)) || dragging?.uid === c.uid}

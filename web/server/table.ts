@@ -174,7 +174,10 @@ export class Table {
         context: decision.context,
       },
       yourScore: currentScores(this.data, state)[you]!,
-      events: state.events.filter((e) => !e.visibleTo || e.visibleTo.includes(you)).slice(-EVENT_LOG_SIZE),
+      events: state.events
+        .map((e, seq) => ({ ...e, seq }))
+        .filter((e) => !e.visibleTo || e.visibleTo.includes(you))
+        .slice(-EVENT_LOG_SIZE),
       result: state.result,
     };
     return structuredClone(view);
