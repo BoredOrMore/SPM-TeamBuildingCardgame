@@ -92,8 +92,8 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const team = input.teams[seat] ?? [];
   const c = countCards(team);
   const lines: ScoreLine[] = [];
-  const add = (label: string, points: number) => {
-    if (points !== 0) lines.push({ label, points });
+  const add = (label: string, points: number, detail?: string) => {
+    if (points !== 0) lines.push(detail ? { label, points, detail } : { label, points });
   };
 
   const crisis = input.visibleCrisis.filter((x) => !cancelled.has(x.uid));
@@ -106,12 +106,17 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const leftoverBug = n(c, 'bug') - pairs;
   // Bug overrides from Meta apply to everyone, the harshest wins [P31].
   let bugValue = bugEff.points as number;
+  let bugRule: string | undefined;
   for (const m of input.activeMeta) {
     const override = effectOf(data, m).override as { cardId: string; points: number } | undefined;
-    if (override?.cardId === 'bug') bugValue = Math.min(bugValue, override.points);
+    if (override?.cardId === 'bug' && override.points < bugValue) {
+      bugValue = override.points;
+      bugRule = data.byId.get(m)?.name ?? m;
+    }
   }
-  add('QA Tester', n(c, 'qa_tester') * (qaEff.points as number));
-  add('Bug (unpaired)', leftoverBug * bugValue);
+  const fixed = pairs > 0 ? ` · fixed ${pairs} {BUG}` : '';
+  add('QA Tester', n(c, 'qa_tester') * (qaEff.points as number), `${n(c, 'qa_tester')} × ${qaEff.points as number}${fixed}`);
+  add('Bug (unpaired)', leftoverBug * bugValue, `${leftoverBug} × ${bugValue}${bugRule ? ` (${bugRule})` : ''}`);
 
   const effective: Counts = new Map(c);
   effective.set('bug', leftoverBug);
@@ -125,8 +130,11 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   let factor = 1;
   if (pms >= pmRule.conflictAtCount) factor = pmRule.conflictScore;
   else if (pms > 0) factor = pmRule.factor;
-  add('Junior Developer', tierScore(juniorEff.tiers as number[], juniors, juniorEff.pointsEachAfterTiers as number) * factor);
-  add('Project Manager', pms * (effectOf(data, 'project_manager').points as number));
+  const juniorBase = tierScore(juniorEff.tiers as number[], juniors, juniorEff.pointsEachAfterTiers as number);
+  const pmNote = pms >= pmRule.conflictAtCount ? ` · ${pms} {PM}: = ${factor}` : pms > 0 ? ` × ${factor} ({PM})` : '';
+  add('Junior Developer', juniorBase * factor, `${juniors} {JUNIOR} = ${juniorBase}${pmNote}`);
+  const pmPoints = effectOf(data, 'project_manager').points as number;
+  add('Project Manager', pms * pmPoints, `${pms} × ${pmPoints}`);
 
   const seniors = n(c, 'senior_dev');
   const seniorEff = effectOf(data, 'senior_dev');
@@ -135,35 +143,40 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   // Merge Conflict sets every Senior to a fixed value; each visible Technical Debt copy still applies [P28].
   const mergeConflict = crisisCount('merge_conflict') > 0;
   const seniorValue = mergeConflict ? Math.min(perSenior, effectOf(data, 'merge_conflict').points as number) : perSenior;
-  add(mergeConflict ? 'Senior Developer (Merge Conflict)' : 'Senior Developer', seniors * seniorValue);
-  add('Technical Debt', -crisisCount('technical_debt') * seniors);
+  const seniorNote = n(c, ifMissing.cardId) > 0 ? '' : ` (no ${data.byId.get(ifMissing.cardId)?.name ?? ifMissing.cardId})`;
+  add(mergeConflict ? 'Senior Developer (Merge Conflict)' : 'Senior Developer', seniors * seniorValue, `${seniors} × ${seniorValue}${seniorNote}`);
+  add('Technical Debt', -crisisCount('technical_debt') * seniors, `-1 × ${seniors} {SENIOR}`);
 
-  add('UX/UI Designer', tierScore(effectOf(data, 'designer').tiers as number[], n(c, 'designer')));
+  add('UX/UI Designer', tierScore(effectOf(data, 'designer').tiers as number[], n(c, 'designer')), `${n(c, 'designer')} {DESIGNER}`);
 
   // Step 3: event cards.
   const scopeCreep = crisisCount('scope_creep') > 0;
-  add('Coffee', scopeCreep ? 0 : n(c, 'coffee') * (effectOf(data, 'coffee').points as number));
-  add('Freelance', scopeCreep ? 0 : n(c, 'freelance') * (effectOf(data, 'freelance').points as number));
+  for (const [id, label] of [['coffee', 'Coffee'], ['freelance', 'Freelance']] as const) {
+    const each = effectOf(data, id).points as number;
+    add(label, scopeCreep ? 0 : n(c, id) * each, `${n(c, id)} × ${each}`);
+  }
   const invEff = effectOf(data, 'investors');
   const allGroups = Object.keys(data.cards.roleGroups).length;
   const fullTeam = groups >= allGroups;
   if (!scopeCreep) {
     const perInvestor = groups * (invEff.pointsPerRoleType as number) + (fullTeam ? (invEff.fullTeamPoints as number) : 0);
-    add('Investors', n(c, 'investors') * perInvestor);
+    add('Investors', n(c, 'investors') * perInvestor, `${n(c, 'investors')} × ${perInvestor} (${groups} role types${fullTeam ? ', full team' : ''})`);
   }
 
   // Step 4: boosts. Upskill picks the role with the most cards; Employee of the Month stacks [P16].
   const roleIds = [...data.byId.values()].filter((d) => d.type === 'role').map((d) => d.id);
   const mostRole = Math.max(0, ...roleIds.map((id) => n(c, id)));
-  add('Upskill', n(c, 'upskill') * (effectOf(data, 'upskill').points as number) * mostRole);
-  if (mostRole > 0) add('Employee of the Month', n(c, 'employee_of_the_month') * (effectOf(data, 'employee_of_the_month').points as number));
+  const upskillEach = effectOf(data, 'upskill').points as number;
+  add('Upskill', n(c, 'upskill') * upskillEach * mostRole, `${n(c, 'upskill')} × ${upskillEach} × ${mostRole} (most common role)`);
+  const eotmEach = effectOf(data, 'employee_of_the_month').points as number;
+  if (mostRole > 0) add('Employee of the Month', n(c, 'employee_of_the_month') * eotmEach, `${n(c, 'employee_of_the_month')} × ${eotmEach}`);
 
   // Step 5: Meta bonuses.
   for (const id of input.activeMeta) {
     const raw = metaPoints(id, effectOf(data, id), input, effective, groups);
     // Only bonuses are scaled [P35]; fractions round down [P32].
     const points = raw > 0 ? Math.floor(raw * data.rules.scoring.metaMultiplier) : raw;
-    add(`Meta: ${data.byId.get(id)?.name ?? id}`, points);
+    add(`Meta: ${data.byId.get(id)?.name ?? id}`, points, data.byId.get(id)?.cardText);
   }
 
   // Step 6: Crisis bonuses and play-time bonuses.
@@ -171,12 +184,14 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   for (const [id, label] of [['unicorn_hype', 'Unicorn Hype'], ['product_launch', 'Product Launch']] as const) {
     if (crisisCount(id) === 0) continue;
     const eff = effectOf(data, id);
-    add(label, groups * (eff.pointsPerRoleType as number) + (leftoverBug === 0 ? (eff.cleanPoints as number) : 0));
+    const clean = leftoverBug === 0 ? (eff.cleanPoints as number) : 0;
+    add(label, groups * (eff.pointsPerRoleType as number) + clean, `${groups} role types × ${eff.pointsPerRoleType as number}${clean ? ` + ${clean} {CLEAN}` : ''}`);
   }
   if (crisisCount('viral_success') > 0 && n(c, 'designer') > 0) {
     const eff = effectOf(data, 'viral_success');
     const most = Math.max(...input.teams.map((t) => countCards(t).get('designer') ?? 0));
-    add('Viral Success', n(c, 'designer') === most ? (eff.mostPoints as number) : (eff.otherPoints as number));
+    const isMost = n(c, 'designer') === most;
+    add('Viral Success', isMost ? (eff.mostPoints as number) : (eff.otherPoints as number), isMost ? `most {DESIGNER} (${most})` : `${n(c, 'designer')} {DESIGNER}, not the most`);
   }
   for (const b of input.bonuses) add(b.source, b.points);
 

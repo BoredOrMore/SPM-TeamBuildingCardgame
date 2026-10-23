@@ -336,12 +336,26 @@ function Results({ view, conn }: { view: GameView; conn: Connection }) {
           <h2>
             {view.result!.winners.includes(s.seat) && <i className="ri-trophy-line" />} {view.players[s.seat]?.name} · {s.total}
           </h2>
-          <ul>
+          <TeamChips team={view.players[s.seat]?.team ?? []} protectedUids={[]} zone={`result-${s.seat}`} />
+          <ul className="breakdown">
             {s.lines.map((l, i) => (
               <li key={i}>
-                <CardText text={l.label} /> <b>{l.points}</b>
+                <span>
+                  {/* play-time bonuses are labelled by the card id that gave them */}
+                  <b>{cardName(l.label)}</b>
+                  {l.detail && (
+                    <span className="muted detail">
+                      <CardText text={l.detail} />
+                    </span>
+                  )}
+                </span>
+                <b className={l.points < 0 ? 'minus' : 'plus'}>{l.points > 0 ? `+${l.points}` : l.points}</b>
               </li>
             ))}
+            <li className="total">
+              <b>Total</b>
+              <b>{s.total}</b>
+            </li>
           </ul>
         </div>
       ))}

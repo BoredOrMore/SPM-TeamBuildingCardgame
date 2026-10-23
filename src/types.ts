@@ -140,6 +140,8 @@ export interface GameEvent {
 export interface ScoreLine {
   label: string;
   points: number;
+  /** how the points were counted, e.g. "2 × -5 (Zero Defect Premium)"; may hold {CODE} icons */
+  detail?: string;
 }
 
 export interface ScoreResult {
