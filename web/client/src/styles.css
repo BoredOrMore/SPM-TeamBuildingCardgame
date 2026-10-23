@@ -77,9 +77,6 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .app.in-game .hand-cards .card .card-text { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
 }
-@media (min-width: 900px) {
-  .app.in-game .hand-cards { flex-wrap: wrap; overflow-x: visible; }
-}
 
 /* your decision, as a sheet over the hand */
 .sheet {
