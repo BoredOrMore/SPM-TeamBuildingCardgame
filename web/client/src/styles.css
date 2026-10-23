@@ -47,7 +47,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 
 /* table */
 .game { display: flex; flex-direction: column; gap: 12px; }
-.topbar { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
+.topbar { container: topbar / inline-size; position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 8px; font-weight: 600; }
 .topbar button.speed { padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 /* phones: the room code is in the lobby, the round and turn stay on one line */
 @media (max-width: 600px) { .topbar .room { display: none; } }
@@ -190,7 +190,11 @@ button.picker-tile.picked { border-color: var(--accent); }
   position: absolute; z-index: 35; top: calc(100% + 6px); right: 0; width: min(380px, calc(100vw - 24px)); max-height: 60dvh; overflow-y: auto;
   padding: 0 12px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.18); white-space: normal; font-weight: 400;
 }
-@media (max-width: 1100px) { .topbar .log .label { display: none; } }
+/* the topbar's own width decides (the rules panel narrows it): the room and labels give way before anything overflows */
+@container topbar (max-width: 1060px) { .topbar .log .label, .topbar .room { display: none; } }
+@container topbar (max-width: 860px) { .topbar .rules-button .label, .topbar .speed .label { display: none; } }
+/* too narrow for the round track beside the buttons: it gets its own line under them, as on a phone */
+@container topbar (max-width: 720px) { .round-track { order: 1; flex-basis: 100%; } }
 
 /* card backs: hidden cards show only their deck */
 .card-back {
