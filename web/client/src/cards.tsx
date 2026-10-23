@@ -41,6 +41,11 @@ export function cardName(id: string): string {
   return CARD_DEFS.get(id)?.name ?? id;
 }
 
+/** Whether a card is an Action card, which goes to the discard pile once played. */
+export function isAction(id: string): boolean {
+  return CARD_DEFS.get(id)?.type === 'action';
+}
+
 /** Frame colour of a card: its type, or its deck for Crisis and Meta. */
 function frameColor(def: (CardDef & { deck: Deck }) | undefined): string {
   if (!def) return '#888';

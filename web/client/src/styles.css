@@ -47,6 +47,8 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .game { display: flex; flex-direction: column; gap: 12px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 .score { font-size: 1.2rem; }
+.now { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--line); font-weight: 600; text-align: center; }
+.now.yours { background: var(--accent); color: #fff; }
 .goals, .mini-team, .hand-cards { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .deck-count { font-size: 0.8rem; }
 .opponents { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
@@ -134,24 +136,26 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 }
 
 /* event playback */
-.playback { position: fixed; inset: 0; z-index: 40; cursor: pointer; }
-.banner {
-  position: fixed; left: 50%; top: 22%; transform: translateX(-50%); max-width: calc(100% - 32px); width: max-content;
-  display: flex; gap: 12px; align-items: center; padding: 14px 20px; border-radius: 14px;
-  background: var(--ink); color: #fff; font-weight: 600; font-size: 1.05rem; box-shadow: 0 12px 32px rgb(0 0 0 / 0.3);
-  animation: banner-in 220ms ease-out;
+.playback { position: fixed; inset: 0; z-index: 40; cursor: pointer; background: rgb(20 20 30 / 0.35); }
+.spotlight {
+  position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100% - 32px);
+  display: flex; flex-direction: column; align-items: center; gap: 12px; animation: spot-in 200ms ease-out;
 }
-.banner > i { font-size: 1.8rem; }
-.flight { position: fixed; left: 0; top: 0; z-index: 41; pointer-events: none; transform: translate(-200vw, 0); }
+.spot-cards { display: flex; gap: 12px; justify-content: center; }
+.spot-card .card { width: 180px; min-height: 150px; box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }
+.spot-card .card .card-name { font-size: 1rem; padding: 8px 10px; }
+.spot-card .card .card-text { font-size: 0.95rem; padding: 0 10px; }
+.spot-icon { font-size: 3.5rem; color: #fff; }
+.spot-line { margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; font-size: 1.05rem; text-align: center; }
 .bonus-float { position: fixed; z-index: 42; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 800; color: #2e8b57; animation: bonus-up 1200ms ease-out forwards; }
 .app.playing .play { visibility: hidden; }
-.skip-hint { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: var(--muted); }
+.skip-hint { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #fff; }
 .pulse { animation: pulse 900ms ease-in-out 1; box-shadow: 0 0 0 3px #e9a23b; }
 
-@keyframes banner-in { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes spot-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes bonus-up { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -160%); } }
 @keyframes pulse { 50% { transform: scale(1.02); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .banner, .bonus-float, .pulse { animation: none; }
+  .spotlight, .bonus-float, .pulse { animation: none; }
 }

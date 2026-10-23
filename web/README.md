@@ -30,3 +30,8 @@ Open http://localhost:5173, create a room, and share the code. Phones and iPads 
 npm test
 npm run typecheck
 ```
+
+## Following the game
+
+- The bar under the turn counter always says what the game is waiting for. It turns blue when it is waiting for you.
+- After everyone plays, the game shows what happened **one thing at a time**: each player's card, then each effect and Crisis, one large card with one line saying who did what. Each step moves on by itself after 1.5 seconds, and the card then flies to where it goes. Tap anywhere to skip to the end.

@@ -53,7 +53,7 @@ export function App() {
       ) : shown.phase === 'lobby' ? (
         <Lobby view={shown} conn={conn} />
       ) : (
-        <Game view={shown} conn={conn} />
+        <Game view={shown} conn={conn} playing={!!playback.step} />
       )}
       <PlaybackOverlay step={playback.step} onSkip={playback.skip} />
       {toast && <div className="toast">{toast}</div>}
@@ -132,7 +132,7 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
 }
 
 /** The table: crisis and goals, other players, your team, your hand, and the current decision. */
-function Game({ view, conn }: { view: GameView; conn: Connection }) {
+function Game({ view, conn, playing }: { view: GameView; conn: Connection; playing: boolean }) {
   const me = view.players[view.you]!;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
 
@@ -149,6 +149,9 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
           <i className="ri-trophy-line" /> {view.yourScore.total}
         </span>
       </header>
+      <p className={`now ${!playing && (myDecision || (view.stage === 'pick' && !view.picked)) ? 'yours' : ''}`} role="status">
+        {playing ? 'Showing what happened…' : nowLine(view)}
+      </p>
 
       <section className="goals" data-zone="crisis">
         {view.visibleCrisis.map((c) => (
@@ -220,6 +223,19 @@ function Game({ view, conn }: { view: GameView; conn: Connection }) {
       <Log view={view} />
     </main>
   );
+}
+
+/** One line saying what the game is waiting for right now, and whether that is you. */
+function nowLine(view: GameView): string {
+  const d = view.decision;
+  if (d) return d.player === view.you ? `Your move: ${decisionTitle(d)}` : `Waiting for ${view.players[d.player]?.name}: ${decisionTitle(d)}`;
+  if (view.stage !== 'pick') return 'Resolving…';
+  if (!view.picked) {
+    const need = Math.min(view.picksRequired, view.hand.length);
+    return `Pick ${need === 1 ? '1 card' : `${need} cards`}: drag up to play`;
+  }
+  const waiting = view.players.filter((p) => p.seat !== view.you && !p.hasPicked).map((p) => p.name);
+  return waiting.length ? `Waiting for ${waiting.join(', ')} to pick` : 'Revealing…';
 }
 
 /** Recent public (and your private) events, newest first. */
