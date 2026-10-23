@@ -274,6 +274,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 .spot-card .card .card-name { font-size: 1rem; padding: 8px 10px; }
 .spot-card .card .card-text { font-size: 0.95rem; padding: 0 10px; }
 .spot-icon { font-size: 3.5rem; color: #fff; }
+.spot-cause { margin: 0 0 -4px; padding: 4px 12px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 700; font-size: 0.85rem; }
 .spot-line { margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; font-size: 1.05rem; text-align: center; }
 .seat-score { position: relative; display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-weight: 700; font-size: 0.9rem; }
 .score-delta { position: absolute; left: 100%; top: -4px; margin-left: 4px; font-size: 1rem; animation: score-rise 1400ms ease-out forwards; pointer-events: none; }
