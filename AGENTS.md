@@ -38,6 +38,10 @@ Every card a player reads follows the keyword system in `data/keywords.json` [P3
 7. **`cardText` must mean exactly what `text` and `effect` do.** A change in meaning is a rule change: edit `effect`, then rerun the balance simulation.
 8. **Adding, renaming or removing a code** means updating `keywords.json` (including its `icon`), every card that uses it, and the icon mapping in `/mnt/project-files/graphics/icon-mapping.md`.
 
+## Card face rules
+
+Every card face in the web app follows `web/CARD_SPEC.md`, taken from the Figma Card component: frame color, type badge top left, timing badge top right, name pill, centered text, footer label, and the size for each place a card is shown. **Check every change to card-face code against the checklist at the end of that file**, and update the spec first when the design changes.
+
 ## Mandatory rules
 
 1. **Keep diffs minimal** — touch only the files the change needs. No unrelated refactors, renames or reformatting; they hide the real change from review. Do not commit generated output (`dist/`, `node_modules/`). If you spot an unrelated problem, report it instead of fixing it.
