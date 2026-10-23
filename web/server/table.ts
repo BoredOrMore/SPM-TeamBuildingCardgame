@@ -1,7 +1,7 @@
 // One game table: lobby seats, bots, the engine state, and what each seat may see. No networking here.
 
 import { applyActionInPlace, createGame, currentDecision, currentScores, greedyBot, IllegalAction } from '../../src/index.js';
-import type { Action, Bot, GameData, GameEvent, GameState } from '../../src/index.js';
+import type { Action, Bot, CardInstance, GameData, GameEvent, GameState } from '../../src/index.js';
 import type { GameView, LobbyView, OpponentView, SeatInfo, View } from '../shared/protocol.js';
 
 /** How many recent events each view carries for the play log. */
@@ -147,10 +147,14 @@ export class Table {
       hasPicked: p.picked !== null,
       revealed: p.revealed,
     }));
+    const yourScore = currentScores(this.data, state)[you]!;
     const view: GameView = {
       phase: 'game',
       code: this.code,
       you,
+      round: state.round,
+      totalRounds: this.data.rules.rounds.count,
+      passDirection: this.data.rules.rounds.passDirection[state.round - 1]!,
       turn: state.turn,
       totalTurns: state.totalTurns,
       stage: state.stage,
@@ -173,7 +177,10 @@ export class Table {
         options: decision.player === you ? decision.options : undefined,
         context: decision.context,
       },
-      yourScore: currentScores(this.data, state)[you]!,
+      yourScore,
+      yourTotal: state.roundScores.reduce((sum, r) => sum + r[you]!.total, state.stage === 'ended' ? 0 : yourScore.total),
+      roundScores: state.roundScores,
+      roundTeams: state.events.filter((e) => e.type === 'round_ended').map((e) => e.teams as CardInstance[][]),
       events: state.events
         .map((e, seq) => ({ ...e, seq }))
         .filter((e) => !e.visibleTo || e.visibleTo.includes(you))

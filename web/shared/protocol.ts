@@ -48,6 +48,12 @@ export interface GameView {
   phase: 'game';
   code: string;
   you: number;
+  /** 1-based round, of `totalRounds` */
+  round: number;
+  totalRounds: number;
+  /** which way hands pass this round */
+  passDirection: 'left' | 'right';
+  /** turn within the round, of `totalTurns` per round */
   turn: number;
   totalTurns: number;
   stage: Stage;
@@ -65,6 +71,11 @@ export interface GameView {
   decision?: DecisionView;
   /** your score if the game ended now, counting your private Meta */
   yourScore: ScoreResult;
+  /** your points over every finished round plus this one */
+  yourTotal: number;
+  /** each finished round's scores and teams, by seat */
+  roundScores: ScoreResult[][];
+  roundTeams: CardInstance[][][];
   /** recent events you may see; `seq` is the event's position in the whole game, so the client can tell which are new */
   events: Array<GameEvent & { seq: number }>;
   result?: { scores: ScoreResult[]; winners: number[] };
