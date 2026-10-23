@@ -233,7 +233,14 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
                       <CardBack key={i} deck="main" mini />
                     ))}
                   </span>
-                  {view.stage === 'pick' && <span className="tag">{p.hasPicked ? 'ready' : 'picking…'}</span>}
+                  {view.stage === 'pick' &&
+                    (p.hasPicked ? (
+                      <span className="picked-back" title="Picked, face down">
+                        <CardBack deck="main" mini />
+                      </span>
+                    ) : (
+                      <span className="tag">picking…</span>
+                    ))}
                 </div>
                 <TeamChips team={p.team} protectedUids={p.protected} zone={`team-${p.seat}`} />
               </div>
@@ -362,7 +369,8 @@ function Log({ view }: { view: GameView }) {
   const turns: Array<{ title: string; steps: Step[] }> = [];
   for (const e of view.events) {
     if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? `Turn ${e.turn}` : 'Earlier', steps: [] });
-    turns[turns.length - 1]!.steps.push(...stepsFor(view, [e]));
+    // the flip only shows cards turning over; the per-player lines that follow say who played what
+    turns[turns.length - 1]!.steps.push(...stepsFor(view, [e]).filter((s) => !s.flip));
   }
   return (
     <details className="log">
