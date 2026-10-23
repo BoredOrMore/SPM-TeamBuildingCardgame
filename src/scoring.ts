@@ -99,11 +99,10 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const crisis = input.visibleCrisis.filter((x) => !cancelled.has(x.uid));
   const crisisCount = (id: string) => crisis.filter((x) => x.id === id).length;
 
-  // Step 1: pair QA with Bug. Paired Bugs no longer count as Bugs for "no bug" conditions [P26].
+  // Step 1: each QA fixes one Bug. QA always keeps its points; a fixed Bug scores 0 and no longer counts as a Bug [P26].
   const qaEff = effectOf(data, 'qa_tester');
   const bugEff = effectOf(data, 'bug');
   const pairs = Math.min(n(c, 'qa_tester'), n(c, 'bug'));
-  const leftoverQa = n(c, 'qa_tester') - pairs;
   const leftoverBug = n(c, 'bug') - pairs;
   // Bug overrides from Meta apply to everyone, the harshest wins [P31].
   let bugValue = bugEff.points as number;
@@ -111,7 +110,7 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
     const override = effectOf(data, m).override as { cardId: string; points: number } | undefined;
     if (override?.cardId === 'bug') bugValue = Math.min(bugValue, override.points);
   }
-  add('QA Tester (unpaired)', leftoverQa * (qaEff.points as number));
+  add('QA Tester', n(c, 'qa_tester') * (qaEff.points as number));
   add('Bug (unpaired)', leftoverBug * bugValue);
 
   const effective: Counts = new Map(c);

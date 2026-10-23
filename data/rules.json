@@ -68,7 +68,7 @@
   "testCases": [
     { "name": "3 Junior + 1 PM", "team": { "junior_dev": 3, "project_manager": 1 }, "expect": { "junior_dev": 14, "project_manager": 1 } },
     { "name": "3 Junior + 2 PM conflict", "team": { "junior_dev": 3, "project_manager": 2 }, "expect": { "junior_dev": 0, "project_manager": 2 } },
-    { "name": "2 QA + 3 Bug", "team": { "qa_tester": 2, "bug": 3 }, "expect": { "qa_and_bug": -3 } },
+    { "name": "2 QA + 3 Bug", "team": { "qa_tester": 2, "bug": 3 }, "expect": { "qa_tester": 6, "bug": -3 } },
     { "name": "Upskill on 3 Junior", "team": { "junior_dev": 3, "upskill": 1 }, "choices": { "upskill": "junior_dev" }, "expect": { "junior_dev": 10 } },
     { "name": "Employee of the Month on 3 Designer", "team": { "designer": 3, "employee_of_the_month": 1 }, "expect": { "designer": 15 } }
   ]
