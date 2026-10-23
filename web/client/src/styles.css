@@ -81,6 +81,10 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
 .app.in-game .hand-cards { flex-wrap: nowrap; overflow-x: auto; padding: 10px 4px 4px; align-items: flex-start; }
+.hand-cards.from-right { animation: hand-in-right 400ms ease-out; }
+.hand-cards.from-left { animation: hand-in-left 400ms ease-out; }
+@keyframes hand-in-right { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+@keyframes hand-in-left { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
 .app.in-game .hand-cards .card { flex: none; width: 140px; min-height: 0; position: relative; }
 .app.in-game .hand-cards .card.selected, .app.in-game .hand-cards .card.lifted { z-index: 1; }
 .app.in-game .play-zone { position: relative; min-height: 44px; padding: 6px; margin-bottom: 6px; font-size: 0.9rem; }
@@ -323,6 +327,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .spotlight, .bonus-float, .pulse, .sheet, .picked-back { animation: none; }
   .score-delta { animation: none; opacity: 0; }
+  .hand-cards.from-right, .hand-cards.from-left { animation: none; }
   .flip-inner { animation: none; transform: rotateY(180deg); }
 }
 

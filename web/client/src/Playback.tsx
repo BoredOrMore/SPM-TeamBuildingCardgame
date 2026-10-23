@@ -155,7 +155,8 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
     case 'no_effect':
       return { icon: 'ri-information-line', seats: [], cards: [{ id: idOfUid(view, String(e.source)) }] };
     case 'hands_passed':
-      return { icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line', seats: [], cards: [] };
+      // the hand sliding in shows the pass; the topbar arrow says which way, so it needs no spotlight
+      return { icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line', seats: [], cards: [], logOnly: true };
     case 'hands_swapped':
       return { icon: 'ri-repeat-line', seats: [], cards: [] };
     default:
