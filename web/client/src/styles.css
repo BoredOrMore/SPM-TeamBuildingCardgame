@@ -63,6 +63,18 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .game { height: 100%; gap: 8px; }
 .app.in-game .goals { flex: none; flex-wrap: nowrap; overflow-x: auto; }
 .app.in-game .goals > * { flex: none; white-space: nowrap; }
+/* Crisis and Meta in play are tiles: square art, name and effect; hover or hold one for the full card */
+.app.in-game .goals { align-items: center; }
+.app.in-game .goals > .card { width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
+.app.in-game .goals > .card .card-top { grid-row: 1 / 3; align-self: start; width: 64px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; }
+.app.in-game .goals > .card .card-art { height: 100%; aspect-ratio: 1; }
+.app.in-game .goals > .card .card-badge, .app.in-game .goals > .card .card-footer { display: none; }
+.app.in-game .goals > .card .card-top + .card-name { margin: 0; max-width: none; justify-content: flex-start; border-radius: 6px; outline: none; font-size: 0.75rem; padding: 3px 8px; }
+.app.in-game .goals > .card .card-text { text-align: left; padding: 0; font-size: 0.75rem; line-height: 1.3; }
+@media (max-width: 600px) {
+  .app.in-game .goals > .card .card-top + .card-name { font-size: 0.65rem; padding: 2px 6px; }
+  .app.in-game .goals > .card .card-text { font-size: 0.65rem; }
+}
 .table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .my-team, .hand { flex: none; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
@@ -79,6 +91,21 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text { display: none; }
   .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
+}
+@media (max-width: 600px) {
+  /* a phone keeps every board on one screen: Crisis and Meta become small tiles (art, name, effect), each player one row */
+  .app.in-game .game { gap: 6px; }
+  .app.in-game .goals > .card { width: 210px; grid-template-columns: 48px 1fr; gap: 2px 6px; }
+  .app.in-game .goals > .card .card-top { width: 48px; }
+  .app.in-game .opponents { grid-template-columns: 1fr; gap: 6px; }
+  .app.in-game .opponent, .app.in-game .my-team { display: flex; align-items: center; gap: 6px; padding: 6px 8px; }
+  .app.in-game .opp-head, .app.in-game .my-team h2 { flex: none; flex-wrap: nowrap; margin: 0; }
+  .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+  .app.in-game .pile .card-back { width: 40px; }
+  .app.in-game .now { padding: 6px 10px; }
+  .app.in-game .hand { padding: 6px 8px; }
+  .app.in-game .play-zone { min-height: 36px; margin-bottom: 14px; padding: 4px; }
+  .app.in-game .hand-cards { padding-top: 8px; }
 }
 
 /* your decision, as a sheet over the hand */
