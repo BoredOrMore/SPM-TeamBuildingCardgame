@@ -84,6 +84,33 @@ export function isAction(id: string): boolean {
 }
 
 /** Frame colour of a card: its type, or its deck for Crisis and Meta. */
+/** Type badge icons for cards that have no icon code of their own (CARD_SPEC.md, Type badge icon). */
+const TYPE_BADGE_ICONS: Record<string, string> = { action: 'magic', defense: 'shield-check', boost: 'arrow-up-circle', crisis: 'alarm-warning', meta: 'global' };
+
+/** The Remix icon name in a card's type badge: a Role or Event card's own icon code, otherwise its type's icon. */
+function badgeIcon(def: CardDef & { deck: Deck }): string {
+  const kind = def.type ?? def.deck;
+  if (kind === 'role' || kind === 'event') {
+    const own = [...ICONS.values()].find((k) => k.meaning === def.name);
+    if (!own) throw new Error(`No icon code for ${def.type} card ${def.id}`);
+    return own.icon;
+  }
+  const icon = TYPE_BADGE_ICONS[kind];
+  if (!icon) throw new Error(`No type badge icon for ${def.id} (${kind})`);
+  return icon;
+}
+
+/** The timing keyword in a card's top-right badge, from its data; none for Role and Event cards (CARD_SPEC.md, Timing). */
+function timingCode(def: CardDef & { deck: Deck }): IconCode | undefined {
+  const code =
+    def.deck === 'meta' ? 'PAYDAY'
+    : def.deck === 'crisis' ? (def.persistent ? 'ONGOING' : 'ONBOARD')
+    : def.timing === 'on_reveal' ? 'ONBOARD'
+    : def.timing === 'scoring' ? 'PAYDAY'
+    : undefined;
+  return code ? ICONS.get(code) : undefined;
+}
+
 function frameColor(def: (CardDef & { deck: Deck }) | undefined): string {
   if (!def) return '#888';
   return FRAME_COLORS[def.type ?? def.deck] ?? FRAME_COLORS.meta ?? '#888';
@@ -121,9 +148,12 @@ interface Tip {
 /** Opens or closes the big card preview (touch hold). */
 export const usePreview = () => useContext(PreviewContext);
 
-/** Gap in px between a card and its tooltip, and the tooltip's width. */
+/** Gap in px between a card and its tooltip, and the width of the keyword boxes. */
 const TIP_GAP = 8;
 const TIP_WIDTH = 220;
+/** Width and rough height in px of the full card in the tooltip (CARD_SPEC.md, Sizes: Full on wider screens). */
+const TIP_CARD_WIDTH = 300;
+const TIP_CARD_HEIGHT = 470;
 
 /** Hosts the hover tooltip (mouse) and the big preview (touch hold) for every card on screen. */
 export function PreviewProvider({ children }: { children: ReactNode }) {
@@ -157,11 +187,13 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Keyword and icon codes on a card, in order of first use. */
+/** Keyword and icon codes on a card, in order of first use, then the timing in its top-right badge. */
 function codesOf(id: string): IconCode[] {
-  const text = CARD_DEFS.get(id)?.cardText ?? '';
+  const def = CARD_DEFS.get(id);
+  const text = def?.cardText ?? '';
   const codes = [...new Set([...text.matchAll(/\{([A-Z]+)\}/g)].map((m) => m[1]!))];
-  return codes.map((c) => ICONS.get(c)).filter((k): k is IconCode => !!k);
+  const timing = def && def.deck !== 'support' ? timingCode(def) : undefined;
+  return [...codes.map((c) => ICONS.get(c)).filter((k): k is IconCode => !!k), ...(timing ? [timing] : [])];
 }
 
 /** One box per keyword: icon, name, and what it means. */
@@ -181,26 +213,38 @@ function KeywordBoxes({ id }: { id: string }) {
   );
 }
 
-/** Keyword boxes beside the hovered card: on its right, or its left when there is no room. */
+/** The hovered card at full size with its keyword boxes: on its right, or its left when there is no room. */
 function CardTooltip({ tip }: { tip: Tip }) {
-  if (!codesOf(tip.id).length) return null;
-  const right = tip.rect.right + TIP_GAP + TIP_WIDTH <= window.innerWidth;
-  const left = right ? tip.rect.right + TIP_GAP : Math.max(TIP_GAP, tip.rect.left - TIP_GAP - TIP_WIDTH);
+  const width = TIP_CARD_WIDTH + (codesOf(tip.id).length ? TIP_GAP + TIP_WIDTH : 0);
+  const right = tip.rect.right + TIP_GAP + width <= window.innerWidth;
+  const left = right ? tip.rect.right + TIP_GAP : Math.max(TIP_GAP, tip.rect.left - TIP_GAP - width);
+  const top = Math.max(TIP_GAP, Math.min(tip.rect.top, window.innerHeight - TIP_CARD_HEIGHT - TIP_GAP));
   return (
-    <div className="card-tooltip" role="tooltip" style={{ left, top: tip.rect.top, width: TIP_WIDTH }}>
-      <KeywordBoxes id={tip.id} />
+    <div className={`card-tooltip ${right ? '' : 'flip'}`} role="tooltip" style={{ left, top }}>
+      <FullCard id={tip.id} />
+      {codesOf(tip.id).length > 0 && (
+        <div className="preview-keywords">
+          <KeywordBoxes id={tip.id} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A card face at full size, with no handlers of its own. */
+function FullCard({ id }: { id: string }) {
+  return (
+    <div className="card preview-card" style={{ '--frame': frameColor(CARD_DEFS.get(id)) } as React.CSSProperties}>
+      <CardFace id={id} />
     </div>
   );
 }
 
 /** The big card and its keyword boxes, shown while a card is held on a touch screen. */
 function CardPreview({ id }: { id: string }) {
-  const def = CARD_DEFS.get(id);
   return (
     <div className="preview" aria-live="polite">
-      <div className="preview-card" style={{ '--frame': frameColor(def) } as React.CSSProperties}>
-        <CardFace id={id} />
-      </div>
+      <FullCard id={id} />
       {codesOf(id).length > 0 && (
         <div className="preview-keywords">
           <KeywordBoxes id={id} />
@@ -223,14 +267,33 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
       </>
     );
   }
+  if (small || !def || def.deck === 'support') {
+    return (
+      <>
+        {!small && art && <img className="card-art" src={art} alt="" draggable={false} />}
+        <span className="card-name">
+          {def?.name ?? id}
+          {shield && <i className="ri-shield-line" aria-label="protected" />}
+        </span>
+        {!small && <span className="card-text">{def?.cardText ? <CardText text={def.cardText} /> : def?.text}</span>}
+      </>
+    );
+  }
+  // the printed card: art with a type badge top left and a timing badge top right, the name on the art's edge, text, type label
+  const timing = timingCode(def);
   return (
     <>
-      {!small && art && <img className="card-art" src={art} alt="" draggable={false} />}
+      <span className="card-top">
+        {art && <img className="card-art" src={art} alt="" draggable={false} />}
+        <i className={`card-badge type ri-${badgeIcon(def)}-line`} aria-hidden />
+        {timing && <i className={`card-badge timing ri-${timing.icon}-line`} aria-label={timing.code} />}
+      </span>
       <span className="card-name">
-        {def?.name ?? id}
+        {def.name}
         {shield && <i className="ri-shield-line" aria-label="protected" />}
       </span>
-      {!small && <span className="card-text">{def?.cardText ? <CardText text={def.cardText} /> : def?.text}</span>}
+      <span className="card-text">{def.cardText ? <CardText text={def.cardText} /> : def.text}</span>
+      <span className="card-footer">{(def.type ?? def.deck).toUpperCase()}</span>
     </>
   );
 }

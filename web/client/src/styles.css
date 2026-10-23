@@ -91,7 +91,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .sheet button.sheet-head { position: sticky; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; border-radius: 0; background: var(--panel); font-weight: 700; font-size: 1.05rem; padding: 12px 0; min-height: 48px; }
 .sheet-body { display: flex; flex-direction: column; gap: 10px; }
 .sheet-source .card { width: 100%; min-height: 0; }
-.sheet-source .card .card-art { aspect-ratio: auto; height: 96px; }
+.sheet-source .card .card-art, .sheet-source .card .card-top:not(:has(.card-art)) { aspect-ratio: auto; height: 96px; }
 .sheet-offer { font-weight: 600; }
 .sheet-options { display: flex; flex-direction: column; gap: 8px; }
 button.option { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 52px; }
@@ -140,7 +140,17 @@ button.option:hover { border-color: var(--accent); }
 .card.small { width: auto; min-height: 0; padding: 0; }
 /* the art fills the top, the name sits on its lower edge as on the printed card */
 .card .card-art { display: block; width: 100%; aspect-ratio: 520 / 540; object-fit: cover; }
-.card .card-art + .card-name { position: relative; margin: -16px auto 0; max-width: calc(100% - 12px); border-radius: 999px; justify-content: center; text-align: center; }
+.card .card-art + .card-name, .card-top + .card-name { position: relative; margin: -16px auto 0; max-width: calc(100% - 12px); border-radius: 999px; justify-content: center; text-align: center; }
+/* the printed card (CARD_SPEC.md): badges sit on the art and scale with the card's width */
+.card:has(> .card-top) { --paper: #fff8ec; background: var(--paper); container-type: inline-size; }
+.card-top { position: relative; display: block; background: color-mix(in srgb, var(--frame) 20%, var(--paper)); }
+.card-top:not(:has(.card-art)) { aspect-ratio: 520 / 540; }
+.card-badge { position: absolute; top: min(4cqw, 12px); width: min(15.3cqw, 46px); aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: #fff; border: clamp(1.5px, 1.1cqw, 3px) solid var(--frame); color: var(--frame); font-size: min(8.8cqw, 26px); font-style: normal; }
+.card-badge.type { left: min(4cqw, 12px); }
+.card-badge.timing { right: min(4cqw, 12px); }
+.card-top + .card-name { outline: max(1px, 0.9cqw) solid var(--paper); }
+.card:has(> .card-top) .card-text { text-align: center; }
+.card-footer { margin-top: auto; text-align: center; color: var(--frame); font-weight: 800; font-size: max(0.55rem, 3.3cqw); letter-spacing: 0.12em; }
 /* a team member: a round face in the card type's frame colour */
 .card.chip { position: relative; width: 36px; height: 36px; min-height: 0; padding: 0; border-radius: 50%; overflow: visible; }
 .card.chip .card-art { aspect-ratio: 1; border-radius: 50%; object-position: 50% 20%; }
@@ -182,15 +192,17 @@ button.option:hover { border-color: var(--accent); }
 }
 .preview-card { width: 240px; }
 @media (min-width: 601px) { .preview-card { width: 300px; } }
-.preview-card .card-art { display: block; width: 100%; aspect-ratio: 520 / 540; object-fit: cover; }
-.preview-card .card-name { display: block; }
-.preview-card { background: var(--panel); border-radius: 14px; overflow: hidden; border: 3px solid var(--frame); font-size: 1.25rem; }
-.preview-card .card-name { background: var(--frame); color: #fff; font-weight: 700; padding: 10px 12px; }
-.preview-card .card-text { display: block; padding: 12px; min-height: 120px; line-height: 1.4; }
+.preview-card { min-height: 0; box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }
+.preview-card .card-name { font-size: 1rem; padding: 8px 12px; }
+.preview-card .card-text { font-size: 0.95rem; padding: 0 12px; line-height: 1.4; }
 .preview-keywords { display: flex; flex-direction: column; gap: 6px; width: min(320px, 100%); }
 
 /* keyword boxes: hover tooltip (mouse) and big preview (touch) */
-.card-tooltip { position: fixed; z-index: 25; pointer-events: none; display: flex; flex-direction: column; gap: 6px; }
+/* hovering a card shows it full size with its keyword boxes beside it */
+.card-tooltip { position: fixed; z-index: 25; pointer-events: none; display: flex; gap: 8px; align-items: flex-start; }
+.card-tooltip.flip { flex-direction: row-reverse; }
+.card-tooltip .preview-keywords { width: 220px; }
+.card-tooltip > .card { flex: none; }
 .kw-box { --box: var(--ink); background: #fffaf0; border: 2px solid var(--box); border-radius: 10px; padding: 6px 10px; box-shadow: 0 4px 12px rgb(0 0 0 / 0.15); }
 .kw-title { font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; color: var(--box); }
 .kw-text { font-size: 0.78rem; line-height: 1.35; color: var(--ink); }
