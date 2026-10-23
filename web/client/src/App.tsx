@@ -10,12 +10,13 @@ import { PlaybackOverlay, SPEEDS, stepsFor, usePlayback, type Speed, type Step }
 import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SoundControls } from './SoundControls.js';
 import { setMusic, sfx } from './sound.js';
+import { LanguageButton, t, useLang } from './i18n.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 /** Turns after which a Crisis card is drawn, from rules.json. */
 const CRISIS_AFTER: number[] = rulesJson.crisis.afterTurns;
 /** What each stage of a turn is called on the round track. */
-const STEP_NAMES: Record<GameView['stage'], string> = { pick: 'Pick', actions: 'Actions', nda: 'NDA', crisis: 'Crisis', ended: 'Round over' };
+const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pick'), actions: () => t('Actions'), nda: () => t('NDA'), crisis: () => t('Crisis'), ended: () => t('Round over') };
 
 const NAME_KEY = 'hh_name';
 const SPEED_KEY = 'hh_speed';
@@ -40,6 +41,8 @@ export function App() {
   const [conn, setConn] = useState<Connection>();
   const [view, setView] = useState<View>();
   const [speed, setSpeed] = useState(savedSpeed);
+  // every screen redraws in the new language when it changes
+  useLang();
   const playback = usePlayback(view, speed);
   /** Switches between normal and fast spotlights and remembers the choice in this browser. */
   const toggleSpeed = () => {
@@ -99,6 +102,7 @@ export function App() {
       {!(shown?.phase === 'game' && !shown.result) && (
         <div className="corner">
           <FullscreenButton />
+          <LanguageButton />
           <SoundControls />
         </div>
       )}
@@ -117,19 +121,19 @@ function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: 
   return (
     <main className="home">
       <h1>Head Hunter</h1>
-      <p className="muted">Build the best software team before the deadline.</p>
+      <p className="muted">{t('Build the best software team before the deadline.')}</p>
       <RulebookButton />
       <label>
-        Your name
-        <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="e.g. Bored" />
+        {t('Your name')}
+        <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Bored')} />
       </label>
       <button className="primary" disabled={props.busy || !name.trim()} onClick={() => (remember(), props.onCreate(name))}>
-        Create a room
+        {t('Create a room')}
       </button>
       <div className="join-row">
-        <input value={code} maxLength={4} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="CODE" aria-label="Room code" />
+        <input value={code} maxLength={4} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder={t('CODE')} aria-label={t('Room code')} />
         <button disabled={props.busy || !name.trim() || code.length !== 4} onClick={() => (remember(), props.onJoin(code, name))}>
-          Join
+          {t('Join')}
         </button>
       </div>
     </main>
@@ -148,20 +152,20 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
   }, [view.seats.length]);
   return (
     <main className="lobby">
-      <p className="muted">Room code</p>
+      <p className="muted">{t('Room code')}</p>
       <div className="code">{view.code}</div>
-      <p className="muted">Share this code. {view.minPlayers}–{view.maxPlayers} players.</p>
+      <p className="muted">{t('Share this code. {min}–{max} players.', { min: view.minPlayers, max: view.maxPlayers })}</p>
       <RulebookButton />
       <ul className="seats">
         {view.seats.map((s) => (
           <li key={s.seat}>
             <i className={s.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {s.name}
-            {s.seat === view.you && <span className="tag">you</span>}
-            {s.isHost && <span className="tag">host</span>}
-            {!s.connected && <span className="tag warn">offline</span>}
+            {s.seat === view.you && <span className="tag">{t('you')}</span>}
+            {s.isHost && <span className="tag">{t('host')}</span>}
+            {!s.connected && <span className="tag warn">{t('offline')}</span>}
             {isHost && s.isBot && (
               <button className="link" onClick={() => conn.send('remove_bot', { seat: s.seat })}>
-                remove
+                {t('remove')}
               </button>
             )}
           </li>
@@ -170,17 +174,17 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
       {isHost ? (
         <div className="row">
           <button disabled={view.seats.length >= view.maxPlayers} onClick={() => conn.send('add_bot', {})}>
-            <i className="ri-robot-2-line" /> Add bot
+            <i className="ri-robot-2-line" /> {t('Add bot')}
           </button>
           <button className="primary" disabled={!canStart} onClick={() => conn.send('start', {})}>
-            Start game
+            {t('Start game')}
           </button>
         </div>
       ) : (
-        <p className="muted">Waiting for the host to start…</p>
+        <p className="muted">{t('Waiting for the host to start…')}</p>
       )}
       <button className="link" onClick={() => conn.leave()}>
-        Leave room
+        {t('Leave room')}
       </button>
     </main>
   );
@@ -191,33 +195,34 @@ function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
 function RoundTrack({ view }: { view: GameView }) {
   // the engine counts the next turn as soon as hands pass, so a Crisis drawn now sits before `turn`
   const crisisNow = view.stage === 'crisis';
-  const done = (t: number) => t < view.turn;
+  const done = (turn: number) => turn < view.turn;
   return (
     <nav
       className="round-track"
-      aria-label={`Round ${view.round} of ${view.totalRounds}, turn ${view.turn} of ${view.totalTurns}; hands pass ${view.passDirection} this round`}
+      aria-label={t('Round {round} of {rounds}, turn {turn} of {turns}; hands pass {dir} this round', { round: view.round, rounds: view.totalRounds, turn: view.turn, turns: view.totalTurns, dir: (view.passDirection === 'left' ? t('left') : t('right')) })}
     >
       <span className="track-round">
-        Round {view.round}/{view.totalRounds} <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={`passing ${view.passDirection}`} />
+        {t('Round {round}/{rounds}', { round: view.round, rounds: view.totalRounds })}{' '}
+        <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={t('passing {dir}', { dir: (view.passDirection === 'left' ? t('left') : t('right')) })} />
       </span>
       <ol className="track-turns">
-        {Array.from({ length: view.totalTurns }, (_, i) => i + 1).map((t) => (
-          <Fragment key={t}>
-            <li className={`track-turn ${t === view.turn && !crisisNow ? 'current' : done(t) ? 'done' : ''}`} title={`Turn ${t}`}>
-              {t}
+        {Array.from({ length: view.totalTurns }, (_, i) => i + 1).map((turn) => (
+          <Fragment key={turn}>
+            <li className={`track-turn ${turn === view.turn && !crisisNow ? 'current' : done(turn) ? 'done' : ''}`} title={t('Turn {turn}', { turn })}>
+              {turn}
             </li>
-            {CRISIS_AFTER.includes(t) && t < view.totalTurns && (
+            {CRISIS_AFTER.includes(turn) && turn < view.totalTurns && (
               <li
-                className={`track-crisis ${crisisNow && t === view.turn - 1 ? 'current' : t < view.turn - (crisisNow ? 1 : 0) ? 'done' : ''}`}
-                title={`A Crisis card is drawn after turn ${t}`}
+                className={`track-crisis ${crisisNow && turn === view.turn - 1 ? 'current' : turn < view.turn - (crisisNow ? 1 : 0) ? 'done' : ''}`}
+                title={t('A Crisis card is drawn after turn {turn}', { turn })}
               >
-                <i className="ri-alarm-warning-line" aria-label="Crisis" />
+                <i className="ri-alarm-warning-line" aria-label={t('Crisis')} />
               </li>
             )}
           </Fragment>
         ))}
       </ol>
-      <span className="track-step">{STEP_NAMES[view.stage]}</span>
+      <span className="track-step">{STEP_NAMES[view.stage]()}</span>
     </nav>
   );
 }
@@ -239,30 +244,31 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
     <main className="game">
       <header className="topbar">
         <RoundTrack view={view} />
-        <span className="muted room">Room {view.code}</span>
-        <button className="speed" onClick={onToggleSpeed} title={`Spotlight speed: ${speed === 'fast' ? 'Fast' : 'Normal'}`}>
-          <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? 'Fast' : 'Normal'}</span>
+        <span className="muted room">{t('Room {code}', { code: view.code })}</span>
+        <button className="speed" onClick={onToggleSpeed} title={t('Spotlight speed: {speed}', { speed: speed === 'fast' ? t('Fast') : t('Normal') })}>
+          <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? t('Fast') : t('Normal')}</span>
         </button>
-        <span className="score" title={`${view.yourTotal} over all rounds, ${view.yourScore.total} this round`}>
+        <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
           <i className="ri-trophy-line" /> {view.yourTotal}
         </span>
         <Log view={view} />
         <RulebookButton />
         <FullscreenButton />
+        <LanguageButton />
         <SoundControls />
       </header>
       <p className={`now ${yours ? 'yours' : ''}`} role="status">
-        {playing ? 'Showing what happened…' : nowLine(view)}
+        {playing ? t('Showing what happened…') : nowLine(view)}
       </p>
 
       <div className="table" ref={table.box}>
         <div className="table-fit" ref={table.content}>
           <section className="goals" data-zone="crisis">
-            <span className="pile" data-zone="deck" title="Main deck">
+            <span className="pile" data-zone="deck" title={t('Main deck')}>
               <CardBack deck="main" />
               <b className="pile-count">{view.mainRemaining}</b>
             </span>
-            <span className="pile" title="Crisis deck">
+            <span className="pile" title={t('Crisis deck')}>
               <CardBack deck="crisis" />
               <b className="pile-count">{view.crisisRemaining}</b>
             </span>
@@ -284,18 +290,18 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
                   <div className="opp-head">
                     <i className={p.isBot ? 'ri-robot-2-line' : 'ri-user-line'} /> {p.name}
                     <SeatScore score={p.score} round={view.round} />
-                    {!p.connected && <span className="tag warn">offline</span>}
-                    <span className="opp-hand" title={`${p.handCount} cards in hand`}>
+                    {!p.connected && <span className="tag warn">{t('offline')}</span>}
+                    <span className="opp-hand" title={t('{n} cards in hand', { n: p.handCount })}>
                       <CardBack deck="main" mini />
                       <b className="opp-hand-count">{p.handCount}</b>
                     </span>
                     {view.stage === 'pick' &&
                       (p.hasPicked ? (
-                        <span className="picked-back" title="Picked, face down">
+                        <span className="picked-back" title={t('Picked, face down')}>
                           <CardBack deck="main" mini />
                         </span>
                       ) : (
-                        <span className="tag">picking…</span>
+                        <span className="tag">{t('picking…')}</span>
                       ))}
                   </div>
                   <TeamChips team={p.team} protectedUids={p.protected} zone={`team-${p.seat}`} />
@@ -309,7 +315,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
 
       <section className="my-team" data-zone={`seat-${view.you}`}>
         <h2>
-          Your team <SeatScore score={me.score} round={view.round} />
+          {t('Your team')} <SeatScore score={me.score} round={view.round} />
         </h2>
         <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
       </section>
@@ -374,8 +380,8 @@ function FullscreenButton() {
     <button
       className="fullscreen-button"
       onClick={() => void (full ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
-      title={full ? 'Leave full screen' : 'Full screen'}
-      aria-label={full ? 'Leave full screen' : 'Full screen'}
+      title={full ? t('Leave full screen') : t('Full screen')}
+      aria-label={full ? t('Leave full screen') : t('Full screen')}
       aria-pressed={full}
     >
       <i className={full ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'} />
@@ -402,7 +408,7 @@ function TeamChips({ team, protectedUids, zone }: { team: CardInstance[]; protec
           </span>
         ))
       ) : (
-        <span className="muted">No one hired yet</span>
+        <span className="muted">{t('No one hired yet')}</span>
       )}
     </div>
   );
@@ -418,7 +424,7 @@ function SeatScore({ score, round }: { score: number; round: number }) {
     prev.current = { score, round };
   }, [score, round]);
   return (
-    <span className="seat-score" title="Points this round if it ended now">
+    <span className="seat-score" title={t('Points this round if it ended now')}>
       <i className="ri-star-line" /> {score}
       {delta && (
         <b key={delta.key} className={`score-delta ${delta.n > 0 ? 'up' : 'down'}`}>
@@ -452,16 +458,18 @@ function choiceCards(c: Choice): string[] {
 
 /** How an option that moves several cards is picked one card at a time: a prompt per card, in order, or one prompt for a set. */
 function pickPlan(view: GameView, c: Choice): { uids: string[]; prompts: string[]; ordered: boolean } | undefined {
-  const who = (seat: number) => view.players[seat]?.name ?? `Seat ${seat + 1}`;
+  const who = (seat: number) => view.players[seat]?.name ?? t('Seat {n}', { n: seat + 1 });
   switch (c.kind) {
     case 'headhunt':
-      return { uids: [c.give, c.take], prompts: ['Pick a card from your team to give', 'Pick a card to take'], ordered: true };
+      return { uids: [c.give, c.take], prompts: [t('Pick a card from your team to give'), t('Pick a card to take')], ordered: true };
     case 'merger_offer':
-      return { uids: [c.give, c.take], prompts: ['Pick a card from your team to offer', `Pick a card you want in return`], ordered: true };
+      return { uids: [c.give, c.take], prompts: [t('Pick a card from your team to offer'), t('Pick a card you want in return')], ordered: true };
     case 'give':
-      return { uids: c.uids, prompts: [`Pick ${c.uids.length} ${c.uids.length === 1 ? 'card' : 'cards'} to give to ${who(c.to)}`], ordered: false };
+      return { uids: c.uids, prompts: [c.uids.length === 1 ? t('Pick 1 card to give to {who}', { who: who(c.to) }) : t('Pick {n} cards to give to {who}', { n: c.uids.length, who: who(c.to) })], ordered: false };
     case 'pivot':
-      return c.discard.length ? { uids: c.discard, prompts: [`Pivot: pick ${c.discard.length} ${c.discard.length === 1 ? 'card' : 'cards'} to discard`], ordered: false } : undefined;
+      return c.discard.length
+        ? { uids: c.discard, prompts: [c.discard.length === 1 ? t('Pivot: pick 1 card to discard') : t('Pivot: pick {n} cards to discard', { n: c.discard.length })], ordered: false }
+        : undefined;
     default:
       return undefined;
   }
@@ -517,9 +525,9 @@ function CardPicker({ view, options, onChoose }: { view: GameView; options: Choi
         </span>
       )}
       <div className="picker-actions">
-        {picked.length > 0 && <button onClick={() => setPicked(ordered ? picked.slice(0, -1) : [])}>{ordered ? 'Back' : 'Clear'}</button>}
+        {picked.length > 0 && <button onClick={() => setPicked(ordered ? picked.slice(0, -1) : [])}>{ordered ? t('Back') : t('Clear')}</button>}
         <button className="primary" disabled={!match} onClick={() => match && onChoose(match.i)}>
-          Confirm
+          {t('Confirm')}
         </button>
       </div>
     </div>
@@ -532,10 +540,10 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
   const source = idOfUid(view, decision.source);
   const offer = decision.context?.offer;
   return (
-    <section className={`sheet ${open ? '' : 'closed'}`} aria-label="Your decision">
+    <section className={`sheet ${open ? '' : 'closed'}`} aria-label={t('Your decision')}>
       <button className="sheet-head" onClick={() => setOpen((o) => !o)}>
         <span>{decisionTitle(decision)}</span>
-        <i className={open ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line'} aria-label={open ? 'Hide' : 'Show'} />
+        <i className={open ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line'} aria-label={open ? t('Hide') : t('Show')} />
       </button>
       {open && (
         <div className="sheet-body">
@@ -546,7 +554,7 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
           )}
           {offer && (
             <div className="sheet-offer">
-              {view.players[decision.context?.proposer ?? -1]?.name ?? 'They'} offer: {choiceLabel(view, offer)}
+              {t('{who} offers: {offer}', { who: view.players[decision.context?.proposer ?? -1]?.name ?? t('They'), offer: choiceLabel(view, offer) })}
             </div>
           )}
           {decision.options!.some((o) => pickPlan(view, o)) && (
@@ -575,28 +583,28 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
 /** One line saying what the game is waiting for right now, and whether that is you. */
 function nowLine(view: GameView): string {
   const d = view.decision;
-  if (d) return d.player === view.you ? `Your move: ${decisionTitle(d)}` : `Waiting for ${view.players[d.player]?.name}: ${decisionTitle(d)}`;
-  if (view.stage !== 'pick') return 'Resolving…';
+  if (d) return d.player === view.you ? t('Your move: {what}', { what: decisionTitle(d) }) : t('Waiting for {who}: {what}', { who: view.players[d.player]?.name ?? '?', what: decisionTitle(d) });
+  if (view.stage !== 'pick') return t('Resolving…');
   if (!view.picked) {
     const need = Math.min(view.picksRequired, view.hand.length);
-    return `Pick ${need === 1 ? '1 card' : `${need} cards`}: drag up to play`;
+    return need === 1 ? t('Pick 1 card: drag up to play') : t('Pick {n} cards: drag up to play', { n: need });
   }
   const waiting = view.players.filter((p) => p.seat !== view.you && !p.hasPicked).map((p) => p.name);
-  return waiting.length ? `Waiting for ${waiting.join(', ')} to pick` : 'Revealing…';
+  return waiting.length ? t('Waiting for {who} to pick', { who: waiting.join(', ') }) : t('Revealing…');
 }
 
 /** A topbar button that opens recent public (and your private) events: one section per turn, newest turn first, one row per event. */
 function Log({ view }: { view: GameView }) {
   const turns: Array<{ title: string; steps: Step[] }> = [];
   for (const e of view.events) {
-    if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? `Round ${e.round} · Turn ${e.turn}` : 'Earlier', steps: [] });
+    if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? t('Round {round} · Turn {turn}', { round: String(e.round), turn: String(e.turn) }) : t('Earlier'), steps: [] });
     // the flip only shows cards turning over; the per-player lines that follow say who played what
     turns[turns.length - 1]!.steps.push(...stepsFor(view, [e]).filter((s) => !s.flip));
   }
   return (
     <details className="log">
-      <summary title="What happened" aria-label="What happened">
-        <i className="ri-history-line" /> <span className="label">What happened</span>
+      <summary title={t('What happened')} aria-label={t('What happened')}>
+        <i className="ri-history-line" /> <span className="label">{t('What happened')}</span>
       </summary>
       <div className="log-body">
         {turns
@@ -629,15 +637,15 @@ function Results({ view, conn }: { view: GameView; conn: Connection }) {
   useEffect(() => sfx(won ? 'win' : 'lose'), [won]);
   return (
     <main className="results">
-      <h1>Game over</h1>
+      <h1>{t('Game over')}</h1>
       <table className="standings-table">
         <thead>
           <tr>
             <th />
             {view.roundScores.map((_, r) => (
-              <th key={r}>Round {r + 1}</th>
+              <th key={r}>{t('Round {n}', { n: r + 1 })}</th>
             ))}
-            <th>Total</th>
+            <th>{t('Total')}</th>
           </tr>
         </thead>
         <tbody>
@@ -659,7 +667,7 @@ function Results({ view, conn }: { view: GameView; conn: Connection }) {
       <div className="round-tabs" role="tablist">
         {view.roundScores.map((_, r) => (
           <button key={r} role="tab" aria-selected={r === round} className={r === round ? 'primary' : ''} onClick={() => setRound(r)}>
-            Round {r + 1}
+            {t('Round {n}', { n: r + 1 })}
           </button>
         ))}
       </div>
@@ -687,16 +695,22 @@ function Results({ view, conn }: { view: GameView; conn: Connection }) {
                 </li>
               ))}
               <li className="total">
-                <b>Round {round + 1}</b>
+                <b>{t('Round {n}', { n: round + 1 })}</b>
                 <b>{s.total}</b>
               </li>
             </ul>
           </div>
         );
       })}
-      {isHost ? <button className="primary" onClick={() => conn.send('play_again', {})}>Back to lobby</button> : <p className="muted">The host can start another game.</p>}
+      {isHost ? (
+        <button className="primary" onClick={() => conn.send('play_again', {})}>
+          {t('Back to lobby')}
+        </button>
+      ) : (
+        <p className="muted">{t('The host can start another game.')}</p>
+      )}
       <button className="link" onClick={() => conn.leave()}>
-        Leave room
+        {t('Leave room')}
       </button>
     </main>
   );

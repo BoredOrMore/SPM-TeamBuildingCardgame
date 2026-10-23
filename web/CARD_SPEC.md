@@ -69,6 +69,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 - The table above your team (Crisis, Meta, opponents) never scrolls: on a short screen it shrinks as a whole to fit, down to 60%, and the play log opens from a topbar button. Sizes in the table are before that shrink.
 - A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
 - In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
+- Card text shows in the player's language (EN or TH, the topbar button). Thai text comes from `client/src/locales/cards.th.json` with the same codes and numbers as `cardText`; the card name, icons and footer label stay English.
 
 ## Checklist
 

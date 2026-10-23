@@ -7,23 +7,25 @@ import cardsJson from '../../../data/cards.json';
 import rulesJson from '../../../data/rules.json';
 import type { CardsFile } from '../../../src/index.js';
 import { Card, IconGlossary } from './cards.js';
+import { t } from './i18n.js';
 
 const cards = cardsJson as unknown as CardsFile;
 const rules = rulesJson;
 
 /** What each scoring step in rules.json means to a player, with its icon. */
-const SCORING_STEPS: Record<string, { icon: string; text: string }> = {
-  pair_qa_with_bug: { icon: 'search-line', text: 'Each QA Tester fixes 1 Bug: that Bug scores 0.' },
-  role_cards: { icon: 'user-line', text: 'Role cards score as written.' },
-  event_cards: { icon: 'flashlight-line', text: 'Event cards score as written. An unfixed Bug loses points.' },
-  boost_and_defense: { icon: 'arrow-up-circle-line', text: 'Boost and Defense cards score.' },
-  meta_bonuses: { icon: 'global-line', text: "This round's Meta cards score for everyone." },
-  crisis_bonuses_and_penalties: { icon: 'alarm-warning-line', text: 'Crisis bonuses and penalties are added.' },
-  total: { icon: 'calculator-line', text: 'The sum is your score for the round.' },
+const SCORING_STEPS: Record<string, { icon: string; text: () => string }> = {
+  pair_qa_with_bug: { icon: 'search-line', text: () => t('Each QA Tester fixes 1 Bug: that Bug scores 0.') },
+  role_cards: { icon: 'user-line', text: () => t('Role cards score as written.') },
+  event_cards: { icon: 'flashlight-line', text: () => t('Event cards score as written. An unfixed Bug loses points.') },
+  boost_and_defense: { icon: 'arrow-up-circle-line', text: () => t('Boost and Defense cards score.') },
+  meta_bonuses: { icon: 'global-line', text: () => t("This round's Meta cards score for everyone.") },
+  crisis_bonuses_and_penalties: { icon: 'alarm-warning-line', text: () => t('Crisis bonuses and penalties are added.') },
+  total: { icon: 'calculator-line', text: () => t('The sum is your score for the round.') },
 };
 
 const TABS = ['Basics', 'A turn', 'Scoring', 'Icons', 'Cards'] as const;
 type Tab = (typeof TABS)[number];
+const TAB_NAMES: Record<Tab, () => string> = { Basics: () => t('Basics'), 'A turn': () => t('A turn'), Scoring: () => t('Scoring'), Icons: () => t('Icons'), Cards: () => t('Cards') };
 const DECKS = ['main', 'crisis', 'meta'] as const;
 const DECK_NAMES: Record<(typeof DECKS)[number], string> = { main: 'Main', crisis: 'Crisis', meta: 'Meta' };
 
@@ -32,8 +34,8 @@ export function RulebookButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className={`rules-button ${open ? 'primary' : ''}`} onClick={() => setOpen((o) => !o)} title="Rules" aria-label="Rules" aria-pressed={open}>
-        <i className="ri-book-open-line" /> <span className="label">Rules</span>
+      <button className={`rules-button ${open ? 'primary' : ''}`} onClick={() => setOpen((o) => !o)} title={t('Rules')} aria-label={t('Rules')} aria-pressed={open}>
+        <i className="ri-book-open-line" /> <span className="label">{t('Rules')}</span>
       </button>
       {open && <Rulebook onClose={() => setOpen(false)} />}
     </>
@@ -56,19 +58,19 @@ function Rulebook({ onClose }: { onClose: () => void }) {
     };
   }, [onClose]);
   return createPortal(
-    <aside className="rulebook" aria-label="Rules">
+    <aside className="rulebook" aria-label={t('Rules')}>
       <header>
         <h2>
-          <i className="ri-book-open-line" /> How to play
+          <i className="ri-book-open-line" /> {t('How to play')}
         </h2>
-        <button className="close" onClick={onClose} aria-label="Close rules">
+        <button className="close" onClick={onClose} aria-label={t('Close rules')}>
           <i className="ri-close-line" />
         </button>
       </header>
       <nav className="rule-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button key={t} role="tab" aria-selected={t === tab} className={t === tab ? 'primary' : ''} onClick={() => setTab(t)}>
-            {t}
+        {TABS.map((name) => (
+          <button key={name} role="tab" aria-selected={name === tab} className={name === tab ? 'primary' : ''} onClick={() => setTab(name)}>
+            {TAB_NAMES[name]()}
           </button>
         ))}
       </nav>
@@ -78,7 +80,7 @@ function Rulebook({ onClose }: { onClose: () => void }) {
         {tab === 'Scoring' && <Scoring />}
         {tab === 'Icons' && (
           <>
-            <p>Top left of a card: its role or type. Top right: when it works. Point at or hold a card to see its icons explained.</p>
+            <p>{t('Top left of a card: its role or type. Top right: when it works. Point at or hold a card to see its icons explained.')}</p>
             <div className="glossary">
               <IconGlossary />
             </div>
@@ -101,38 +103,34 @@ function Rule({ icon, children }: { icon: string; children: ReactNode }) {
   );
 }
 
+/** A translated rule line, with each **part** in bold. */
+function rich(text: string): ReactNode {
+  return text.split('**').map((part, i) => (i % 2 ? <b key={i}>{part}</b> : part));
+}
+
 /** The goal and how a game and a round are built. */
 function Basics() {
   const { rounds, crisis } = rules;
+  const directions = rounds.passDirection.map((d) => (d === 'left' ? t('left') : t('right'))).join(t(', then '));
   return (
     <>
-      <h3>Goal</h3>
+      <h3>{t('Goal')}</h3>
       <ul className="rules">
-        <Rule icon="trophy-line">
-          Most points after <b>{rounds.count} rounds</b> wins.
-        </Rule>
-        <Rule icon="scales-3-line">Tie: most Role cards over all rounds wins. Still tied: a shared win.</Rule>
+        <Rule icon="trophy-line">{rich(t('Most points after **{n} rounds** wins.', { n: rounds.count }))}</Rule>
+        <Rule icon="scales-3-line">{t('Tie: most Role cards over all rounds wins. Still tied: a shared win.')}</Rule>
       </ul>
-      <h3>A round</h3>
+      <h3>{t('A round')}</h3>
       <ul className="rules">
-        <Rule icon="stack-line">
-          New hand of <b>{rules.setup.handSize['4']} cards</b>, empty team.
-        </Rule>
-        <Rule icon="global-line">
-          <b>{rules.setup.activeMetaCount} Meta cards</b> turn over. They score for everyone at the end of the round.
-        </Rule>
-        <Rule icon="loop-left-line">
-          <b>{rules.turns.count['4']} turns.</b> After each one, pass your hand on: {rounds.passDirection.join(', then ')}, one way per round.
-        </Rule>
-        <Rule icon="alarm-warning-line">
-          After turns <b>{crisis.afterTurns.join(', ')}</b>: a Crisis card. An Ongoing Crisis stays until the round ends.
-        </Rule>
-        <Rule icon="calculator-line">End of the round: every team scores, then all teams are cleared.</Rule>
+        <Rule icon="stack-line">{rich(t('New hand of **{n} cards**, empty team.', { n: rules.setup.handSize['4'] }))}</Rule>
+        <Rule icon="global-line">{rich(t('**{n} Meta cards** turn over. They score for everyone at the end of the round.', { n: rules.setup.activeMetaCount }))}</Rule>
+        <Rule icon="loop-left-line">{rich(t('**{n} turns.** After each one, pass your hand on: {directions}, one way per round.', { n: rules.turns.count['4'], directions }))}</Rule>
+        <Rule icon="alarm-warning-line">{rich(t('After turns **{turns}**: a Crisis card. An Ongoing Crisis stays until the round ends.', { turns: crisis.afterTurns.join(', ') }))}</Rule>
+        <Rule icon="calculator-line">{t('End of the round: every team scores, then all teams are cleared.')}</Rule>
       </ul>
-      <h3>The bar at the top</h3>
+      <h3>{t('The bar at the top')}</h3>
       <ul className="rules">
-        <Rule icon="checkbox-blank-circle-line">The round, each turn, and the step of the turn now (Pick, Actions, Crisis).</Rule>
-        <Rule icon="alarm-warning-line">The alarm between two turns: a Crisis comes there.</Rule>
+        <Rule icon="checkbox-blank-circle-line">{t('The round, each turn, and the step of the turn now (Pick, Actions, Crisis).')}</Rule>
+        <Rule icon="alarm-warning-line">{t('The alarm between two turns: a Crisis comes there.')}</Rule>
       </ul>
     </>
   );
@@ -142,24 +140,12 @@ function Basics() {
 function ATurn() {
   return (
     <ol className="rules steps">
-      <Rule icon="hand">
-        <b>Pick.</b> Drag 1 card to the play zone. Some Crises make it 2.
-      </Rule>
-      <Rule icon="eye-line">
-        <b>Reveal.</b> All picks turn over together.
-      </Rule>
-      <Rule icon="magic-line">
-        <b>Actions.</b> Action cards work, one player at a time. If you must choose, a sheet opens.
-      </Rule>
-      <Rule icon="team-line">
-        <b>Hire.</b> Every other card joins its owner's team.
-      </Rule>
-      <Rule icon="arrow-left-right-line">
-        <b>Pass.</b> Hands move to the next player.
-      </Rule>
-      <Rule icon="alarm-warning-line">
-        <b>Crisis.</b> Only after turns {rules.crisis.afterTurns.join(', ')}.
-      </Rule>
+      <Rule icon="hand">{rich(t('**Pick.** Drag 1 card to the play zone. Some Crises make it 2.'))}</Rule>
+      <Rule icon="eye-line">{rich(t('**Reveal.** All picks turn over together.'))}</Rule>
+      <Rule icon="magic-line">{rich(t('**Actions.** Action cards work, one player at a time. If you must choose, a sheet opens.'))}</Rule>
+      <Rule icon="team-line">{rich(t("**Hire.** Every other card joins its owner's team."))}</Rule>
+      <Rule icon="arrow-left-right-line">{rich(t('**Pass.** Hands move to the next player.'))}</Rule>
+      <Rule icon="alarm-warning-line">{rich(t('**Crisis.** Only after turns {turns}.', { turns: rules.crisis.afterTurns.join(', ') }))}</Rule>
     </ol>
   );
 }
@@ -168,25 +154,23 @@ function ATurn() {
 function Scoring() {
   return (
     <>
-      <h3>End of each round, in this order</h3>
+      <h3>{t('End of each round, in this order')}</h3>
       <ol className="rules steps">
         {rules.scoring.order.map((s) => {
           const step = SCORING_STEPS[s.id];
           if (!step) throw new Error(`No rulebook text for scoring step ${s.id}`);
           return (
             <Rule key={s.id} icon={step.icon}>
-              {step.text}
+              {step.text()}
             </Rule>
           );
         })}
       </ol>
-      <h3>Good to know</h3>
+      <h3>{t('Good to know')}</h3>
       <ul className="rules">
-        <Rule icon="team-line">
-          <b>Complete team</b>: at least 1 Developer (Junior or Senior), Project Manager, Designer and QA. Some cards pay more for it.
-        </Rule>
-        <Rule icon="star-line">The star next to each name is the score this round so far. Other players' stars count only what everyone can see.</Rule>
-        <Rule icon="trophy-line">The trophy at the top is your total over all rounds.</Rule>
+        <Rule icon="team-line">{rich(t('**Complete team**: at least 1 Developer (Junior or Senior), Project Manager, Designer and QA. Some cards pay more for it.'))}</Rule>
+        <Rule icon="star-line">{t("The star next to each name is the score this round so far. Other players' stars count only what everyone can see.")}</Rule>
+        <Rule icon="trophy-line">{t('The trophy at the top is your total over all rounds.')}</Rule>
       </ul>
     </>
   );

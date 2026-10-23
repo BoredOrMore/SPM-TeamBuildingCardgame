@@ -409,6 +409,8 @@ button.picker-tile.picked { border-color: var(--accent); }
 .sound { position: relative; }
 .corner { position: fixed; top: 10px; right: 10px; z-index: 30; display: flex; gap: 6px; }
 .sound-btn, .fullscreen-button { min-height: 40px; min-width: 40px; padding: 6px; border-radius: 999px; font-size: 1.15rem; line-height: 1; }
+/* the language button names the language it switches to */
+.lang-button { min-height: 40px; min-width: 40px; padding: 6px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; line-height: 1; }
 .sound-panel {
   position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: 220px;
   display: flex; flex-direction: column; gap: 10px; padding: 12px;
@@ -427,7 +429,7 @@ button.picker-tile.picked { border-color: var(--accent); }
   /* round, speed, score, rules and sound share one phone-width row */
   .topbar { gap: 4px; font-size: 0.9rem; }
   .topbar button.speed, .topbar .rules-button { padding: 4px 8px; }
-  .topbar .sound-btn, .topbar .fullscreen-button { min-width: 36px; min-height: 36px; padding: 4px; }
+  .topbar .sound-btn, .topbar .fullscreen-button, .topbar .lang-button { min-width: 36px; min-height: 36px; padding: 4px; }
   .topbar .log summary { min-height: 36px; padding: 4px 8px; }
 }
 /* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.

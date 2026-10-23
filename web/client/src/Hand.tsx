@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameView } from '../../shared/protocol.js';
 import { Card, HOLD_MS, STILL_PX, cardName, usePreview } from './cards.js';
+import { t } from './i18n.js';
 import { sfx } from './sound.js';
 
 /** A mouse drag starts after this many px; touch needs a hold first so the page can still scroll. */
@@ -175,7 +176,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
             inZone.map((c) => <Card key={c.uid} id={c.id} small onClick={() => toggle(c.uid)} />)
           ) : (
             <span className="muted">
-              <i className="ri-drag-move-2-line" /> {need === 1 ? 'Drag a card here to play it' : `Drag ${need} cards here to play them`}
+              <i className="ri-drag-move-2-line" /> {need === 1 ? t('Drag a card here to play it') : t('Drag {n} cards here to play them', { n: need })}
             </span>
           )}
           {need > 1 && (
@@ -186,7 +187,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
         </div>
       )}
       {/* what to do now is in the status bar at the top */}
-      <h2>Your hand</h2>
+      <h2>{t('Your hand')}</h2>
       {/* a new hand each turn slides in from the neighbour it came from: passing left, it comes from the right */}
       <div
         key={`${view.round}-${view.turn}`}
@@ -207,10 +208,10 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
           />
         ))}
       </div>
-      {picking && staged.length > 0 && staged.length < need && <p className="muted">{need - staged.length} more to go</p>}
+      {picking && staged.length > 0 && staged.length < need && <p className="muted">{t('{n} more to go', { n: need - staged.length })}</p>}
       {picking && need > 0 && staged.length === need && (
         <button className="primary play" onClick={() => play(staged)}>
-          Play {need === 1 ? cardName(view.hand.find((c) => c.uid === staged[0])?.id ?? '') : `${need} cards`}
+          {need === 1 ? t('Play {card}', { card: cardName(view.hand.find((c) => c.uid === staged[0])?.id ?? '') }) : t('Play {n} cards', { n: need })}
         </button>
       )}
       {dragging && (

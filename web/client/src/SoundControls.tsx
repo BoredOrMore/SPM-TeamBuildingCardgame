@@ -1,6 +1,7 @@
 // The speaker button: mute, and separate volumes for effects and music.
 
 import { useEffect, useRef, useState } from 'react';
+import { t } from './i18n.js';
 import { sfx, updateSound, useSoundSettings } from './sound.js';
 
 export function SoundControls({ className = '' }: { className?: string }) {
@@ -21,20 +22,20 @@ export function SoundControls({ className = '' }: { className?: string }) {
   const silent = s.muted || (s.sfx === 0 && s.music === 0);
   return (
     <div ref={box} className={`sound ${className}`}>
-      <button className="sound-btn" aria-label="Sound settings" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button className="sound-btn" aria-label={t('Sound settings')} aria-expanded={open} onClick={() => setOpen(!open)}>
         <i className={silent ? 'ri-volume-mute-line' : 'ri-volume-up-line'} />
       </button>
       {open && (
-        <div className="sound-panel" role="dialog" aria-label="Sound">
+        <div className="sound-panel" role="dialog" aria-label={t('Sound')}>
           <label className="sound-row">
-            <input type="checkbox" checked={s.muted} onChange={(e) => updateSound({ muted: e.target.checked })} /> Mute all
+            <input type="checkbox" checked={s.muted} onChange={(e) => updateSound({ muted: e.target.checked })} /> {t('Mute all')}
           </label>
           <label className="sound-row">
-            <i className="ri-music-2-line" /> Music
+            <i className="ri-music-2-line" /> {t('Music')}
             <input type="range" min={0} max={1} step={0.05} value={s.music} disabled={s.muted} onChange={(e) => updateSound({ music: Number(e.target.value) })} />
           </label>
           <label className="sound-row">
-            <i className="ri-notification-3-line" /> Effects
+            <i className="ri-notification-3-line" /> {t('Effects')}
             <input
               type="range"
               min={0}
