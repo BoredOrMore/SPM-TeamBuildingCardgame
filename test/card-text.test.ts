@@ -9,8 +9,8 @@ const keywords = JSON.parse(readFileSync(fileURLToPath(new URL('../data/keywords
   maxTextChars: number;
   bannedPatterns: string[];
   placeholders: string[];
-  keywords: Array<{ code: string; group: 'timing' | 'condition' | 'interaction' }>;
-  icons: Array<{ code: string }>;
+  keywords: Array<{ code: string; icon: string; group: 'timing' | 'condition' | 'interaction' }>;
+  icons: Array<{ code: string; icon: string }>;
   pendingSimplify: string[];
 };
 
@@ -32,6 +32,10 @@ describe('card text follows the keyword rules (AGENTS.md)', () => {
 
   it('uses only codes defined in keywords.json', () => {
     for (const card of printed) for (const code of codes(card.cardText!)) expect(known, `${card.id} -> {${code}}`).toContain(code);
+  });
+
+  it('gives every code an icon, so cards never show a code as text', () => {
+    for (const k of [...keywords.keywords, ...keywords.icons]) expect(k.icon, k.code).toMatch(/^[a-z0-9-]+$/);
   });
 
   it('leaves timing keywords to the card frame', () => {

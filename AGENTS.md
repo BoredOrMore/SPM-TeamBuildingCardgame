@@ -26,13 +26,14 @@ npm run analyze -- --dir results/baseline --out results/baseline/report.md  # me
 Every card a player reads follows the keyword system in `data/keywords.json` [P38], so all cards read the same way and need little mental arithmetic. **Recheck every rule below whenever you add or change a card, a keyword or an icon code**; `test/card-text.test.ts` checks the ones marked (test), and the rest are checked by reading the cards side by side.
 
 1. **Write `cardText` with codes in braces** — `{POACH}`, `{JUNIOR}` — where a card will show an icon. Use only codes defined in `keywords.json` (test).
+   Codes are data only: a rendered card always shows the code's icon (`icon` in `keywords.json`, from `iconSet`), never the code as text. Every code needs an icon (test).
 2. **Timing keywords live on the card frame, not in the text** — Onboard, Ongoing and Payday come from the card's `timing`, `persistent` and deck (every Meta card is Payday) (test).
 3. **At most 2 condition or interaction keywords per card**, each placed before the number it unlocks: `{CLEAN} +8` (test).
 4. **One line** — at most `maxTextChars`, counting each code as one icon (test).
 5. **Only plus and minus** — no multipliers and no "instead of" overrides. The only exceptions are the cards in `pendingSimplify`, until the team decides [P39]; remove a card from that list when its text is simplified (test).
 6. **Same effect, same words** across cards: `+N per {X}`, `{X} = 0`, `Everyone discards 1 {X}`, `Leader` and `Last place`.
 7. **`cardText` must mean exactly what `text` and `effect` do.** A change in meaning is a rule change: edit `effect`, then rerun the balance simulation.
-8. **Adding, renaming or removing a code** means updating `keywords.json`, every card that uses it, and the icon mapping.
+8. **Adding, renaming or removing a code** means updating `keywords.json` (including its `icon`), every card that uses it, and the icon mapping in `/mnt/project-files/graphics/icon-mapping.md`.
 
 ## Mandatory rules
 
