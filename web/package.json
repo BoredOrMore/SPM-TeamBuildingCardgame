@@ -1,0 +1,33 @@
+{
+  "name": "head-hunter-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Online multiplayer web app for Head Hunter: room server and browser client, both on the shared rule engine in ../src",
+  "scripts": {
+    "dev": "concurrently -n server,client \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/main.ts",
+    "dev:client": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ."
+  },
+  "dependencies": {
+    "@colyseus/core": "0.18.18",
+    "@colyseus/sdk": "0.18.5",
+    "@colyseus/ws-transport": "0.18.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remixicon": "4.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.4",
+    "concurrently": "9.2.1",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vite": "7.1.12",
+    "vitest": "3.2.4"
+  }
+}
