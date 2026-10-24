@@ -91,15 +91,15 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .goals > * { flex: none; white-space: nowrap; }
 /* Crisis and Meta in play are tiles: square art, name and effect; hover or hold one for the full card */
 .app.in-game .goals { align-items: center; }
-.app.in-game .goals > .card { flex: 1 1 200px; width: auto; max-width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
-.app.in-game .goals > .card .card-top { grid-row: 1 / 3; align-self: start; width: 64px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; }
-.app.in-game .goals > .card .card-art { height: 100%; aspect-ratio: 1; }
-.app.in-game .goals > .card .card-badge, .app.in-game .goals > .card .card-footer { display: none; }
-.app.in-game .goals > .card .card-top + .card-name { margin: 0; max-width: none; justify-content: flex-start; border-radius: 6px; outline: none; font-size: 0.75rem; padding: 3px 8px; }
-.app.in-game .goals > .card .card-text { text-align: left; padding: 0; font-size: 0.75rem; line-height: 1.3; }
+.app.in-game :is(.goals, .sheet-source) > .card { flex: 1 1 200px; width: auto; max-width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
+.app.in-game :is(.goals, .sheet-source) > .card .card-top { grid-row: 1 / 3; align-self: start; width: 64px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; }
+.app.in-game :is(.goals, .sheet-source) > .card .card-art { height: 100%; aspect-ratio: 1; }
+.app.in-game :is(.goals, .sheet-source) > .card .card-badge, .app.in-game :is(.goals, .sheet-source) > .card .card-footer { display: none; }
+.app.in-game :is(.goals, .sheet-source) > .card .card-top + .card-name { margin: 0; max-width: none; justify-content: flex-start; border-radius: 6px; outline: none; font-size: 0.75rem; padding: 3px 8px; }
+.app.in-game :is(.goals, .sheet-source) > .card .card-text { text-align: left; padding: 0; font-size: 0.75rem; line-height: 1.3; }
 @media (max-width: 600px) {
-  .app.in-game .goals > .card .card-top + .card-name { font-size: 0.65rem; padding: 2px 6px; }
-  .app.in-game .goals > .card .card-text { font-size: 0.65rem; }
+  .app.in-game :is(.goals, .sheet-source) > .card .card-top + .card-name { font-size: 0.65rem; padding: 2px 6px; }
+  .app.in-game :is(.goals, .sheet-source) > .card .card-text { font-size: 0.65rem; }
 }
 .table { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .my-team, .hand { flex: none; }
@@ -140,8 +140,8 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 @media (max-width: 600px) {
   /* a phone keeps every board on one screen: Crisis and Meta become small tiles (art, name, effect), each player one row */
   .app.in-game .game { gap: 6px; }
-  .app.in-game .goals > .card { flex-basis: 150px; max-width: none; grid-template-columns: 48px 1fr; gap: 2px 6px; }
-  .app.in-game .goals > .card .card-top { width: 48px; }
+  .app.in-game :is(.goals, .sheet-source) > .card { flex-basis: 150px; max-width: none; grid-template-columns: 48px 1fr; gap: 2px 6px; }
+  .app.in-game :is(.goals, .sheet-source) > .card .card-top { width: 48px; }
   .app.in-game .opponents { grid-template-columns: 1fr; gap: 6px; }
   .app.in-game .opponent, .app.in-game .my-team { display: flex; align-items: center; gap: 6px; padding: 6px 8px; }
   .app.in-game .opp-head, .app.in-game .my-team h2 { flex: none; flex-wrap: nowrap; margin: 0; }
@@ -155,15 +155,15 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 
 /* your decision, as a sheet over the hand */
 .sheet {
-  position: fixed; left: 0; right: var(--rules-right, 0px); bottom: var(--rules-bottom, 0px); z-index: 30; max-width: 960px; margin: 0 auto; max-height: 70vh; overflow-y: auto;
+  position: fixed; left: 0; right: var(--rules-right, 0px); bottom: var(--rules-bottom, 0px); z-index: 30; max-width: 960px; margin: 0 auto; max-height: min(70vh, calc(100dvh - var(--rules-bottom, 0px) - 12px)); overflow-y: auto;
   background: var(--panel); border-top: 3px solid var(--accent); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / 0.2);
   padding: 0 16px calc(16px + env(safe-area-inset-bottom)); animation: sheet-up 220ms ease-out;
 }
 .sheet.closed { padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
 .sheet button.sheet-head { position: sticky; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; border-radius: 0; background: var(--panel); font-weight: 700; font-size: 1.05rem; padding: 12px 0; min-height: 48px; }
 .sheet-body { display: flex; flex-direction: column; gap: 10px; }
-.sheet-source .card { width: 100%; min-height: 0; }
-.sheet-source .card .card-art, .sheet-source .card .card-top:not(:has(.card-art)) { aspect-ratio: auto; height: 96px; }
+/* the card that asks, as a tile like the Crisis and Meta cards on the table, so the options show without scrolling */
+.app.in-game .sheet-source > .card { max-width: none; }
 .sheet-offer { font-weight: 600; }
 .sheet-options { display: flex; flex-direction: column; gap: 8px; }
 button.option { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 52px; }
@@ -172,8 +172,9 @@ button.option:hover { border-color: var(--accent); }
 .card-picker { display: flex; flex-direction: column; gap: 8px; }
 .picker-prompt { font-weight: 600; }
 .picker-tiles { display: flex; gap: 8px; flex-wrap: wrap; }
-button.picker-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px; border: 2px solid transparent; }
+button.picker-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px 4px; border: 2px solid transparent; }
 button.picker-tile.picked { border-color: var(--accent); }
+.picker-name { font-size: 0.75rem; font-weight: 600; }
 .picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .play { width: 100%; margin-top: 10px; }
@@ -241,19 +242,19 @@ button.picker-tile.picked { border-color: var(--accent); }
 .card-top + .card-name { outline: max(1px, 0.9cqw) solid var(--paper); }
 /* the printed card's size is locked to the Figma shape (548 x 768) wherever it shows in full: the art keeps its share,
    and the text shrinks to fit the space left (useFitText) instead of the card growing */
-.card:where(:has(> .card-top):not(.goals > .card)) { aspect-ratio: 548 / 768; min-height: 0; gap: 0; }
-.card:where(:has(> .card-top):not(.goals > .card)) > * { flex: none; }
-.card:where(:has(> .card-top):not(.goals > .card)) > .card-top { overflow: hidden; }
-.card:where(:has(> .card-top):not(.goals > .card)) .card-art { height: auto; aspect-ratio: 520 / 540; }
-.card:where(:has(> .card-top):not(.goals > .card)) > .card-name { font-size: 5.8cqw; padding: 1.8cqw 4cqw; margin-top: -5cqw; }
-.card:where(:has(> .card-top):not(.goals > .card)) > .card-text { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 2cqw 4cqw 0; font-size: calc(5.6cqw * var(--fit, 1)); line-height: 1.3; }
-.card:where(:has(> .card-top):not(.goals > .card)) > .card-footer { padding-bottom: 1.5cqw; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) { aspect-ratio: 548 / 768; min-height: 0; gap: 0; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) > * { flex: none; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) > .card-top { overflow: hidden; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) .card-art { height: auto; aspect-ratio: 520 / 540; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) > .card-name { font-size: 5.8cqw; padding: 1.8cqw 4cqw; margin-top: -5cqw; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) > .card-text { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 2cqw 4cqw 0; font-size: calc(5.6cqw * var(--fit, 1)); line-height: 1.3; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) > .card-footer { padding-bottom: 1.5cqw; }
 /* each part of a card's text on its own line; points bold, conditions plain */
 .card-text b { font-weight: 800; }
 .card-text { font-weight: 400; }
-.card:where(:has(> .card-top):not(.goals > .card)) .text-line { display: block; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) .text-line { display: block; }
 .text-line + .text-line::before { content: ' · '; }
-.card:where(:has(> .card-top):not(.goals > .card)) .text-line + .text-line::before { content: none; }
+.card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) .text-line + .text-line::before { content: none; }
 .card:has(> .card-top) .card-text { text-align: center; }
 .card-footer { margin-top: auto; text-align: center; color: var(--frame); font-weight: 800; font-size: max(0.55rem, 3.3cqw); letter-spacing: 0.12em; }
 /* a team member: a round face in the card type's frame colour */
