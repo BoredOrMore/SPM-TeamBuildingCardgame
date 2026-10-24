@@ -6,8 +6,10 @@ import { ROOM_NAME, type ClientMessages, type View } from '../../shared/protocol
 /** Room server port, on the same host that served this page so phones on the LAN reach it too. */
 const SERVER_PORT = 2567;
 const TOKEN_KEY = 'hh_reconnect';
+/** The deployed room server (VITE_SERVER_URL at build time); without it, the dev server on this page's host. */
+const SERVER_URL: string = import.meta.env.VITE_SERVER_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:${SERVER_PORT}`;
 
-const client = new Client(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:${SERVER_PORT}`);
+const client = new Client(SERVER_URL);
 
 export interface Handlers {
   onView: (view: View) => void;

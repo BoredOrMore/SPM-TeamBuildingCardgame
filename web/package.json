@@ -8,6 +8,8 @@
     "dev": "concurrently -n server,client \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "tsx watch server/main.ts",
     "dev:client": "vite",
+    "build": "vite build",
+    "start": "tsx server/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --root ."
   },
