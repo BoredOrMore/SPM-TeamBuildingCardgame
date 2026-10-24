@@ -308,8 +308,6 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
                 </div>
               ))}
           </section>
-
-          {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
         </div>
       </div>
 
@@ -321,6 +319,8 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
       </section>
 
       <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
+      {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
+      {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
     </main>
   );
 }
@@ -512,7 +512,8 @@ function CardPicker({ view, options, onChoose }: { view: GameView; options: Choi
         <div className="picker-tiles">
           {tiles.map((t) => (
             <button key={t.uid} className={`picker-tile ${picked.includes(t.uid) ? 'picked' : ''}`} aria-pressed={picked.includes(t.uid)} onClick={() => tap(t.uid)}>
-              <Card id={idOfUid(view, t.uid)} small />
+              <Card id={idOfUid(view, t.uid)} chip />
+              <span className="picker-name">{cardName(idOfUid(view, t.uid))}</span>
               {t.owner !== undefined && <span className="muted">{view.players[t.owner]?.name}</span>}
             </button>
           ))}
@@ -520,7 +521,7 @@ function CardPicker({ view, options, onChoose }: { view: GameView; options: Choi
       ) : (
         <span className="option-cards">
           {picked.map((uid) => (
-            <Card key={uid} id={idOfUid(view, uid)} small />
+            <Card key={uid} id={idOfUid(view, uid)} chip />
           ))}
         </span>
       )}
@@ -566,7 +567,7 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
                 {choiceCards(o).length > 0 && (
                   <span className="option-cards">
                     {choiceCards(o).map((uid) => (
-                      <Card key={uid} id={idOfUid(view, uid)} small />
+                      <Card key={uid} id={idOfUid(view, uid)} chip />
                     ))}
                   </span>
                 )}
