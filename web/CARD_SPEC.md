@@ -16,8 +16,8 @@ Figma card is 548 × 768. Sizes below are in Figma px and as a share of card wid
 | Type badge | top left, 16 (2.9%) in from the inner edge | white circle 84 (15.3%), ring 6 in frame color, icon 48 (57% of badge) in frame color |
 | Timing badge | top right, same size and look as the type badge | Onboard, Ongoing or Payday icon from `keywords.json`; see Timing |
 | Name pill | centered, its top 32 above the art's bottom edge | fill frame color, 5 px paper outline, radius full, white text (Figma: Fredoka SemiBold 34) |
-| Card text | centered under the name, 28 px side padding | ink `iconInk`, inline icons, card icons on chips (Figma: Nunito Bold 28, icons 34) |
-| Footer | bottom center, 20 above the inner's bottom | type label in capitals, frame color, letter spacing 12% (Figma: Nunito ExtraBold 18) |
+| Card text | centered under the name, 28 px side padding | ink `iconInk`, inline icons, card icons on chips (Figma: Nunito Bold 28 = 5.1% of card width, icons 34) |
+| Footer | bottom center, sitting on the card's bottom edge | a pill filled with the frame color, rounded at the top, type label in white capitals, letter spacing 12% (Figma: Nunito ExtraBold 18); the card text ends above it |
 
 ## Type badge icon
 
@@ -72,7 +72,10 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 - Your decision opens as a sheet at the bottom of the screen (above the rules panel when it is open), always whole on screen; it is not part of the table, so the table's shrink never moves or scales it.
 - A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
 - In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
-- A card face shows only `cardText`. A card that says more (`cardTextMore`) ends its face text with a dim `more` mark (three dots), and the full card shown on hover or hold adds those lines under the face text, one per line.
+- A card never hides text: everywhere its text shows, it shows `cardText` and every `cardTextMore` line, one per line, shrunk to fit (Bored, 2026-11-17: players need the information without opening a card).
+- While you choose a card, a hand card that would score more on your team than on its own (your team only: no Meta, Crisis or bonuses) has a gold ring and a round link mark at its top centre, between the two badges. The Combos button in the topbar turns this off and on; the choice is saved in the browser.
+- While you choose a card, a hand card that this round's Meta (your secret ones included) would pay for carries a Meta mark beside the combo mark: a pill in the Meta frame color with the Meta icon and the points playing it would add or take (`+2`, `-4`).
+- This round's Meta are not tiles but one board in the Meta frame color, so nothing has to be opened: a title ("Meta: scores for everyone at round end"), then one row per Meta with its name on a pill, its whole text (`cardText` and every `cardTextMore` line) and, on the right, the points it gives you now. Your own secret Meta are rows too, marked with a lock.
 - Card text shows in the player's language (EN or TH, the topbar button). Thai text comes from `client/src/locales/cards.th.json` with the same codes and numbers as `cardText`; the card name, icons and footer label stay English.
 
 ## Checklist
@@ -81,7 +84,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 2. The type badge is top left and its icon follows the table above.
 3. The timing badge is top right, its icon comes from data as in Timing, and Role and Event cards leave it empty.
 4. The name pill overlaps the art's bottom edge and is centered.
-5. Card text is centered, uses icons for every code and chips for card icons, shows points bold and conditions plain, and puts each ` · ` part on its own line. A face with further lines shows the `more` mark, and the opened card shows every line.
+5. Card text is centered, uses icons for every code and chips for card icons, shows points bold and conditions plain, and puts each ` · ` part on its own line. Every line of the card shows; none is left for hover or hold.
 6. The footer shows the type label.
 7. The card keeps the size in Sizes for where it is shown whatever its content, and every card in a row has the same size.
 8. Hover (mouse) and hold (touch) show the full card with Tooltips, on top of everything and whole on screen.

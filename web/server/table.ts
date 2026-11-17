@@ -143,6 +143,26 @@ export class Table {
     // others' private Meta is hidden, so their live score counts only what is on the table
     const publicScore = (seat: number) =>
       scorePlayer({ data: this.data, teams, seat, activeMeta: state.activeMeta, visibleCrisis: state.visibleCrisis, bonuses: state.players[seat]!.bonuses, totalTurns: state.totalTurns }).total;
+    // a hand card is a combo when your team makes it worth more than it is alone; Meta, Crisis and bonuses are left out
+    const scoreOf = (team: CardInstance[], activeMeta: string[]) =>
+      scorePlayer({ data: this.data, teams: teams.map((t, seat) => (seat === you ? team : t)), seat: you, activeMeta, visibleCrisis: [], bonuses: [], totalTurns: state.totalTurns }).total;
+    const teamOnlyScore = (team: CardInstance[]) => scoreOf(team, []);
+    const teamScore = teamOnlyScore(me.team);
+    const comboCards = me.hand
+      .filter((c) => {
+        const gain = teamOnlyScore([...me.team, c]) - teamScore;
+        return gain > 0 && gain > teamOnlyScore([c]);
+      })
+      .map((c) => c.uid);
+    // what this round's Meta, the player's own included, would add for each hand card on top of its points without any Meta
+    const yourMeta = [...state.activeMeta, ...me.privateMeta];
+    const metaScore = scoreOf(me.team, yourMeta) - teamScore;
+    const metaGains: Record<string, number> = {};
+    for (const c of me.hand) {
+      const withCard = [...me.team, c];
+      const gain = scoreOf(withCard, yourMeta) - teamOnlyScore(withCard) - metaScore;
+      if (gain !== 0) metaGains[c.uid] = gain;
+    }
     const players: OpponentView[] = state.players.map((p) => ({
       ...seats[p.seat]!,
       team: p.team,
@@ -167,6 +187,8 @@ export class Table {
       crunchNextTurn: state.crunchNextTurn,
       hand: me.hand,
       picked: me.picked,
+      comboCards,
+      metaGains,
       privateMeta: me.privateMeta,
       players,
       activeMeta: state.activeMeta,

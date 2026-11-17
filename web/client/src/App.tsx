@@ -7,7 +7,7 @@ import type { DecisionView, GameView, LobbyView, View } from '../../shared/proto
 import { Hand } from './Hand.js';
 import { RulebookButton } from './Rulebook.js';
 import { PlaybackOverlay, SPEEDS, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
-import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
+import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SoundControls } from './SoundControls.js';
 import { setMusic, sfx } from './sound.js';
 import { LanguageButton, t, useLang } from './i18n.js';
@@ -20,6 +20,7 @@ const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pic
 
 const NAME_KEY = 'hh_name';
 const SPEED_KEY = 'hh_speed';
+const COMBOS_KEY = 'hh_combos';
 
 /** The spotlight speed this browser saved, or normal when none or an unknown value is saved. */
 function savedSpeed(): Speed {
@@ -28,6 +29,14 @@ function savedSpeed(): Speed {
     return SPEEDS.find((s) => s === v) ?? 'normal';
   } catch {
     return 'normal';
+  }
+}
+/** Whether this browser asked for combo highlights in the hand; on until the player turns them off. */
+function savedCombos(): boolean {
+  try {
+    return localStorage.getItem(COMBOS_KEY) !== 'off';
+  } catch {
+    return true;
   }
 }
 /** How long an error toast stays on screen. */
@@ -56,6 +65,8 @@ export function App() {
   };
   const shown = playback.shown;
   const [toast, setToast] = useState<string>();
+  /** Which request is waiting on the server, so the home screen can say so. */
+  const [connecting, setConnecting] = useState<'create' | 'join'>();
   const handlers = useRef<Handlers>({
     onView: setView,
     onError: setToast,
@@ -80,12 +91,15 @@ export function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  /** Runs a create or join, showing any failure as a toast. */
-  const connect = async (open: () => Promise<Connection>) => {
+  /** Runs a create or join, marking it as waiting on the server until it answers and showing any failure as a toast. */
+  const connect = async (kind: 'create' | 'join', open: () => Promise<Connection>) => {
+    setConnecting(kind);
     try {
       setConn(await open());
     } catch (err) {
       setToast(err instanceof Error ? err.message : String(err));
+    } finally {
+      setConnecting(undefined);
     }
   };
 
@@ -93,7 +107,7 @@ export function App() {
     <PreviewProvider>
     <div className={`app ${playback.step ? 'playing' : ''} ${shown?.phase === 'game' && !shown.result ? 'in-game' : ''}`}>
       {!conn || !shown ? (
-        <Home busy={!!conn} onCreate={(name) => connect(() => createRoom(name, handlers.current))} onJoin={(code, name) => connect(() => joinRoom(code, name, handlers.current))} />
+        <Home busy={!!conn} connecting={connecting} onCreate={(name) => connect('create', () => createRoom(name, handlers.current))} onJoin={(code, name) => connect('join', () => joinRoom(code, name, handlers.current))} />
       ) : shown.phase === 'lobby' ? (
         <Lobby view={shown} conn={conn} />
       ) : (
@@ -114,10 +128,13 @@ export function App() {
 }
 
 /** Name entry plus create-room and join-by-code. */
-function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: (code: string, name: string) => void }) {
+function Home(props: { busy: boolean; connecting: 'create' | 'join' | undefined; onCreate: (name: string) => void; onJoin: (code: string, name: string) => void }) {
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '');
   const [code, setCode] = useState('');
   const remember = () => localStorage.setItem(NAME_KEY, name);
+  // one request at a time: both buttons wait while the server answers
+  const busy = props.busy || !!props.connecting;
+  const spinner = <i className="ri-loader-4-line spin" aria-hidden />;
   return (
     <main className="home">
       <h1>Head Hunter</h1>
@@ -127,15 +144,20 @@ function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: 
         {t('Your name')}
         <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Bored')} />
       </label>
-      <button className="primary" disabled={props.busy || !name.trim()} onClick={() => (remember(), props.onCreate(name))}>
-        {t('Create a room')}
+      <button className="primary" disabled={busy || !name.trim()} onClick={() => (remember(), props.onCreate(name))}>
+        {props.connecting === 'create' ? <>{spinner} {t('Creating the room…')}</> : t('Create a room')}
       </button>
       <div className="join-row">
         <input value={code} maxLength={4} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder={t('CODE')} aria-label={t('Room code')} />
-        <button disabled={props.busy || !name.trim() || code.length !== 4} onClick={() => (remember(), props.onJoin(code, name))}>
-          {t('Join')}
+        <button disabled={busy || !name.trim() || code.length !== 4} onClick={() => (remember(), props.onJoin(code, name))}>
+          {props.connecting === 'join' ? <>{spinner} {t('Joining…')}</> : t('Join')}
         </button>
       </div>
+      {props.connecting && (
+        <p className="muted" role="status">
+          {t('Waiting for the server. If it was asleep, this can take about a minute.')}
+        </p>
+      )}
     </main>
   );
 }
@@ -237,6 +259,16 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
   }, [yours]);
 
   const table = useFitTable();
+  const [combos, setCombos] = useState(savedCombos);
+  /** Turns the combo highlights in the hand on or off and remembers the choice in this browser. */
+  const toggleCombos = () => {
+    setCombos(!combos);
+    try {
+      localStorage.setItem(COMBOS_KEY, combos ? 'off' : 'on');
+    } catch {
+      // private windows may block storage; the choice still holds for this visit
+    }
+  };
 
   if (view.result) return <Results view={view} conn={conn} />;
 
@@ -247,6 +279,9 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         <span className="muted room">{t('Room {code}', { code: view.code })}</span>
         <button className="speed" onClick={onToggleSpeed} title={t('Spotlight speed: {speed}', { speed: speed === 'fast' ? t('Fast') : t('Normal') })}>
           <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? t('Fast') : t('Normal')}</span>
+        </button>
+        <button className="speed" aria-pressed={combos} onClick={toggleCombos} title={combos ? t('Combo highlights: on') : t('Combo highlights: off')}>
+          <i className={combos ? 'ri-links-line' : 'ri-link-unlink'} /> <span className="label">{t('Combos')}</span>
         </button>
         <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
           <i className="ri-trophy-line" /> {view.yourTotal}
@@ -275,12 +310,13 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
             {view.visibleCrisis.map((c) => (
               <Card key={c.uid} id={c.id} />
             ))}
-            {view.activeMeta.map((id) => (
-              <Card key={id} id={id} />
-            ))}
-            {view.privateMeta.map((id) => (
-              <Card key={id} id={id} />
-            ))}
+            {view.activeMeta.length + view.privateMeta.length > 0 && (
+              <MetaBoard
+                shared={view.activeMeta}
+                secret={view.privateMeta}
+                pointsNow={(id) => view.yourScore.lines.find((l) => l.label === `Meta: ${cardName(id)}`)?.points ?? 0}
+              />
+            )}
           </section>
           <section className="opponents">
             {view.players
@@ -318,7 +354,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
       </section>
 
-      <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
+      <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
       {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
       {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
     </main>

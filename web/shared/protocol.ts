@@ -63,6 +63,10 @@ export interface GameView {
   crunchNextTurn: boolean;
   hand: CardInstance[];
   picked: string[] | null;
+  /** uids of hand cards that would score more on your team than on their own, counting only your team (no Meta, Crisis or bonuses) */
+  comboCards: string[];
+  /** by hand card uid: the points this round's Meta (yours included) would add or take if you played it now; cards with 0 are left out */
+  metaGains: Record<string, number>;
   privateMeta: string[];
   players: OpponentView[];
   activeMeta: string[];
