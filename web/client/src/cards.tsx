@@ -521,10 +521,19 @@ export function Card(props: {
 
 /**
  * This round's Meta as one board, so nothing has to be opened: each Meta as a tile with its art, name, whole text
- * and the points it gives this player right now. `secret` are the player's own Meta that others cannot see.
+ * and the points it gives this player right now; hovering a tile with a mouse, or holding it on touch, shows the whole card. `secret` are the player's own Meta that others cannot see.
  */
 export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; secret: string[]; pointsNow: (id: string) => number }) {
   const ids = [...shared, ...secret];
+  const tooltip = useContext(TooltipContext);
+  const preview = usePreview();
+  const hovered = useRef(false);
+  // a Meta that leaves the board while hovered (round end) never gets pointerleave
+  useEffect(() => () => void (hovered.current && tooltip(undefined)), [tooltip]);
+  const hold = useRef<{ timer: number; x: number; y: number }>(undefined);
+  const cancelHold = () => {
+    if (hold.current) clearTimeout(hold.current.timer);
+  };
   return (
     <div className="meta-board" style={{ '--metas': ids.length } as React.CSSProperties}>
       <span className="meta-title">
@@ -536,7 +545,32 @@ export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; sec
           if (!def?.cardText) throw new Error(`No card text for Meta ${id}`);
           const points = pointsNow(id);
           return (
-            <div key={id} className="meta-row">
+            <div
+              key={id}
+              className="meta-row"
+              onPointerEnter={(e) => {
+                if (e.pointerType !== 'mouse' || e.buttons !== 0) return;
+                hovered.current = true;
+                tooltip({ id, rect: e.currentTarget.getBoundingClientRect() });
+              }}
+              onPointerLeave={() => {
+                hovered.current = false;
+                tooltip(undefined);
+              }}
+              onPointerDown={(e) => {
+                tooltip(undefined);
+                cancelHold();
+                if (e.pointerType === 'mouse') return;
+                hold.current = { x: e.clientX, y: e.clientY, timer: window.setTimeout(() => preview(id), HOLD_MS) };
+              }}
+              onPointerMove={(e) => {
+                const h = hold.current;
+                if (h && Math.hypot(e.clientX - h.x, e.clientY - h.y) > STILL_PX) cancelHold();
+              }}
+              onPointerUp={cancelHold}
+              onPointerCancel={cancelHold}
+              onContextMenu={(e) => e.preventDefault()}
+            >
               <img className="meta-art" src={artUrl(id)} alt="" draggable={false} />
               <b className="meta-name">
                 {secret.includes(id) && <i className="ri-lock-line" aria-label={t('Only you see this Meta')} />} {def.name}
