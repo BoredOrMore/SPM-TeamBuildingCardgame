@@ -20,6 +20,7 @@ const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pic
 
 const NAME_KEY = 'hh_name';
 const SPEED_KEY = 'hh_speed';
+const COMBOS_KEY = 'hh_combos';
 
 /** The spotlight speed this browser saved, or normal when none or an unknown value is saved. */
 function savedSpeed(): Speed {
@@ -28,6 +29,14 @@ function savedSpeed(): Speed {
     return SPEEDS.find((s) => s === v) ?? 'normal';
   } catch {
     return 'normal';
+  }
+}
+/** Whether this browser asked for combo highlights in the hand; on until the player turns them off. */
+function savedCombos(): boolean {
+  try {
+    return localStorage.getItem(COMBOS_KEY) !== 'off';
+  } catch {
+    return true;
   }
 }
 /** How long an error toast stays on screen. */
@@ -250,6 +259,16 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
   }, [yours]);
 
   const table = useFitTable();
+  const [combos, setCombos] = useState(savedCombos);
+  /** Turns the combo highlights in the hand on or off and remembers the choice in this browser. */
+  const toggleCombos = () => {
+    setCombos(!combos);
+    try {
+      localStorage.setItem(COMBOS_KEY, combos ? 'off' : 'on');
+    } catch {
+      // private windows may block storage; the choice still holds for this visit
+    }
+  };
 
   if (view.result) return <Results view={view} conn={conn} />;
 
@@ -260,6 +279,9 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         <span className="muted room">{t('Room {code}', { code: view.code })}</span>
         <button className="speed" onClick={onToggleSpeed} title={t('Spotlight speed: {speed}', { speed: speed === 'fast' ? t('Fast') : t('Normal') })}>
           <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? t('Fast') : t('Normal')}</span>
+        </button>
+        <button className="speed" aria-pressed={combos} onClick={toggleCombos} title={combos ? t('Combo highlights: on') : t('Combo highlights: off')}>
+          <i className={combos ? 'ri-links-line' : 'ri-link-unlink'} /> <span className="label">{t('Combos')}</span>
         </button>
         <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
           <i className="ri-trophy-line" /> {view.yourTotal}
@@ -331,7 +353,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
       </section>
 
-      <Hand view={view} onPlay={(cards) => conn.send('pick', { cards })} />
+      <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
       {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
       {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
     </main>

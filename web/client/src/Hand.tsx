@@ -29,7 +29,7 @@ interface Drag {
 }
 
 /** Hand cards with drag-and-hold onto a play zone; tap-to-select plus a Play button still works. */
-export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]) => void }) {
+export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos: boolean; onPlay: (uids: string[]) => void }) {
   const preview = usePreview();
   const [staged, setStaged] = useState<string[]>([]);
   const [drag, setDrag] = useState<Drag>();
@@ -202,6 +202,7 @@ export function Hand({ view, onPlay }: { view: GameView; onPlay: (uids: string[]
             id={c.id}
             selected={staged.includes(c.uid) || !!view.picked?.includes(c.uid)}
             dim={(!picking && !view.picked?.includes(c.uid)) || dragging?.uid === c.uid}
+            combo={showCombos && picking && view.comboCards.includes(c.uid)}
             lifted={drag?.uid === c.uid && drag.held && !drag.dragging}
             onPointerDown={press(c.uid, c.id)}
             onClick={tap(c.uid)}

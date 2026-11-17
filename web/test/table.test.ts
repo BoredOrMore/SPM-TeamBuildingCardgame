@@ -79,6 +79,21 @@ describe('views hide private information', () => {
     expect(json).not.toContain('mainRemaining":[');
   });
 
+  it('marks the hand cards that score more on your team than alone', () => {
+    const table = startedTable();
+    const me = table.state!.players[0]!;
+    me.team = [{ uid: 't1', id: 'junior_dev' }];
+    me.hand = [
+      { uid: 'h1', id: 'senior_dev' },
+      { uid: 'h2', id: 'project_manager' },
+      { uid: 'h3', id: 'coffee' },
+      { uid: 'h4', id: 'bug' },
+    ];
+    expect((table.viewFor('a') as GameView).comboCards).toEqual(['h1', 'h2']);
+    me.team = [];
+    expect((table.viewFor('a') as GameView).comboCards).toEqual([]);
+  });
+
   it("scores others from the table only, never from their private Meta", () => {
     const table = startedTable();
     playOut(table, (t) => t.state!.turn >= 5);

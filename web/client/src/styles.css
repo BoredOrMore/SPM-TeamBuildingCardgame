@@ -5,6 +5,7 @@
   --muted: #6b6a75;
   --line: #e2dfd7;
   --accent: #3b82c4;
+  --combo: #f2b632;
   --warn: #e0524a;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--ink);
@@ -273,6 +274,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 .card.clickable:hover { transform: translateY(-4px); }
 .card.selected { transform: translateY(-8px); box-shadow: 0 0 0 3px var(--accent); }
 .card.dim { opacity: 0.55; }
+/* a hand card that scores more with your team: a gold ring and a link mark inside its top edge, between the two badges */
+.card.combo:not(.selected) { box-shadow: 0 0 0 3px var(--combo), 0 0 14px var(--combo); }
+.combo-mark { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); z-index: 1; display: grid; place-items: center; width: 22px; aspect-ratio: 1; border-radius: 50%; background: var(--combo); color: var(--ink); font-size: 0.85rem; }
 .card:disabled { cursor: default; }
 .kw { font-size: 1.05em; vertical-align: -0.15em; margin: 0 1px; color: var(--ink); }
 .chip {

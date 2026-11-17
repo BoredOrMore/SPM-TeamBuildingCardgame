@@ -433,6 +433,8 @@ export function Card(props: {
   /** a round art face only, for team rows */
   chip?: boolean;
   shield?: boolean;
+  /** marks a hand card that scores more with the player's team */
+  combo?: boolean;
   lifted?: boolean;
   onClick?: () => void;
   onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -444,7 +446,7 @@ export function Card(props: {
   useEffect(() => () => void (hovered.current && tooltip(undefined)), [tooltip]);
   const hold = useRef<{ timer: number; x: number; y: number; fired: boolean }>(undefined);
   const def = CARD_DEFS.get(props.id);
-  const classes = ['card', props.small && 'small', props.chip && 'chip', props.selected && 'selected', props.dim && 'dim', props.lifted && 'lifted', props.onClick && 'clickable']
+  const classes = ['card', props.small && 'small', props.chip && 'chip', props.selected && 'selected', props.dim && 'dim', props.lifted && 'lifted', props.combo && 'combo', props.onClick && 'clickable']
     .filter(Boolean)
     .join(' ');
 
@@ -502,6 +504,7 @@ export function Card(props: {
       }}
     >
       <CardFace id={props.id} small={props.small} chip={props.chip} shield={props.shield} />
+      {props.combo && <i className="ri-links-line combo-mark" aria-label={t('Combo with your team')} />}
     </div>
   );
 }

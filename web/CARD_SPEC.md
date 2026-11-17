@@ -73,6 +73,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 - A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
 - In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
 - A card face shows only `cardText`. A card that says more (`cardTextMore`) ends its face text with a dim `more` mark (three dots), and the full card shown on hover or hold adds those lines under the face text, one per line.
+- While you choose a card, a hand card that would score more on your team than on its own (your team only: no Meta, Crisis or bonuses) has a gold ring and a round link mark at its top centre, between the two badges. The Combos button in the topbar turns this off and on; the choice is saved in the browser.
 - Card text shows in the player's language (EN or TH, the topbar button). Thai text comes from `client/src/locales/cards.th.json` with the same codes and numbers as `cardText`; the card name, icons and footer label stay English.
 
 ## Checklist

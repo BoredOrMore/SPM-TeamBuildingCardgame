@@ -63,6 +63,8 @@ export interface GameView {
   crunchNextTurn: boolean;
   hand: CardInstance[];
   picked: string[] | null;
+  /** uids of hand cards that would score more on your team than on their own, counting only your team (no Meta, Crisis or bonuses) */
+  comboCards: string[];
   privateMeta: string[];
   players: OpponentView[];
   activeMeta: string[];
