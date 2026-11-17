@@ -61,11 +61,12 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .track-round { white-space: nowrap; }
 .track-turns { display: flex; align-items: center; gap: 3px; flex: 1; justify-content: center; margin: 0; padding: 0; list-style: none; }
 .track-turn { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); color: var(--muted); font-size: 0.75rem; }
-.track-turn.done { background: var(--line); border-color: var(--line); color: var(--ink); }
-.track-turn.current { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.15); }
+.track-turn.done { background: var(--line); border-color: var(--line); color: var(--muted); opacity: 0.6; }
+/* the turn now: larger, bold and ringed, with room beside it so it never covers its neighbours */
+.track-turn.current { margin: 0 5px; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 800; transform: scale(1.4); box-shadow: 0 0 0 3px rgb(59 130 196 / 0.3); }
 .track-crisis { display: grid; place-items: center; width: 20px; height: 20px; color: var(--warn); opacity: 0.55; font-size: 0.9rem; }
 .track-crisis.done { opacity: 0.25; }
-.track-crisis.current { opacity: 1; border-radius: 50%; background: var(--warn); color: #fff; transform: scale(1.2); }
+.track-crisis.current { margin: 0 5px; opacity: 1; border-radius: 50%; background: var(--warn); color: #fff; transform: scale(1.4); box-shadow: 0 0 0 3px rgb(224 82 74 / 0.3); }
 .track-step { white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: var(--line); font-size: 0.75rem; }
 @media (max-width: 600px) {
   /* a phone gives the track its own line under the buttons */
