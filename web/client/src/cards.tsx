@@ -520,33 +520,37 @@ export function Card(props: {
 }
 
 /**
- * This round's Meta as one board, so nothing has to be opened: each Meta on a row with its name, its whole text
+ * This round's Meta as one board, so nothing has to be opened: each Meta as a tile with its art, name, whole text
  * and the points it gives this player right now. `secret` are the player's own Meta that others cannot see.
  */
 export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; secret: string[]; pointsNow: (id: string) => number }) {
+  const ids = [...shared, ...secret];
   return (
-    <div className="meta-board">
+    <div className="meta-board" style={{ '--metas': ids.length } as React.CSSProperties}>
       <span className="meta-title">
         <i className="ri-global-line" /> {t('Meta: scores for everyone at round end')}
       </span>
-      {[...shared, ...secret].map((id) => {
-        const def = CARD_DEFS.get(id);
-        if (!def?.cardText) throw new Error(`No card text for Meta ${id}`);
-        const points = pointsNow(id);
-        return (
-          <span key={id} className="meta-row">
-            <b className="meta-name">
-              {secret.includes(id) && <i className="ri-lock-line" aria-label={t('Only you see this Meta')} />} {def.name}
-            </b>
-            <span className="meta-text">
-              <CardText text={wholeTextOf(def)!} />
-            </span>
-            <b className="meta-now" title={t('Your points from this Meta now')}>
-              {points > 0 ? `+${points}` : points}
-            </b>
-          </span>
-        );
-      })}
+      <div className="meta-tiles">
+        {ids.map((id) => {
+          const def = CARD_DEFS.get(id);
+          if (!def?.cardText) throw new Error(`No card text for Meta ${id}`);
+          const points = pointsNow(id);
+          return (
+            <div key={id} className="meta-row">
+              <img className="meta-art" src={artUrl(id)} alt="" draggable={false} />
+              <b className="meta-name">
+                {secret.includes(id) && <i className="ri-lock-line" aria-label={t('Only you see this Meta')} />} {def.name}
+              </b>
+              <b className="meta-now" title={t('Your points from this Meta now')}>
+                {points > 0 ? `+${points}` : points}
+              </b>
+              <span className="meta-text">
+                <CardText text={wholeTextOf(def)!} />
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

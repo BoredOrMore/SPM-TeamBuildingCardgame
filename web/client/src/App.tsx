@@ -9,9 +9,9 @@ import { Hand } from './Hand.js';
 import { RulebookButton } from './Rulebook.js';
 import { PlaybackOverlay, SPEEDS, reducedMotion, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
 import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
-import { SoundControls } from './SoundControls.js';
+import { SettingsMenu } from './Settings.js';
 import { setMusic, sfx } from './sound.js';
-import { LanguageButton, t, useLang } from './i18n.js';
+import { t, useLang } from './i18n.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
 
 /** How long the round track's current dot takes to show that the turn moved on, in ms. */
@@ -119,9 +119,7 @@ export function App() {
       )}
       {!(shown?.phase === 'game' && !shown.result) && (
         <div className="corner">
-          <FullscreenButton />
-          <LanguageButton />
-          <SoundControls />
+          <SettingsMenu />
         </div>
       )}
       <PlaybackOverlay step={playback.step} speed={speed} onSkip={playback.skip} onNext={playback.next} />
@@ -306,20 +304,12 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
       <header className="topbar">
         <RoundTrack view={view} />
         <span className="muted room">{t('Room {code}', { code: view.code })}</span>
-        <button className="speed" onClick={onToggleSpeed} title={t('Spotlight speed: {speed}', { speed: speed === 'fast' ? t('Fast') : t('Normal') })}>
-          <i className={speed === 'fast' ? 'ri-speed-line' : 'ri-play-line'} /> <span className="label">{speed === 'fast' ? t('Fast') : t('Normal')}</span>
-        </button>
-        <button className="speed" aria-pressed={combos} onClick={toggleCombos} title={combos ? t('Combo highlights: on') : t('Combo highlights: off')}>
-          <i className={combos ? 'ri-links-line' : 'ri-link-unlink'} /> <span className="label">{t('Combos')}</span>
-        </button>
         <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
           <i className="ri-trophy-line" /> {view.yourTotal}
         </span>
         <Log view={view} />
         <RulebookButton />
-        <FullscreenButton />
-        <LanguageButton />
-        <SoundControls />
+        <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
       </header>
       <p className={`now ${yours ? 'yours' : ''}`} role="status">
         {playing ? t('Showing what happened…') : nowLine(view)}
@@ -430,28 +420,6 @@ function useFitTable() {
     return () => watch.disconnect();
   });
   return { box, content };
-}
-
-/** Enters or leaves full screen. Hidden where the browser has no full screen for pages (iPhone): there, Add to Home Screen opens the game without the browser bar. */
-function FullscreenButton() {
-  const [full, setFull] = useState(!!document.fullscreenElement);
-  useEffect(() => {
-    const onChange = () => setFull(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', onChange);
-    return () => document.removeEventListener('fullscreenchange', onChange);
-  }, []);
-  if (!document.fullscreenEnabled) return null;
-  return (
-    <button
-      className="fullscreen-button"
-      onClick={() => void (full ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
-      title={full ? t('Leave full screen') : t('Full screen')}
-      aria-label={full ? t('Leave full screen') : t('Full screen')}
-      aria-pressed={full}
-    >
-      <i className={full ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'} />
-    </button>
-  );
 }
 
 /** A team as one chip per card kind with a count, so a long team fits on one or two lines. */

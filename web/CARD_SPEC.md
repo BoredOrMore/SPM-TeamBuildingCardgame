@@ -12,7 +12,7 @@ Figma card is 548 × 768. Sizes below are in Figma px and as a share of card wid
 |---|---|---|
 | Frame | whole card | fill = frame color of the card's type (`frameColors`), outer radius 32 (5.8%), border 14 (2.6%) |
 | Inner | inside the frame | paper `#FFF8EC`, radius 22 |
-| Art | top of inner, 520 × 540 | `client/public/cards/art/<card id>.webp`; with no art, a tint of the frame color |
+| Art | top of inner, 520 × 540 | `client/public/cards/art/<card id>.webp`; with no art, a tint of the frame color. Since 2026-11-17 the art is the two-ink risograph set (blue and pink on cream), drawn as SVG layers with one standard human figure; sources and rules are in project files `graphics/style-b/src/` (`figure.py`, `BRIEF.md`, `FIGURE_FIX.md`). The earlier chibi set is kept in project files `graphics/export/art/` |
 | Type badge | top left, 16 (2.9%) in from the inner edge | white circle 84 (15.3%), ring 6 in frame color, icon 48 (57% of badge) in frame color |
 | Timing badge | top right, same size and look as the type badge | Onboard, Ongoing or Payday icon from `keywords.json`; see Timing |
 | Name pill | centered, its top 32 above the art's bottom edge | fill frame color, 5 px paper outline, radius full, white text (Figma: Fredoka SemiBold 34) |

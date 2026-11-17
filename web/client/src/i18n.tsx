@@ -56,14 +56,3 @@ export function t(en: string, vars: Record<string, string | number> = {}): strin
     return String(v);
   });
 }
-
-/** A button that switches between English and Thai. */
-export function LanguageButton() {
-  const l = useLang();
-  const next: Lang = l === 'en' ? 'th' : 'en';
-  return (
-    <button className="lang-button" onClick={() => setLang(next)} title={next === 'th' ? 'ภาษาไทย' : 'English'} aria-label={next === 'th' ? 'ภาษาไทย' : 'English'}>
-      {next === 'th' ? 'ไทย' : 'EN'}
-    </button>
-  );
-}
