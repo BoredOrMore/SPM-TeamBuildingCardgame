@@ -301,7 +301,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 }
 /* the held card is on top of everything, the rules panel included, and never squeezed: on a short screen the whole card
    gets smaller (its height leaves --preview-room for the keyword boxes), so its text always shows */
-.preview { --preview-room: 220px; }
+.preview, .card-tooltip { --preview-room: 220px; }
 .card.preview-card { flex: none; width: min(240px, calc((100dvh - var(--preview-room)) * 548 / 768)); }
 @media (min-width: 601px) { .card.preview-card { width: min(300px, calc((100dvh - var(--preview-room)) * 548 / 768)); } }
 .preview-card { min-height: 0; box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }
