@@ -1,6 +1,7 @@
 // Plays the game's events one at a time before the board changes, so every move is seen:
 // a spotlight shows one card large with one line saying who did what, then the card flies to where it goes.
 
+import { animate } from 'motion/mini';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CardInstance, GameEvent, ScoreResult } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
@@ -32,6 +33,13 @@ const SAME_CAUSE_HOLD = 0.5;
 const CRISIS_HOLD = 2;
 /** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
 const REVEAL_HOLD = 1.6;
+/** How small a card is when it lands, against its spotlight size, and how faded. */
+const FLIGHT_END_SCALE = 0.25;
+const FLIGHT_END_OPACITY = 0.4;
+/** How many points along its arc a flying card passes through; more is a smoother curve. */
+const FLIGHT_ARC_POINTS = 8;
+/** The pace along the arc: starts gently, lands gently. */
+const FLIGHT_EASE = [0.4, 0, 0.6, 1] as const;
 const SILENT = new Set(['card_picked', 'teams_updated', 'game_started', 'game_ended', 'private_meta_dealt', 'turn_started']);
 
 type SeqEvent = GameEvent & { seq: number };
@@ -361,6 +369,18 @@ function centreOf(selector: string): { x: number; y: number } | undefined {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
+/**
+ * Transforms that carry a card along a curve to a point `dx`, `dy` away, shrinking as it goes:
+ * it moves across first and turns toward its zone as it lands, like a card tossed onto a table, instead of a straight line.
+ */
+function flightArc(dx: number, dy: number): string[] {
+  return Array.from({ length: FLIGHT_ARC_POINTS + 1 }, (_, i) => {
+    const t = i / FLIGHT_ARC_POINTS;
+    const scale = 1 - (1 - FLIGHT_END_SCALE) * t;
+    return `translate(${dx * (2 * t - t * t)}px, ${dy * t * t}px) scale(${scale})`;
+  });
+}
+
 /** The spotlight for the step playing now, with seat pulses and bonus numbers. Tap to skip. */
 export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | undefined; speed: Speed; onSkip: () => void; onNext: () => void }) {
   const cards = useRef<HTMLDivElement>(null);
@@ -384,11 +404,10 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
         const r = el.getBoundingClientRect();
         const dx = end.x - (r.left + r.width / 2);
         const dy = end.y - (r.top + r.height / 2);
-        el.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(0.25)`, opacity: 0.4 }], {
-          duration: flightMs,
-          delay: spotlightMs - flightMs,
-          easing: 'cubic-bezier(.5,0,.7,.4)',
-          fill: 'forwards',
+        animate(el, { transform: flightArc(dx, dy), opacity: [1, FLIGHT_END_OPACITY] }, {
+          duration: flightMs / 1000,
+          delay: (spotlightMs - flightMs) / 1000,
+          ease: FLIGHT_EASE,
         });
       });
     }

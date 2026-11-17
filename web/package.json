@@ -11,22 +11,27 @@
     "build": "vite build",
     "start": "tsx server/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --root ."
+    "test": "vitest run --root .",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build -o storybook-static"
   },
   "dependencies": {
     "@colyseus/core": "0.18.18",
     "@colyseus/sdk": "0.18.5",
     "@colyseus/ws-transport": "0.18.4",
+    "motion": "14.14.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "remixicon": "4.9.1"
   },
   "devDependencies": {
+    "@storybook/react-vite": "10.6.7",
     "@types/node": "22.15.3",
     "@types/react": "19.1.12",
     "@types/react-dom": "19.1.9",
     "@vitejs/plugin-react": "5.0.4",
     "concurrently": "9.2.1",
+    "storybook": "10.6.7",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "vite": "7.1.12",
