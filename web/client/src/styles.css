@@ -386,7 +386,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 .chip-shield { position: absolute; right: -4px; bottom: -4px; font-size: 0.8rem; background: var(--panel); border-radius: 50%; }
 @media (min-width: 601px) { .card.chip { width: 44px; height: 44px; } }
 .card.small .card-name { font-size: 0.75rem; padding: 4px 8px; }
-.card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.card, .meta-row { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .card.clickable { cursor: pointer; }
 .hand-cards .card { cursor: grab; }
 .card.lifted { transform: translateY(-10px) scale(1.04); box-shadow: 0 10px 24px rgb(0 0 0 / 0.2); }
