@@ -170,6 +170,36 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 /* headings and numbers in the display face; card faces keep theirs (CARD_SPEC.md) */
 :is(.home h1, .code, h2, .now, .score, .track-round, .track-turn, .track-crisis, .seat-score, .pile-count, .meta-now, .opp-head) { font-family: var(--display); }
 
+/* the cards everyone just revealed fill the empty middle of a wide table (Bored, 2026-11-18), sized to its height;
+   on a phone or a short screen there is no spare room, so it is left out */
+.last-plays { display: none; }
+@media (min-width: 901px) and (min-height: 700px) {
+  .app.in-game .last-plays { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; container: plays / size; }
+}
+.last-plays-title { margin: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
+.last-plays-row { display: flex; gap: 16px; justify-content: center; align-items: flex-end; }
+.last-play { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.last-play-cards { display: flex; gap: 6px; }
+/* the popup row look (CARD_SPEC.md): art, badges and name, every card the same size, as tall as the room allows */
+/* art, badges and name only, so the card ends under its name */
+.last-play .card { width: clamp(72px, calc((100cqh - 80px) * 520 / 540), 170px); aspect-ratio: auto; min-height: 0; padding-bottom: 6px; box-shadow: 4px 4px 0 var(--pink); }
+.last-play .card .card-text, .last-play .card .card-footer { display: none; }
+.last-play .card .card-name { font-size: 0.8rem; padding: 3px 6px; line-height: 1.15; }
+.last-play-owner { font-family: var(--display); font-weight: 800; font-size: 0.9rem; }
+/* the card names show beside small cards, whose name pills are too small to read */
+.last-play-names { display: none; }
+/* a short room (a 1280 × 800 screen once teams grow): no title, each name beside its cards, the cards as tall as the room */
+@container plays (max-height: 200px) {
+  .last-plays-title { display: none; }
+  .last-play { flex-direction: row; gap: 6px; }
+  /* only the art and badges, square, so no empty paper is left under it */
+  .last-play .card { width: clamp(56px, calc(100cqh - 14px), 150px); aspect-ratio: 520 / 540; overflow: hidden; }
+  .last-play .card .card-name { display: none; }
+  .last-play-owner { display: flex; flex-direction: column; max-width: 9em; line-height: 1.15; }
+  .last-play-names { display: block; font-family: system-ui, sans-serif; font-weight: 600; font-size: 0.75rem; color: var(--muted); }
+}
+@container plays (max-height: 84px) { .last-plays-row { display: none; } }
+
 /* fewer, larger blocks of ink, as on a printed poster (Bored, 2026-11-18): the masthead is one solid blue band,
    the opponents share one tinted band split by ink rules, and your team and hand are one block */
 .masthead { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; border: 2px solid var(--ink); border-radius: 8px; background: radial-gradient(circle, rgb(255 255 255 / 0.12) 1px, transparent 1.6px) 0 0 / 6px 6px, var(--accent); color: #fff; box-shadow: 4px 4px 0 var(--pink); }

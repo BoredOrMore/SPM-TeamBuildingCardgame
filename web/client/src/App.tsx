@@ -367,6 +367,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
               ))}
           </section>
         </div>
+        <LastPlays view={view} />
       </div>
 
       {/* your side of the table is one block: your team on top, your hand below */}
@@ -429,6 +430,36 @@ function useFitTable() {
 }
 
 /** A team as one chip per card kind with a count, so a long team fits on one or two lines. */
+/**
+ * The cards everyone just revealed, large in the middle of the table, each under its player's name
+ * (Bored, 2026-11-18). Desktop only: the CSS hides it where there is no spare room.
+ */
+function LastPlays({ view }: { view: GameView }) {
+  const reveal = [...view.events].reverse().find((e) => e.type === 'cards_revealed');
+  if (!reveal) return null;
+  const plays = (reveal.cards as Array<{ player: number; cards: CardInstance[] }>).filter((p) => p.cards.length > 0);
+  return (
+    <section className="last-plays" aria-label={t('Just played')}>
+      <h2 className="last-plays-title">{t('Just played')}</h2>
+      <div className="last-plays-row">
+        {plays.map((p) => (
+          <div key={p.player} className="last-play">
+            <span className="last-play-cards">
+              {p.cards.map((c) => (
+                <Card key={c.uid} id={c.id} />
+              ))}
+            </span>
+            <span className="last-play-owner">
+              {p.player === view.you ? t('You') : (view.players[p.player]?.name ?? '?')}
+              <span className="last-play-names">{p.cards.map((c) => cardName(c.id)).join(', ')}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function TeamChips({ team, protectedUids, zone }: { team: CardInstance[]; protectedUids: string[]; zone: string }) {
   const groups: Array<{ id: string; uid: string; count: number; shield: boolean }> = [];
   for (const c of team) {
