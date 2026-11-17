@@ -16,8 +16,8 @@ Figma card is 548 × 768. Sizes below are in Figma px and as a share of card wid
 | Type badge | top left, 16 (2.9%) in from the inner edge | white circle 84 (15.3%), ring 6 in frame color, icon 48 (57% of badge) in frame color |
 | Timing badge | top right, same size and look as the type badge | Onboard, Ongoing or Payday icon from `keywords.json`; see Timing |
 | Name pill | centered, its top 32 above the art's bottom edge | fill frame color, 5 px paper outline, radius full, white text (Figma: Fredoka SemiBold 34) |
-| Card text | centered under the name, 28 px side padding | ink `iconInk`, inline icons, card icons on chips (Figma: Nunito Bold 28, icons 34) |
-| Footer | bottom center, 20 above the inner's bottom | type label in capitals, frame color, letter spacing 12% (Figma: Nunito ExtraBold 18) |
+| Card text | centered under the name, 28 px side padding | ink `iconInk`, inline icons, card icons on chips (Figma: Nunito Bold 28 = 5.1% of card width, icons 34) |
+| Footer | bottom center, sitting on the card's bottom edge | a pill filled with the frame color, rounded at the top, type label in white capitals, letter spacing 12% (Figma: Nunito ExtraBold 18); the card text ends above it |
 
 ## Type badge icon
 
