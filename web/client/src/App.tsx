@@ -7,7 +7,7 @@ import type { DecisionView, GameView, LobbyView, View } from '../../shared/proto
 import { Hand } from './Hand.js';
 import { RulebookButton } from './Rulebook.js';
 import { PlaybackOverlay, SPEEDS, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
-import { Card, CardBack, CardText, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
+import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SoundControls } from './SoundControls.js';
 import { setMusic, sfx } from './sound.js';
 import { LanguageButton, t, useLang } from './i18n.js';
@@ -311,16 +311,12 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
               <Card key={c.uid} id={c.id} />
             ))}
             {view.activeMeta.length + view.privateMeta.length > 0 && (
-              <span className="meta-label">
-                <i className="ri-global-line" /> <span className="label">{t('Meta: scores for everyone at round end')}</span>
-              </span>
+              <MetaBoard
+                shared={view.activeMeta}
+                secret={view.privateMeta}
+                pointsNow={(id) => view.yourScore.lines.find((l) => l.label === `Meta: ${cardName(id)}`)?.points ?? 0}
+              />
             )}
-            {view.activeMeta.map((id) => (
-              <Card key={id} id={id} />
-            ))}
-            {view.privateMeta.map((id) => (
-              <Card key={id} id={id} />
-            ))}
           </section>
           <section className="opponents">
             {view.players

@@ -509,6 +509,38 @@ export function Card(props: {
   );
 }
 
+/**
+ * This round's Meta as one board, so nothing has to be opened: each Meta on a row with its name, its whole text
+ * and the points it gives this player right now. `secret` are the player's own Meta that others cannot see.
+ */
+export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; secret: string[]; pointsNow: (id: string) => number }) {
+  return (
+    <div className="meta-board">
+      <span className="meta-title">
+        <i className="ri-global-line" /> {t('Meta: scores for everyone at round end')}
+      </span>
+      {[...shared, ...secret].map((id) => {
+        const def = CARD_DEFS.get(id);
+        if (!def?.cardText) throw new Error(`No card text for Meta ${id}`);
+        const points = pointsNow(id);
+        return (
+          <span key={id} className="meta-row">
+            <b className="meta-name">
+              {secret.includes(id) && <i className="ri-lock-line" aria-label={t('Only you see this Meta')} />} {def.name}
+            </b>
+            <span className="meta-text">
+              <CardText text={[cardTextOf(def)!, ...cardTextMoreOf(def)].join(' · ')} />
+            </span>
+            <b className="meta-now" title={t('Your points from this Meta now')}>
+              {points > 0 ? `+${points}` : points}
+            </b>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 /** The card id behind a uid anywhere on the table you can see. */
 export function idOfUid(view: GameView, uid: string): string {
   const all: CardInstance[] = [...view.hand, ...view.discard, ...view.visibleCrisis, ...view.players.flatMap((p) => [...p.team, ...p.revealed])];
