@@ -390,6 +390,26 @@
         "persistent Crisis cards stay into the next round"
       ],
       "status": "pending"
+    },
+    {
+      "id": "P42",
+      "topic": "Meta cards per round",
+      "current": "rounds.activeMetaByRound is empty: every round shows setup.activeMetaCount Meta cards (3)",
+      "alternatives": [
+        "ramp up: 1 Meta in round 1, 2 in round 2, 3 in round 3, so a new player reads fewer goals at first",
+        "2 Meta in every round"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P43",
+      "topic": "Limit on visible Crisis cards",
+      "current": "crisis.maxPersistent is 0: no limit, up to 3 Ongoing Crisis cards can stay face up in a round",
+      "alternatives": [
+        "at most 2 stay face up; the oldest goes to the Crisis discard when a new one arrives",
+        "at most 1 stays face up"
+      ],
+      "status": "pending"
     }
   ]
 }

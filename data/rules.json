@@ -36,8 +36,9 @@
     "newHandEachRound": true,
     "teamsAtRoundEnd": "discard",
     "newMetaEachRound": true,
+    "activeMetaByRound": [],
     "winner": "most_points_over_all_rounds",
-    "placeholders": ["P41"]
+    "placeholders": ["P41", "P42"]
   },
   "crisis": {
     "afterTurns": [2, 4, 6],
@@ -49,7 +50,8 @@
     "midGameScoreTies": "all_tied_players",
     "limitedPerGame": { "cards": [], "max": 0 },
     "previewNext": false,
-    "placeholders": ["P14", "P34", "P36"]
+    "maxPersistent": 0,
+    "placeholders": ["P14", "P34", "P36", "P43"]
   },
   "discardPile": {
     "sources": ["burnout", "layoff", "refactor", "pivot_or_persevere"],

@@ -53,7 +53,7 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
       privateMeta: [],
     });
   }
-  const active = meta.splice(0, data.rules.setup.activeMetaCount);
+  const active = meta.splice(0, activeMetaCount(data, 1));
   for (const p of players) p.privateMeta = meta.splice(0, data.rules.setup.privateMetaPerPlayer).map((c) => c.id); // [P37]
   const state: GameState = {
     playerCount: opts.players,
@@ -126,7 +126,7 @@ function endRound(data: GameData, state: GameState): void {
     p.bonuses = [];
   }
   state.crisisDiscard.push(...state.visibleCrisis.splice(0));
-  state.activeMeta = state.unusedMeta.splice(0, data.rules.setup.activeMetaCount);
+  state.activeMeta = state.unusedMeta.splice(0, activeMetaCount(data, state.round + 1));
   state.round += 1;
   startRound(data, state);
 }
@@ -334,6 +334,11 @@ function endGame(data: GameData, state: GameState): void {
 
 // ---------------------------------------------------------------- crisis
 
+/** How many Meta cards are face up in a round: the round's own count when the rules list one, else the same count every round [P42]. */
+function activeMetaCount(data: GameData, round: number): number {
+  return data.rules.rounds.activeMetaByRound[round - 1] ?? data.rules.setup.activeMetaCount;
+}
+
 /** Draws one Crisis card and applies or queues its effect. */
 function drawCrisis(data: GameData, state: GameState): void {
   nextCrisis(data, state);
@@ -343,6 +348,9 @@ function drawCrisis(data: GameData, state: GameState): void {
   emit(state, { type: 'crisis_drawn', card: { ...card }, drawer });
   if (def.persistent) state.visibleCrisis.push(card);
   else state.crisisDiscard.push(card);
+  // The oldest visible Crisis leaves when a new one goes over the limit [P43].
+  const { maxPersistent } = data.rules.crisis;
+  if (maxPersistent > 0 && state.visibleCrisis.length > maxPersistent) state.crisisDiscard.push(state.visibleCrisis.shift()!);
 
   const order = seatOrder(state, drawer);
   switch (card.id) {

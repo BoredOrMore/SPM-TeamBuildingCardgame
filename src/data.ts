@@ -40,7 +40,13 @@ export function parseGameData(cards: CardsFile, rules: RulesFile): GameData {
   const { activeMetaCount, privateMetaPerPlayer } = rules.setup;
   const metaCards = deckSize({ cards, rules, byId }, 'meta');
   // Every round shows new Meta cards, never repeated [P41].
-  if (!Number.isInteger(privateMetaPerPlayer) || privateMetaPerPlayer < 0 || rounds.count * activeMetaCount + rules.players.max * privateMetaPerPlayer > metaCards) {
+  const { activeMetaByRound } = rounds;
+  if (!Array.isArray(activeMetaByRound) || (activeMetaByRound.length !== 0 && activeMetaByRound.length !== rounds.count) || activeMetaByRound.some((n) => !Number.isInteger(n) || n < 0)) {
+    throw new DataError('rounds.activeMetaByRound must be empty or one whole number >= 0 per round');
+  }
+  const metaShown = activeMetaByRound.length ? activeMetaByRound.reduce((sum, n) => sum + n, 0) : rounds.count * activeMetaCount;
+  if (!Number.isInteger(rules.crisis.maxPersistent) || rules.crisis.maxPersistent < 0) throw new DataError('crisis.maxPersistent must be a whole number >= 0');
+  if (!Number.isInteger(privateMetaPerPlayer) || privateMetaPerPlayer < 0 || metaShown + rules.players.max * privateMetaPerPlayer > metaCards) {
     throw new DataError('setup.privateMetaPerPlayer must be a whole number >= 0 that fits the Meta deck');
   }
   if (typeof rules.crisis.previewNext !== 'boolean') throw new DataError('crisis.previewNext must be true or false');

@@ -43,8 +43,8 @@ export interface RulesFile {
   players: { min: number; max: number };
   setup: { activeMetaCount: number; privateMetaPerPlayer: number; handSize: Record<string, number> };
   turns: { count: Record<string, number> };
-  rounds: { count: number; passDirection: Array<'left' | 'right'>; teamsAtRoundEnd: 'discard' | 'out_of_game' };
-  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean };
+  rounds: { count: number; passDirection: Array<'left' | 'right'>; teamsAtRoundEnd: 'discard' | 'out_of_game'; activeMetaByRound: number[] };
+  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean; maxPersistent: number };
   scoring: { metaMultiplier: number };
   testCases: Array<{
     name: string;
