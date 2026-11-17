@@ -31,6 +31,14 @@ npm test
 npm run typecheck
 ```
 
+## Checking card faces
+
+```bash
+npm run storybook  # opens http://localhost:6006
+```
+
+Storybook shows every card at each size in `CARD_SPEC.md` (full, hand, popup row, table tile, team chip, all cards) in the same containers the game uses. Use the toolbar to switch the screen size (phone 390 × 844, small laptop 1024 × 640, desktop 1280 × 800) and the card language (EN/TH), and the Controls panel to pick a card or turn on the combo and Meta marks.
+
 ## Following the game
 
 - The bar under the turn counter always says what the game is waiting for. It turns blue when it is waiting for you.

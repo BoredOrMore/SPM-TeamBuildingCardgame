@@ -12,5 +12,5 @@
     "noEmit": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["server", "client", "shared", "test", "vite.config.ts"]
+  "include": ["server", "client", "shared", "test", "vite.config.ts", ".storybook"]
 }
