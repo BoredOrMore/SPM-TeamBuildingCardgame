@@ -520,7 +520,7 @@ export function Card(props: {
 }
 
 /**
- * This round's Meta as one board, so nothing has to be opened: each Meta on a row with its name, its whole text
+ * This round's Meta as one board, so nothing has to be opened: each Meta on a row with its art, name, whole text
  * and the points it gives this player right now. `secret` are the player's own Meta that others cannot see.
  */
 export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; secret: string[]; pointsNow: (id: string) => number }) {
@@ -535,6 +535,7 @@ export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; sec
         const points = pointsNow(id);
         return (
           <span key={id} className="meta-row">
+            <img className="meta-art" src={artUrl(id)} alt="" draggable={false} />
             <b className="meta-name">
               {secret.includes(id) && <i className="ri-lock-line" aria-label={t('Only you see this Meta')} />} {def.name}
             </b>
