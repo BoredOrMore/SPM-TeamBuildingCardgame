@@ -108,20 +108,32 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .goals > * { flex: none; white-space: nowrap; }
 /* Crisis and Meta in play are tiles: square art, name and effect; hover or hold one for the full card */
 .app.in-game .goals { align-items: center; }
-/* this round's Meta as one board: every effect whole on its own row, with the player's points from it now */
-.app.in-game .goals > .meta-board { flex: 1 1 320px; max-width: 640px; white-space: normal; display: grid; grid-template-columns: auto auto 1fr auto; gap: 4px 10px; align-items: center; padding: 6px 10px 8px; border: 3px solid var(--meta); border-radius: 10px; background: color-mix(in srgb, var(--meta) 12%, #fff8ec); }
-.meta-title { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; color: var(--meta); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-.meta-row { display: contents; }
-.meta-art { width: 48px; aspect-ratio: 1; object-fit: cover; border: 2px solid var(--meta); border-radius: 6px; background: #fff8ec; }
-.meta-name { padding: 2px 8px; border-radius: 999px; background: var(--meta); color: #fff; font-size: 0.75rem; }
-.meta-text { font-size: 0.85rem; line-height: 1.3; }
-.meta-now { min-width: 2.2em; text-align: right; font-size: 1rem; color: var(--meta); }
+/* this round's Meta as one board: up to 3 Meta side by side as small tiles (art, name, points now, whole effect),
+   so a third one adds a column instead of a taller list (--metas is how many there are) */
+.app.in-game .goals > .meta-board { flex: 1 1 calc(var(--metas) * 230px); max-width: calc(var(--metas) * 280px + 120px); white-space: normal; display: flex; flex-direction: column; gap: 4px; padding: 6px 8px 8px; border: 3px solid var(--meta); border-radius: 10px; background: color-mix(in srgb, var(--meta) 12%, #fff8ec); }
+.meta-title { display: flex; align-items: center; gap: 4px; color: var(--meta); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.meta-tiles { display: grid; grid-template-columns: repeat(var(--metas), minmax(0, 1fr)); gap: 6px; }
+.meta-row { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr; align-items: start; gap: 2px 6px; padding: 4px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 75%, transparent); }
+.meta-art { grid-row: 1 / 3; width: 48px; aspect-ratio: 1; object-fit: cover; border: 2px solid var(--meta); border-radius: 6px; background: #fff8ec; }
+.meta-name { justify-self: start; padding: 2px 8px; border-radius: 999px; background: var(--meta); color: #fff; font-size: 0.72rem; line-height: 1.25; }
+.meta-now { min-width: 1.8em; text-align: right; font-size: 1rem; line-height: 1.2; color: var(--meta); }
+.meta-text { grid-column: 2 / -1; font-size: 0.8rem; line-height: 1.3; }
 @media (max-width: 600px) {
-  /* the art beside its name and text, the points at the end */
-  .app.in-game .goals > .meta-board { grid-template-columns: auto 1fr auto; gap: 2px 8px; }
-  .meta-art { grid-row: span 2; width: 40px; }
-  .meta-name { grid-column: 2 / -1; justify-self: start; font-size: 0.7rem; }
-  .meta-text { font-size: 0.78rem; }
+  /* a phone keeps the columns: art and points on top, then the name and the effect under them */
+  .app.in-game .goals > .meta-board { flex-basis: 100%; max-width: none; }
+  .meta-tiles { gap: 4px; }
+  .meta-row { grid-template-columns: auto 1fr; grid-template-rows: auto; padding: 3px; }
+  .meta-art { grid-row: auto; width: 36px; }
+  .meta-now { grid-row: 1; grid-column: 2; }
+  .meta-name, .meta-text { grid-column: 1 / -1; }
+  .meta-name { font-size: 0.65rem; padding: 1px 6px; }
+  .meta-text { font-size: 0.7rem; }
+  /* one Meta alone has the whole row: art beside its name and effect */
+  .meta-tiles:has(> :only-child) .meta-row { grid-template-columns: auto 1fr auto; }
+  .meta-tiles:has(> :only-child) .meta-art { grid-row: 1 / 3; }
+  .meta-tiles:has(> :only-child) .meta-name { grid-column: 2; }
+  .meta-tiles:has(> :only-child) .meta-now { grid-column: 3; }
+  .meta-tiles:has(> :only-child) .meta-text { grid-column: 2 / -1; }
 }
 .app.in-game :is(.goals, .sheet-source) > .card { flex: 1 1 200px; width: auto; max-width: 250px; min-height: 0; white-space: normal; display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto 1fr; gap: 2px 8px; padding: 4px; }
 .app.in-game :is(.goals, .sheet-source) > .card .card-top { grid-row: 1 / 3; align-self: start; width: 64px; aspect-ratio: 1; border-radius: 6px; overflow: hidden; }
