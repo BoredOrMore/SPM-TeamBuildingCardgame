@@ -269,8 +269,6 @@ button.picker-tile.picked { border-color: var(--accent); }
 .card-text { font-weight: 400; }
 .card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) .text-line { display: block; }
 .text-line + .text-line::before { content: ' · '; }
-/* a face whose card says more when opened ends in a dim "more" mark */
-.text-more { display: block; opacity: 0.55; line-height: 1; }
 .card:where(:has(> .card-top):not(:is(.goals, .sheet-source) > .card)) .text-line + .text-line::before { content: none; }
 .card:has(> .card-top) .card-text { text-align: center; }
 .card-footer { margin-top: auto; text-align: center; color: var(--frame); font-weight: 800; font-size: max(0.55rem, 3.3cqw); letter-spacing: 0.12em; }

@@ -136,16 +136,17 @@ function cardTextOf(def: CardDef): string | undefined {
   return th;
 }
 
-/** A card's further lines in the current language: what its face leaves for the opened card. */
-function cardTextMoreOf(def: CardDef): string[] {
-  if (!def.cardTextMore || lang() === 'en') return def.cardTextMore ?? [];
-  const th = CARD_TEXT_MORE_TH[def.id];
-  if (th === undefined) throw new Error(`No Thai for the further lines of ${def.id}`);
-  return th;
+/** A card's whole text in the current language: its first line and every further line, split by ` · `, so nothing is hidden. */
+function wholeTextOf(def: CardDef): string | undefined {
+  const first = cardTextOf(def);
+  if (first === undefined || !def.cardTextMore) return first;
+  const more = lang() === 'en' ? def.cardTextMore : CARD_TEXT_MORE_TH[def.id];
+  if (more === undefined) throw new Error(`No Thai for the further lines of ${def.id}`);
+  return [first, ...more].join(' · ');
 }
 
-/** Card text with every {CODE} drawn as its icon; `more` marks a face whose card says more when opened. */
-export function CardText({ text, more }: { text: string; more?: boolean }) {
+/** Card text with every {CODE} drawn as its icon. */
+export function CardText({ text }: { text: string }) {
   return (
     <>
       {text.split(' · ').map((line, l) => (
@@ -157,7 +158,6 @@ export function CardText({ text, more }: { text: string; more?: boolean }) {
           })}
         </span>
       ))}
-      {more && <i className="ri-more-line text-more" aria-label={t('More when opened')} />}
     </>
   );
 }
@@ -340,11 +340,11 @@ function CardTooltip({ tip }: { tip: Tip }) {
   );
 }
 
-/** A card at full size with its whole text, the lines its face leaves out included; no handlers of its own. */
+/** A card face at full size, with no handlers of its own. */
 function FullCard({ id }: { id: string }) {
   return (
     <div className="card preview-card" style={{ '--frame': frameColor(CARD_DEFS.get(id)) } as React.CSSProperties}>
-      <CardFace id={id} opened />
+      <CardFace id={id} />
     </div>
   );
 }
@@ -364,7 +364,7 @@ function CardPreview({ id }: { id: string }) {
 }
 
 /** Name bar and text of a card, without any behaviour. */
-function CardFace({ id, small, chip, shield, opened }: { id: string; small?: boolean; chip?: boolean; shield?: boolean; opened?: boolean }) {
+function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; chip?: boolean; shield?: boolean }) {
   const def = CARD_DEFS.get(id);
   const art = def && hasArt(def.deck) ? artUrl(id) : undefined;
   if (chip) {
@@ -385,18 +385,16 @@ function CardFace({ id, small, chip, shield, opened }: { id: string; small?: boo
           {def?.name ?? id}
           {shield && <i className="ri-shield-line" aria-label={t('protected')} />}
         </span>
-        {!small && <span className="card-text">{def?.cardText ? <CardText text={cardTextOf(def)!} more={!!def.cardTextMore} /> : def?.text}</span>}
+        {!small && <span className="card-text">{def?.cardText ? <CardText text={wholeTextOf(def)!} /> : def?.text}</span>}
       </>
     );
   }
-  return <PrintedFace def={def} art={art} shield={shield} opened={opened} />;
+  return <PrintedFace def={def} art={art} shield={shield} />;
 }
 
 /** The printed card (CARD_SPEC.md): fixed shape, so its text shrinks rather than the card growing. */
-function PrintedFace({ def, art, shield, opened }: { def: CardDef & { deck: Deck }; art: string | undefined; shield?: boolean; opened?: boolean }) {
-  const face = cardTextOf(def);
-  // the opened card (hover or hold) adds the lines its face leaves out
-  const text = face && opened ? [face, ...cardTextMoreOf(def)].join(' · ') : face;
+function PrintedFace({ def, art, shield }: { def: CardDef & { deck: Deck }; art: string | undefined; shield?: boolean }) {
+  const text = wholeTextOf(def);
   const textRef = useFitText(text ?? def.text);
   // the printed card: art with a type badge top left and a timing badge top right, the name on the art's edge, text, type label
   const timing = timingCode(def);
@@ -412,7 +410,7 @@ function PrintedFace({ def, art, shield, opened }: { def: CardDef & { deck: Deck
         {shield && <i className="ri-shield-line" aria-label={t('protected')} />}
       </span>
       <span ref={textRef} className="card-text">
-        {text ? <CardText text={text} more={!!def.cardTextMore && !opened} /> : def.text}
+        {text ? <CardText text={text} /> : def.text}
       </span>
       <span className="card-footer">{(def.type ?? def.deck).toUpperCase()}</span>
     </>
@@ -541,7 +539,7 @@ export function MetaBoard({ shared, secret, pointsNow }: { shared: string[]; sec
               {secret.includes(id) && <i className="ri-lock-line" aria-label={t('Only you see this Meta')} />} {def.name}
             </b>
             <span className="meta-text">
-              <CardText text={[cardTextOf(def)!, ...cardTextMoreOf(def)].join(' · ')} />
+              <CardText text={wholeTextOf(def)!} />
             </span>
             <b className="meta-now" title={t('Your points from this Meta now')}>
               {points > 0 ? `+${points}` : points}
