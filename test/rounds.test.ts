@@ -18,7 +18,7 @@ describe('rounds [P41]', () => {
     for (const end of games) {
       const metas = end.events.filter((e) => e.type === 'round_started').map((e) => e.activeMeta as string[]);
       expect(metas).toHaveLength(data.rules.rounds.count);
-      for (const m of metas) expect(m).toHaveLength(data.rules.setup.activeMetaCount);
+      expect(metas.map((m) => m.length)).toEqual(data.rules.rounds.activeMetaByRound); // [P42]
       const all = metas.flat();
       expect(new Set(all).size).toBe(all.length);
     }

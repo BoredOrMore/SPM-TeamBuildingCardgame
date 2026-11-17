@@ -394,9 +394,9 @@
     {
       "id": "P42",
       "topic": "Meta cards per round",
-      "current": "rounds.activeMetaByRound is empty: every round shows setup.activeMetaCount Meta cards (3)",
+      "current": "Bored chose on 2026-11-17: ramp up, 1 Meta in round 1, 2 in round 2, 3 in round 3 (rounds.activeMetaByRound), so a new player reads fewer goals at first",
       "alternatives": [
-        "ramp up: 1 Meta in round 1, 2 in round 2, 3 in round 3, so a new player reads fewer goals at first",
+        "3 Meta in every round (the rule before 2026-11-17; leave activeMetaByRound empty)",
         "2 Meta in every round"
       ],
       "status": "pending"
@@ -404,10 +404,20 @@
     {
       "id": "P43",
       "topic": "Limit on visible Crisis cards",
-      "current": "crisis.maxPersistent is 0: no limit, up to 3 Ongoing Crisis cards can stay face up in a round",
+      "current": "Bored chose on 2026-11-17: no limit (crisis.maxPersistent is 0), up to 3 Ongoing Crisis cards can stay face up in a round; a limit made no measurable difference in 10,000-game runs",
       "alternatives": [
         "at most 2 stay face up; the oldest goes to the Crisis discard when a new one arrives",
         "at most 1 stays face up"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "P44",
+      "topic": "Junior Developer score",
+      "current": "Bored chose on 2026-11-17: +2 per Junior, and +1 more each with exactly 1 Project Manager; 2 Project Managers still make Juniors score 0. One formula instead of the 1/3/7 and 2/6/14 tables",
+      "alternatives": [
+        "the tables before 2026-11-17: 1/3/7 then +1 each, doubled by a Project Manager",
+        "+2 per Junior, doubled by a Project Manager (10,000-game runs: winners lean on Juniors more)"
       ],
       "status": "pending"
     }

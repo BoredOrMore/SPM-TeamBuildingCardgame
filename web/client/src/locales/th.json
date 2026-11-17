@@ -115,7 +115,7 @@
   "Tie: most Role cards over all rounds wins. Still tied: a shared win.": "ถ้าเสมอ: ใครมีการ์ด Role มากที่สุดรวมทุกรอบชนะ ถ้ายังเสมอ: ชนะร่วมกัน",
   "A round": "หนึ่งรอบ",
   "New hand of **{n} cards**, empty team.": "แจกการ์ดใหม่ **{n} ใบ** ทีมเริ่มว่าง",
-  "**{n} Meta cards** turn over. They score for everyone at the end of the round.": "เปิด **การ์ด Meta {n} ใบ** ให้คะแนนกับทุกคนตอนจบรอบ",
+  "**Meta cards** turn over: {n} by round. They score for everyone at the end of the round.": "เปิด **การ์ด Meta** ตามรอบ: {n} ใบ ให้คะแนนกับทุกคนตอนจบรอบ",
   "**{n} turns.** After each one, pass your hand on: {directions}, one way per round.": "**{n} เทิร์น** จบแต่ละเทิร์นส่งการ์ดในมือต่อ: {directions} รอบละทาง",
   "After turns **{turns}**: a Crisis card. An Ongoing Crisis stays until the round ends.": "หลังเทิร์น **{turns}**: จั่ว Crisis 1 ใบ Crisis แบบ Ongoing อยู่จนจบรอบ",
   "End of the round: every team scores, then all teams are cleared.": "จบรอบ: ทุกทีมนับคะแนน แล้วล้างทีมทั้งหมด",

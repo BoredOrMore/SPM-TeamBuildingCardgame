@@ -122,7 +122,7 @@ function Basics() {
       <h3>{t('A round')}</h3>
       <ul className="rules">
         <Rule icon="stack-line">{rich(t('New hand of **{n} cards**, empty team.', { n: rules.setup.handSize['4'] }))}</Rule>
-        <Rule icon="global-line">{rich(t('**{n} Meta cards** turn over. They score for everyone at the end of the round.', { n: rules.setup.activeMetaCount }))}</Rule>
+        <Rule icon="global-line">{rich(t('**Meta cards** turn over: {n} by round. They score for everyone at the end of the round.', { n: rounds.activeMetaByRound.join(', ') }))}</Rule>
         <Rule icon="loop-left-line">{rich(t('**{n} turns.** After each one, pass your hand on: {directions}, one way per round.', { n: rules.turns.count['4'], directions }))}</Rule>
         <Rule icon="alarm-warning-line">{rich(t('After turns **{turns}**: a Crisis card. An Ongoing Crisis stays until the round ends.', { turns: crisis.afterTurns.join(', ') }))}</Rule>
         <Rule icon="calculator-line">{t('End of the round: every team scores, then all teams are cleared.')}</Rule>

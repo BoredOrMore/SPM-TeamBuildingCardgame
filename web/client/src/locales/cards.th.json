@@ -1,7 +1,7 @@
 {
-  "junior_dev": "{JUNIOR} 1/3/7, +1 ต่อใบหลังใบที่ 3 · {SYNERGY}{PM}: 2/6/14, +2 ต่อใบ",
+  "junior_dev": "+2 ต่อ {JUNIOR} · มี {PM}: +1 เพิ่มต่อใบ",
   "senior_dev": "{SYNERGY}{JUNIOR}: +3 ต่อใบ (ไม่มี {JUNIOR}: +1 ต่อใบ)",
-  "project_manager": "+1 · {JUNIOR} ของคุณนับคะแนนแถว {PM} · 2 {PM}: {JUNIOR} = 0",
+  "project_manager": "+1 · {JUNIOR} ทุกใบ +1 เพิ่ม · 2 {PM}: {JUNIOR} = 0",
   "designer": "{DESIGNER} 1/2/3+ = 2/5/12",
   "qa_tester": "+3 · แก้ {BUG} ได้ 1 ใบ",
   "coffee": "+1",

@@ -19,17 +19,14 @@
         "name": "Junior Developer",
         "type": "role",
         "quantity": 20,
-        "text": "Score 1/3/7 points based on quantity. Double with Project Manager.",
-        "cardText": "{JUNIOR} 1/3/7, +1 each after 3 · {SYNERGY}{PM}: 2/6/14, +2 each",
+        "text": "Score 2 points each. With a Project Manager, 1 more point each.",
+        "cardText": "+2 per {JUNIOR} · with {PM}: +1 more each",
         "effect": {
-          "kind": "tiered_count",
-          "tiers": [1, 3, 7],
-          "multipliers": [
-            { "kind": "project_manager", "factor": 2, "conflictAtCount": 2, "conflictScore": 0 }
-          ],
-          "pointsEachAfterTiers": 1
+          "kind": "per_card",
+          "points": 2,
+          "partner": { "cardId": "project_manager", "pointsEach": 1, "conflictAtCount": 2, "conflictScore": 0 }
         },
-        "placeholders": ["P40"]
+        "placeholders": ["P40", "P44"]
       },
       {
         "id": "senior_dev",
@@ -49,8 +46,8 @@
         "name": "Project Manager",
         "type": "role",
         "quantity": 5,
-        "text": "Doubles Junior Developer score. Two PM cause conflict (score = 0).",
-        "cardText": "+1 · Your {JUNIOR} score the {PM} row · 2 {PM}: {JUNIOR} = 0",
+        "text": "1 point. Each of your Junior Developers scores 1 more. Two PM cause conflict (Junior score = 0).",
+        "cardText": "+1 · each {JUNIOR} +1 more · 2 {PM}: {JUNIOR} = 0",
         "effect": { "kind": "modifier_only", "modifies": "junior_dev", "points": 1 },
         "placeholders": ["P40"]
       },

@@ -112,13 +112,13 @@ describe('balance knobs in data', () => {
   });
 
   it('shows the Meta count listed for each round [P42]', () => {
-    const ramp = variant((_, rules) => (rules.rounds.activeMetaByRound = [1, 2, 3]));
+    const same = variant((_, rules) => (rules.rounds.activeMetaByRound = []));
     const shown = (gameData?: GameData) =>
       playRandomGame(4, 3, gameData)
         .events.filter((e) => e.type === 'round_started')
         .map((e) => (e.activeMeta as string[]).length);
-    expect(shown(ramp)).toEqual([1, 2, 3]);
-    expect(shown()).toEqual([3, 3, 3]);
+    expect(shown()).toEqual([1, 2, 3]);
+    expect(shown(same)).toEqual([3, 3, 3]);
     expect(() => variant((_, rules) => (rules.rounds.activeMetaByRound = [1, 2]))).toThrow(DataError);
   });
 
