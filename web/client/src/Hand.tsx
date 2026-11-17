@@ -203,6 +203,7 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
             selected={staged.includes(c.uid) || !!view.picked?.includes(c.uid)}
             dim={(!picking && !view.picked?.includes(c.uid)) || dragging?.uid === c.uid}
             combo={showCombos && picking && view.comboCards.includes(c.uid)}
+            metaPoints={picking ? view.metaGains[c.uid] : undefined}
             lifted={drag?.uid === c.uid && drag.held && !drag.dragging}
             onPointerDown={press(c.uid, c.id)}
             onClick={tap(c.uid)}

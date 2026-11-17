@@ -290,7 +290,10 @@ button.picker-tile.picked { border-color: var(--accent); }
 .card.dim { opacity: 0.55; }
 /* a hand card that scores more with your team: a gold ring and a link mark inside its top edge, between the two badges */
 .card.combo:not(.selected) { box-shadow: 0 0 0 3px var(--combo), 0 0 14px var(--combo); }
-.combo-mark { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); z-index: 1; display: grid; place-items: center; width: 22px; aspect-ratio: 1; border-radius: 50%; background: var(--combo); color: var(--ink); font-size: 0.85rem; }
+/* marks on a hand card sit inside its top edge, between the two badges: the combo link, then the Meta points */
+.card-marks { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); z-index: 1; display: flex; gap: 3px; align-items: center; }
+.meta-mark { display: flex; align-items: center; gap: 1px; padding: 1px 6px 1px 4px; border-radius: 999px; background: var(--meta); color: #fff; font-size: 0.8rem; line-height: 1.4; box-shadow: 0 0 0 2px #fff; }
+.combo-mark { display: grid; place-items: center; width: 22px; aspect-ratio: 1; border-radius: 50%; background: var(--combo); color: var(--ink); font-size: 0.85rem; }
 .card:disabled { cursor: default; }
 .kw { font-size: 1.05em; vertical-align: -0.15em; margin: 0 1px; color: var(--ink); }
 .chip {
