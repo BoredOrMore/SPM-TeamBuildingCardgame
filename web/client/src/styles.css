@@ -246,7 +246,8 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .app.in-game .hand-cards .card { width: calc((100cqw - 3 * 4px) / 4); }
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text, .app.in-game .hand-cards .card .card-footer { display: none; }
-  .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
+  /* every name pill the same size: one line across the card, a long name ends in … (hold the card to read it whole) (Bored, 2026-11-18) */
+  .app.in-game .hand-cards .card .card-name { display: block; width: calc(100% - 8px); max-width: none; padding: 3px 5px; font-size: 0.66rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 @media (max-width: 600px) {
   /* a phone keeps every board on one screen: Crisis and Meta become small tiles (art, name, effect), each player one row */
