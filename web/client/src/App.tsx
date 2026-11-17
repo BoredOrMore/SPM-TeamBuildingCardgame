@@ -304,17 +304,17 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
       {/* one solid blue band: the round, your score and controls, and what happens now */}
       <div className="masthead">
         <header className="topbar">
-          {/* the three controls as one group of same-size buttons on the left (Bored, 2026-11-18) */}
-          <div className="topbar-tools">
-            <Log view={view} />
-            <RulebookButton />
-            <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
-          </div>
           <RoundTrack view={view} />
           <span className="muted room">{t('Room {code}', { code: view.code })}</span>
           <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
             <i className="ri-trophy-line" /> {view.yourTotal}
           </span>
+          {/* the three controls as one group on the right; on a phone they are same-size icons (Bored, 2026-11-18) */}
+          <div className="topbar-tools">
+            <Log view={view} />
+            <RulebookButton />
+            <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
+          </div>
         </header>
         <p className={`now ${yours ? 'yours' : ''}`} role="status">
           {playing ? t('Showing what happened…') : nowLine(view)}

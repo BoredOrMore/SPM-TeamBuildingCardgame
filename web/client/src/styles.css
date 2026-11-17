@@ -293,21 +293,18 @@ button.picker-tile.picked { border-color: var(--accent); }
 .topbar .log summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 4px 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); font-size: 0.8rem; }
 .topbar .log summary::-webkit-details-marker { display: none; }
 .topbar .log[open] summary { background: var(--accent); color: #fff; box-shadow: 3px 3px 0 var(--pink); }
-/* the log, rules and settings buttons: one group on the left, every button the same height, their menus open from the left */
-.topbar-tools { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; align-items: center; gap: 4px; }
-.topbar .topbar-tools > * > :is(summary, button) { width: 100%; justify-content: center; }
-.topbar .topbar-tools :is(summary, button) { box-sizing: border-box; height: 44px; min-height: 0; }
-/* both menus hang from the group's left edge, so they stay on screen, and keep ink text on the blue band */
+/* the log, rules and settings buttons: one group on the right, their menus hang from its right edge */
+.topbar-tools { position: relative; display: flex; align-items: center; gap: 6px; }
+/* both menus hang from the group's right edge, so they stay on screen, and keep ink text on the blue band */
 .topbar-tools .settings { position: static; }
-.topbar-tools .log-body, .topbar-tools .settings-panel { left: 0; right: auto; color: var(--ink); }
+.topbar-tools .log-body, .topbar-tools .settings-panel { color: var(--ink); }
 .log-body {
   position: absolute; z-index: 35; top: calc(100% + 6px); right: 0; width: min(380px, calc(100vw - 24px)); max-height: 60dvh; overflow-y: auto;
   padding: 0 12px 10px; background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 5px 5px 0 var(--pink); white-space: normal; font-weight: 400;
 }
 /* the topbar's own width decides (the rules panel narrows it): the room and labels give way before anything overflows */
-@container topbar (max-width: 1060px) { .topbar .room { display: none; } }
-/* the three controls lose their labels together, so they stay the same size */
-@container topbar (max-width: 1060px) { .topbar-tools .label { display: none; } .topbar .topbar-tools :is(summary, button) { width: 44px; justify-content: center; padding: 0; } }
+@container topbar (max-width: 1060px) { .topbar .log .label, .topbar .room { display: none; } }
+@container topbar (max-width: 860px) { .topbar .rules-button .label, .topbar .settings .label { display: none; } }
 /* too narrow for the round track beside the buttons: it gets its own line under them, as on a phone */
 @container topbar (max-width: 720px) { .round-track { order: 1; flex-basis: 100%; } }
 
@@ -566,7 +563,9 @@ button.picker-tile.picked { border-color: var(--accent); }
   .topbar .rules-button .label, .topbar .settings .label { display: none; }
   /* score, log, rules and settings share one phone-width row */
   .topbar { gap: 4px; font-size: 0.9rem; }
-  .topbar .topbar-tools :is(summary, button) { width: 40px; height: 36px; }
+  /* a phone shows the three as icons only, all the same size */
+  .topbar-tools { gap: 4px; }
+  .topbar .topbar-tools :is(summary, button) { box-sizing: border-box; width: 40px; height: 36px; min-height: 0; padding: 0; justify-content: center; }
 }
 /* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.
    The body makes room (--rules-right, --rules-bottom) and the fixed overlays stop at the panel's edge */
