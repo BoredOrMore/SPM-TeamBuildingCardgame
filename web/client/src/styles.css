@@ -51,10 +51,9 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 /* table */
 .game { display: flex; flex-direction: column; gap: 12px; }
 .topbar { container: topbar / inline-size; position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 8px; font-weight: 600; }
-.topbar button.speed { padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 /* phones: the room code is in the lobby, the round and turn stay on one line */
 @media (max-width: 600px) { .topbar .room { display: none; } }
-.topbar > *, .topbar button.speed { white-space: nowrap; }
+.topbar > * { white-space: nowrap; }
 .score { font-size: 1.2rem; }
 /* the round track: every turn of the round, the Crisis draws between them, and the step of the turn now */
 .round-track { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 0.85rem; font-weight: 600; }
@@ -208,7 +207,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 }
 /* the topbar's own width decides (the rules panel narrows it): the room and labels give way before anything overflows */
 @container topbar (max-width: 1060px) { .topbar .log .label, .topbar .room { display: none; } }
-@container topbar (max-width: 860px) { .topbar .rules-button .label, .topbar .speed .label { display: none; } }
+@container topbar (max-width: 860px) { .topbar .rules-button .label, .topbar .settings .label { display: none; } }
 /* too narrow for the round track beside the buttons: it gets its own line under them, as on a phone */
 @container topbar (max-width: 720px) { .round-track { order: 1; flex-basis: 100%; } }
 
@@ -433,31 +432,40 @@ button.picker-tile.picked { border-color: var(--accent); }
   .flip-inner { animation: none; transform: rotateY(180deg); }
 }
 
-/* sound settings */
-.sound { position: relative; }
+/* settings: one gear button opens every on/off choice in a panel under it */
+.settings { position: relative; }
 .corner { position: fixed; top: 10px; right: 10px; z-index: 30; display: flex; gap: 6px; }
-.sound-btn, .fullscreen-button { min-height: 40px; min-width: 40px; padding: 6px; border-radius: 999px; font-size: 1.15rem; line-height: 1; }
-/* the language button names the language it switches to */
-.lang-button { min-height: 40px; min-width: 40px; padding: 6px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; line-height: 1; }
-.sound-panel {
-  position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: 220px;
-  display: flex; flex-direction: column; gap: 10px; padding: 12px;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
-  font-weight: normal;
+.settings-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.8rem; }
+.settings-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 290px; max-width: calc(100vw - 24px);
+  display: flex; flex-direction: column; gap: 10px; padding: 12px 14px;
+  background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 5px 5px 0 var(--pink);
+  font-weight: normal; white-space: normal;
 }
-.sound-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-.sound-row input[type='range'] { flex: 1; min-width: 0; padding: 0; }
-.sound-row input[type='checkbox'] { width: auto; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 32px; font-size: 0.9rem; }
+.set-name { display: inline-flex; align-items: center; gap: 6px; }
+.set-row input[type='range'] { flex: 0 1 120px; min-width: 0; padding: 0; border: 0; accent-color: var(--accent); }
+.set-head { margin: 2px 0 0; padding-top: 10px; border-top: 2px dashed var(--line); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+/* two choices side by side in one outlined strip, the chosen one in blue */
+.seg { flex: none; display: flex; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; }
+.seg button:not(.card) { min-height: 32px; padding: 2px 10px; border: 0; border-radius: 0; font-size: 0.8rem; }
+.seg button:not(.card):hover { transform: none; box-shadow: none; }
+.seg button + button { border-left: 2px solid var(--ink); }
+.seg button[aria-pressed='true'] { background: var(--accent); color: #fff; }
+/* an on/off switch: an ink knob that slides right onto blue */
+.switch { appearance: none; position: relative; flex: none; width: 42px; height: 24px; padding: 0; border: 2px solid var(--ink); border-radius: 999px; background: var(--panel); cursor: pointer; transition: background 120ms ease; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); transition: transform 120ms ease; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(18px); background: #fff; }
 
 /* the rulebook: a book button anywhere, a panel over the screen with one tab per topic */
 .rules-button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; }
 .home .rules-button, .lobby .rules-button { align-self: center; }
 @media (max-width: 600px) {
-  .topbar .rules-button .label, .topbar .speed .label { display: none; }
-  /* round, speed, score, rules and sound share one phone-width row */
+  .topbar .rules-button .label, .topbar .settings .label { display: none; }
+  /* score, log, rules and settings share one phone-width row */
   .topbar { gap: 4px; font-size: 0.9rem; }
-  .topbar button.speed, .topbar .rules-button { padding: 4px 8px; }
-  .topbar .sound-btn, .topbar .fullscreen-button, .topbar .lang-button { min-width: 36px; min-height: 36px; padding: 4px; }
+  .topbar .rules-button, .topbar .settings-btn { padding: 4px 8px; min-height: 36px; }
   .topbar .log summary { min-height: 36px; padding: 4px 8px; }
 }
 /* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.
