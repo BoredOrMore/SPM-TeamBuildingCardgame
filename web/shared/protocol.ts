@@ -1,6 +1,6 @@
 // Messages between the room server and the browser client, and the per-seat view the server sends.
 
-import type { Bonus, CardInstance, Choice, DecisionKind, GameEvent, ScoreResult, Stage } from '../../src/index.js';
+import type { Bonus, CardInstance, Choice, DecisionKind, GameEvent, ScoreLine, ScoreResult, Stage } from '../../src/index.js';
 
 export const ROOM_NAME = 'head_hunter';
 
@@ -33,6 +33,8 @@ export interface OpponentView extends SeatInfo {
   revealed: CardInstance[];
   /** points this round if it ended now, from what everyone can see (your own also counts your private Meta) */
   score: number;
+  /** how `score` adds up, line by line */
+  scoreLines: ScoreLine[];
 }
 
 /** The decision someone must answer now. `options` is set only when it is yours. */

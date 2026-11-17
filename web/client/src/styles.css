@@ -1,3 +1,8 @@
+/* the display face for headings and numbers (Bored, 2026-11-18): Bricolage Grotesque for Latin, Anuphan for Thai,
+   both SIL OFL and served from /fonts, so a game never waits on another site */
+@font-face { font-family: 'Head Hunter Display'; src: url('/fonts/bricolage-grotesque-800-latin.woff2') format('woff2'); font-weight: 600 900; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: 'Head Hunter Display'; src: url('/fonts/anuphan-700-thai.woff2') format('woff2'); font-weight: 600 900; font-display: swap; unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+
 :root {
   /* the interface is printed like the card art: two riso inks, blue and fluorescent pink, on cream paper */
   --bg: #f3efe6;
@@ -11,6 +16,7 @@
   /* the Meta frame colour (frameColors.meta in data/keywords.json) */
   --meta: #7c5cc4;
   --warn: #e0524a;
+  --display: 'Head Hunter Display', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--ink);
   /* paper grain, as on the printed art */
@@ -160,6 +166,67 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .my-team h2 { flex: none; margin: 0; }
 .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
+
+/* headings and numbers in the display face; card faces keep theirs (CARD_SPEC.md) */
+:is(.home h1, .code, h2, .now, .score, .track-round, .track-turn, .track-crisis, .seat-score, .pile-count, .meta-now, .opp-head) { font-family: var(--display); }
+
+/* the cards everyone just revealed fill the empty middle of a wide table (Bored, 2026-11-18), sized to its height;
+   on a phone or a short screen there is no spare room, so it is left out */
+.last-plays { display: none; }
+@media (min-width: 901px) and (min-height: 700px) {
+  .app.in-game .last-plays { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; container: plays / size; }
+}
+.last-plays-title { margin: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
+.last-plays-row { display: flex; gap: 16px; justify-content: center; align-items: flex-end; }
+.last-play { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.last-play-cards { display: flex; gap: 6px; }
+/* the popup row look (CARD_SPEC.md): art, badges and name, every card the same size, as tall as the room allows */
+/* art, badges and name only, so the card ends under its name */
+.last-play .card { width: clamp(72px, calc((100cqh - 80px) * 520 / 540), 170px); aspect-ratio: auto; min-height: 0; padding-bottom: 6px; box-shadow: 4px 4px 0 var(--pink); }
+.last-play .card .card-text, .last-play .card .card-footer { display: none; }
+.last-play .card .card-name { font-size: 0.8rem; padding: 3px 6px; line-height: 1.15; }
+.last-play-owner { font-family: var(--display); font-weight: 800; font-size: 0.9rem; }
+/* the card names show beside small cards, whose name pills are too small to read */
+.last-play-names { display: none; }
+/* a short room (a 1280 × 800 screen once teams grow): no title, each name beside its cards, the cards as tall as the room */
+@container plays (max-height: 200px) {
+  .last-plays-title { display: none; }
+  .last-play { flex-direction: row; gap: 6px; }
+  /* only the art and badges, square, so no empty paper is left under it */
+  .last-play .card { width: clamp(56px, calc(100cqh - 14px), 150px); aspect-ratio: 520 / 540; overflow: hidden; }
+  .last-play .card .card-name { display: none; }
+  .last-play-owner { display: flex; flex-direction: column; max-width: 9em; line-height: 1.15; }
+  .last-play-names { display: block; font-family: system-ui, sans-serif; font-weight: 600; font-size: 0.75rem; color: var(--muted); }
+}
+@container plays (max-height: 84px) { .last-plays-row { display: none; } }
+/* the cards are only a picture here: pointing at them shows the player's score instead of the card's tooltip */
+.last-play { cursor: default; }
+.last-play .card { pointer-events: none; }
+.score-pop { position: fixed; z-index: 45; transform: translate(-50%, -100%); width: 320px; max-height: 60dvh; overflow-y: auto; padding: 8px 12px 10px; background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 5px 5px 0 var(--pink); pointer-events: none; }
+.score-pop h3 { margin: 0 0 4px; font-family: var(--display); font-size: 1rem; }
+.score-pop p { margin: 0; font-size: 0.85rem; }
+.score-pop .breakdown { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; }
+
+/* fewer, larger blocks of ink, as on a printed poster (Bored, 2026-11-18): the masthead is one solid blue band,
+   the opponents share one tinted band split by ink rules, and your team and hand are one block */
+.masthead { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; border: 2px solid var(--ink); border-radius: 8px; background: radial-gradient(circle, rgb(255 255 255 / 0.12) 1px, transparent 1.6px) 0 0 / 6px 6px, var(--accent); color: #fff; box-shadow: 4px 4px 0 var(--pink); }
+.masthead .muted { color: rgb(255 255 255 / 0.8); }
+/* the buttons stay paper stickers on the band, in ink */
+.masthead :is(button, summary) { color: var(--ink); }
+.masthead .tag { color: #fff; }
+.masthead .track-turn { border-color: rgb(255 255 255 / 0.55); color: #fff; }
+.masthead .track-turn.done { background: rgb(255 255 255 / 0.3); border-color: transparent; color: #fff; }
+.masthead .track-turn.current { background: #fff; color: var(--accent); }
+.masthead .track-crisis { color: #fff; }
+.masthead .now, .masthead .now.yours { padding: 6px 10px; border: 0; border-radius: 4px; background: rgb(0 0 0 / 0.14); color: #fff; font-size: 1.3rem; line-height: 1.2; letter-spacing: 0.01em; }
+.masthead .now.yours { background: radial-gradient(circle, rgb(255 92 158 / 0.7) 1.2px, transparent 1.8px) 0 0 / 6px 6px, var(--ink); }
+.opponents { gap: 0; border: 2px solid var(--ink); border-radius: 8px; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); overflow: hidden; }
+.opponents > .opponent { border: 0; border-radius: 0; background: transparent; }
+.opponents > .opponent + .opponent { border-left: 2px solid var(--ink); }
+.opponents > .opponent.acting { background: color-mix(in srgb, var(--pink) 22%, var(--bg)); box-shadow: inset 0 0 0 3px var(--pink); }
+.mine { flex: none; display: flex; flex-direction: column; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); }
+.mine > .my-team { border: 0; border-bottom: 2px solid var(--ink); border-radius: 6px 6px 0 0; background: color-mix(in srgb, var(--pink) 18%, var(--bg)); }
+.mine > .hand { border: 0; border-radius: 0 0 6px 6px; background: transparent; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
 .hand-cards.from-right { animation: hand-in-right 400ms ease-out; }
@@ -179,14 +246,17 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .app.in-game .hand-cards .card { width: calc((100cqw - 3 * 4px) / 4); }
   /* too small to read on a phone: hold a card to see its full text */
   .app.in-game .hand-cards .card .card-text, .app.in-game .hand-cards .card .card-footer { display: none; }
-  .app.in-game .hand-cards .card .card-name { font-size: 0.7rem; padding: 3px 6px; }
+  /* every name pill the same size: one line across the card, a long name ends in … (hold the card to read it whole) (Bored, 2026-11-18) */
+  .app.in-game .hand-cards .card .card-name { display: block; width: calc(100% - 8px); max-width: none; padding: 3px 5px; font-size: 0.66rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 @media (max-width: 600px) {
   /* a phone keeps every board on one screen: Crisis and Meta become small tiles (art, name, effect), each player one row */
   .app.in-game .game { gap: 6px; }
   .app.in-game :is(.goals, .sheet-source) > .card { flex-basis: 150px; max-width: none; grid-template-columns: 48px 1fr; gap: 2px 6px; }
   .app.in-game :is(.goals, .sheet-source) > .card .card-top { width: 48px; }
-  .app.in-game .opponents { grid-template-columns: 1fr; gap: 6px; }
+  .app.in-game .opponents { grid-template-columns: 1fr; gap: 0; }
+  .opponents > .opponent + .opponent { border-left: 0; border-top: 2px solid var(--ink); }
+  .masthead { padding: 4px 6px 6px; gap: 4px; box-shadow: 3px 3px 0 var(--pink); }
   .app.in-game .opponent, .app.in-game .my-team { display: flex; align-items: center; gap: 6px; padding: 6px 8px; }
   .app.in-game .opp-head, .app.in-game .my-team h2 { flex: none; flex-wrap: nowrap; margin: 0; }
   .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
@@ -231,6 +301,11 @@ button.picker-tile.picked { border-color: var(--accent); }
 .topbar .log summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 4px 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); font-size: 0.8rem; }
 .topbar .log summary::-webkit-details-marker { display: none; }
 .topbar .log[open] summary { background: var(--accent); color: #fff; box-shadow: 3px 3px 0 var(--pink); }
+/* the log, rules and settings buttons: one group on the right, their menus hang from its right edge */
+.topbar-tools { position: relative; display: flex; align-items: center; gap: 6px; }
+/* both menus hang from the group's right edge, so they stay on screen, and keep ink text on the blue band */
+.topbar-tools .settings { position: static; }
+.topbar-tools .log-body, .topbar-tools .settings-panel { color: var(--ink); }
 .log-body {
   position: absolute; z-index: 35; top: calc(100% + 6px); right: 0; width: min(380px, calc(100vw - 24px)); max-height: 60dvh; overflow-y: auto;
   padding: 0 12px 10px; background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 5px 5px 0 var(--pink); white-space: normal; font-weight: 400;
@@ -345,6 +420,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 }
 .play-zone.armed { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
 .play-zone.over { border-style: solid; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+/* while you still have to pick, the empty zone pulses in pink so it is easy to find (Bored, 2026-11-18) */
+.play-zone.waiting { border-color: var(--pink); animation: zone-pulse 1.6s ease-in-out infinite; }
+@keyframes zone-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(255 92 158 / 0.55); } 50% { box-shadow: 0 0 0 6px rgb(255 92 158 / 0); background: color-mix(in srgb, var(--pink) 10%, var(--panel)); } }
 .zone-count { position: absolute; right: 10px; top: 6px; font-size: 0.8rem; color: var(--muted); }
 .drag-ghost { position: fixed; z-index: 20; pointer-events: none; transform: translate(-50%, -60%) rotate(-3deg) scale(1.05); filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.25)); }
 .drag-ghost .card { width: 100%; height: 100%; min-height: 0; }
@@ -456,7 +534,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 @keyframes pop { from { transform: rotate(-8deg) scale(0.4); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .spotlight, .bonus-float, .pulse, .sheet, .picked-back { animation: none; }
+  .spotlight, .bonus-float, .pulse, .sheet, .picked-back, .play-zone.waiting { animation: none; }
   .score-delta { animation: none; opacity: 0; }
   .hand-cards.from-right, .hand-cards.from-left { animation: none; }
   .flip-inner { animation: none; transform: rotateY(180deg); }
@@ -496,8 +574,9 @@ button.picker-tile.picked { border-color: var(--accent); }
   .topbar .rules-button .label, .topbar .settings .label { display: none; }
   /* score, log, rules and settings share one phone-width row */
   .topbar { gap: 4px; font-size: 0.9rem; }
-  .topbar .rules-button, .topbar .settings-btn { padding: 4px 8px; min-height: 36px; }
-  .topbar .log summary { min-height: 36px; padding: 4px 8px; }
+  /* a phone shows the three as icons only, all the same size */
+  .topbar-tools { gap: 4px; }
+  .topbar .topbar-tools :is(summary, button) { box-sizing: border-box; width: 40px; height: 36px; min-height: 0; padding: 0; justify-content: center; }
 }
 /* the rules sit beside the game, never over it: a right column on a wide screen, the lower half of a phone.
    The body makes room (--rules-right, --rules-bottom) and the fixed overlays stop at the panel's edge */

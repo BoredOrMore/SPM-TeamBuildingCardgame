@@ -49,6 +49,8 @@ const TOAST_MS = 3500;
 const MIN_TABLE_SCALE = 0.6;
 /** Halvings when searching for the table's scale: a smaller scale lays the content out wider and so shorter. */
 const TABLE_FIT_STEPS = 6;
+/** how close (px) the centre of the score popup on the table may come to the screen's edge */
+const SCORE_POP_EDGE = 170;
 
 export function App() {
   const [conn, setConn] = useState<Connection>();
@@ -301,19 +303,25 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
 
   return (
     <main className="game">
-      <header className="topbar">
-        <RoundTrack view={view} />
-        <span className="muted room">{t('Room {code}', { code: view.code })}</span>
-        <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
-          <i className="ri-trophy-line" /> {view.yourTotal}
-        </span>
-        <Log view={view} />
-        <RulebookButton />
-        <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
-      </header>
-      <p className={`now ${yours ? 'yours' : ''}`} role="status">
-        {playing ? t('Showing what happened…') : nowLine(view)}
-      </p>
+      {/* one solid blue band: the round, your score and controls, and what happens now */}
+      <div className="masthead">
+        <header className="topbar">
+          <RoundTrack view={view} />
+          <span className="muted room">{t('Room {code}', { code: view.code })}</span>
+          <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
+            <i className="ri-trophy-line" /> {view.yourTotal}
+          </span>
+          {/* the three controls as one group on the right; on a phone they are same-size icons (Bored, 2026-11-18) */}
+          <div className="topbar-tools">
+            <Log view={view} />
+            <RulebookButton />
+            <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
+          </div>
+        </header>
+        <p className={`now ${yours ? 'yours' : ''}`} role="status">
+          {playing ? t('Showing what happened…') : nowLine(view)}
+        </p>
+      </div>
 
       <div className="table" ref={table.box}>
         <div className="table-fit" ref={table.content}>
@@ -364,16 +372,20 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
               ))}
           </section>
         </div>
+        <LastPlays view={view} />
       </div>
 
-      <section className="my-team" data-zone={`seat-${view.you}`}>
-        <h2>
-          {t('Your team')} <SeatScore score={me.score} round={view.round} />
-        </h2>
-        <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
-      </section>
+      {/* your side of the table is one block: your team on top, your hand below */}
+      <div className="mine">
+        <section className="my-team" data-zone={`seat-${view.you}`}>
+          <h2>
+            {t('Your team')} <SeatScore score={me.score} round={view.round} />
+          </h2>
+          <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
+        </section>
 
-      <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
+        <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
+      </div>
       {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
       {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
     </main>
@@ -423,6 +435,76 @@ function useFitTable() {
 }
 
 /** A team as one chip per card kind with a count, so a long team fits on one or two lines. */
+/**
+ * The cards everyone revealed last, large in the middle of the table, each under its player's name
+ * (Bored, 2026-11-18); a new round clears them. Pointing at a player's cards shows how their score adds up so far.
+ * Desktop only: the CSS hides it where there is no spare room.
+ */
+function LastPlays({ view }: { view: GameView }) {
+  const [shown, setShown] = useState<{ seat: number; rect: DOMRect }>();
+  // newest first: a round start newer than the last reveal means that reveal was last round's
+  const events = [...view.events].reverse();
+  const revealAt = events.findIndex((e) => e.type === 'cards_revealed');
+  const roundAt = events.findIndex((e) => e.type === 'round_started');
+  const reveal = events[revealAt];
+  if (!reveal || (roundAt !== -1 && roundAt < revealAt)) return null;
+  const plays = (reveal.cards as Array<{ player: number; cards: CardInstance[] }>).filter((p) => p.cards.length > 0);
+  const nameOf = (seat: number) => (seat === view.you ? t('You') : (view.players[seat]?.name ?? '?'));
+  const lines = shown && view.players[shown.seat]?.scoreLines;
+  return (
+    <section className="last-plays" aria-label={t('Just played')}>
+      <h2 className="last-plays-title">{t('Just played')}</h2>
+      <div className="last-plays-row">
+        {plays.map((p) => (
+          <div
+            key={p.player}
+            className="last-play"
+            onPointerEnter={(e) => e.pointerType === 'mouse' && setShown({ seat: p.player, rect: e.currentTarget.getBoundingClientRect() })}
+            onPointerLeave={() => setShown(undefined)}
+          >
+            <span className="last-play-cards">
+              {p.cards.map((c) => (
+                <Card key={c.uid} id={c.id} />
+              ))}
+            </span>
+            <span className="last-play-owner">
+              {nameOf(p.player)}
+              <span className="last-play-names">{p.cards.map((c) => cardName(c.id)).join(', ')}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+      {shown && lines && (
+        // fixed to the screen: the table around it scrolls and would cut it off
+        <div className="score-pop" role="tooltip" style={{ left: Math.min(Math.max(shown.rect.left + shown.rect.width / 2, SCORE_POP_EDGE), innerWidth - SCORE_POP_EDGE), top: shown.rect.top - 8 }}>
+          <h3>
+            {nameOf(shown.seat)} <i className="ri-star-line" /> {view.players[shown.seat]!.score}
+          </h3>
+          {lines.length === 0 ? (
+            <p className="muted">{t('No points yet')}</p>
+          ) : (
+            <ul className="breakdown">
+              {lines.map((l, i) => (
+                <li key={i}>
+                  <span>
+                    <b>{cardName(l.label)}</b>
+                    {l.detail && (
+                      <span className="muted detail">
+                        <CardText text={l.detail} />
+                      </span>
+                    )}
+                  </span>
+                  <b className={l.points < 0 ? 'minus' : 'plus'}>{l.points > 0 ? `+${l.points}` : l.points}</b>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TeamChips({ team, protectedUids, zone }: { team: CardInstance[]; protectedUids: string[]; zone: string }) {
   const groups: Array<{ id: string; uid: string; count: number; shield: boolean }> = [];
   for (const c of team) {

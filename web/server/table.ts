@@ -142,7 +142,7 @@ export class Table {
     const teams = state.players.map((p) => p.team);
     // others' private Meta is hidden, so their live score counts only what is on the table
     const publicScore = (seat: number) =>
-      scorePlayer({ data: this.data, teams, seat, activeMeta: state.activeMeta, visibleCrisis: state.visibleCrisis, bonuses: state.players[seat]!.bonuses, totalTurns: state.totalTurns }).total;
+      scorePlayer({ data: this.data, teams, seat, activeMeta: state.activeMeta, visibleCrisis: state.visibleCrisis, bonuses: state.players[seat]!.bonuses, totalTurns: state.totalTurns });
     // a hand card is a combo when your team makes it worth more than it is alone; Meta, Crisis and bonuses are left out
     const scoreOf = (team: CardInstance[], activeMeta: string[]) =>
       scorePlayer({ data: this.data, teams: teams.map((t, seat) => (seat === you ? team : t)), seat: you, activeMeta, visibleCrisis: [], bonuses: [], totalTurns: state.totalTurns }).total;
@@ -163,6 +163,7 @@ export class Table {
       const gain = scoreOf(withCard, yourMeta) - teamOnlyScore(withCard) - metaScore;
       if (gain !== 0) metaGains[c.uid] = gain;
     }
+    const seatScores = state.players.map((p) => (p.seat === you ? yourScore : publicScore(p.seat)));
     const players: OpponentView[] = state.players.map((p) => ({
       ...seats[p.seat]!,
       team: p.team,
@@ -171,7 +172,8 @@ export class Table {
       handCount: p.hand.length,
       hasPicked: p.picked !== null,
       revealed: p.revealed,
-      score: p.seat === you ? yourScore.total : publicScore(p.seat),
+      score: seatScores[p.seat]!.total,
+      scoreLines: seatScores[p.seat]!.lines,
     }));
     const view: GameView = {
       phase: 'game',
