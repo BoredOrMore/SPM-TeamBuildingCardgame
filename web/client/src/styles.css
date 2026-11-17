@@ -366,6 +366,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 @keyframes spot-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes bonus-up { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -160%); } }
 @keyframes pulse { 50% { transform: scale(1.02); } }
+/* waiting on the server */
+.spin { display: inline-block; animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* the reveal: every pick starts as a Main back and turns over, one seat after another */
 .flip-row { flex-wrap: wrap; max-width: min(92vw, 640px); }

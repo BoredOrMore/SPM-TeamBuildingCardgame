@@ -56,6 +56,8 @@ export function App() {
   };
   const shown = playback.shown;
   const [toast, setToast] = useState<string>();
+  /** Which request is waiting on the server, so the home screen can say so. */
+  const [connecting, setConnecting] = useState<'create' | 'join'>();
   const handlers = useRef<Handlers>({
     onView: setView,
     onError: setToast,
@@ -80,12 +82,15 @@ export function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  /** Runs a create or join, showing any failure as a toast. */
-  const connect = async (open: () => Promise<Connection>) => {
+  /** Runs a create or join, marking it as waiting on the server until it answers and showing any failure as a toast. */
+  const connect = async (kind: 'create' | 'join', open: () => Promise<Connection>) => {
+    setConnecting(kind);
     try {
       setConn(await open());
     } catch (err) {
       setToast(err instanceof Error ? err.message : String(err));
+    } finally {
+      setConnecting(undefined);
     }
   };
 
@@ -93,7 +98,7 @@ export function App() {
     <PreviewProvider>
     <div className={`app ${playback.step ? 'playing' : ''} ${shown?.phase === 'game' && !shown.result ? 'in-game' : ''}`}>
       {!conn || !shown ? (
-        <Home busy={!!conn} onCreate={(name) => connect(() => createRoom(name, handlers.current))} onJoin={(code, name) => connect(() => joinRoom(code, name, handlers.current))} />
+        <Home busy={!!conn} connecting={connecting} onCreate={(name) => connect('create', () => createRoom(name, handlers.current))} onJoin={(code, name) => connect('join', () => joinRoom(code, name, handlers.current))} />
       ) : shown.phase === 'lobby' ? (
         <Lobby view={shown} conn={conn} />
       ) : (
@@ -114,10 +119,13 @@ export function App() {
 }
 
 /** Name entry plus create-room and join-by-code. */
-function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: (code: string, name: string) => void }) {
+function Home(props: { busy: boolean; connecting: 'create' | 'join' | undefined; onCreate: (name: string) => void; onJoin: (code: string, name: string) => void }) {
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '');
   const [code, setCode] = useState('');
   const remember = () => localStorage.setItem(NAME_KEY, name);
+  // one request at a time: both buttons wait while the server answers
+  const busy = props.busy || !!props.connecting;
+  const spinner = <i className="ri-loader-4-line spin" aria-hidden />;
   return (
     <main className="home">
       <h1>Head Hunter</h1>
@@ -127,15 +135,20 @@ function Home(props: { busy: boolean; onCreate: (name: string) => void; onJoin: 
         {t('Your name')}
         <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Bored')} />
       </label>
-      <button className="primary" disabled={props.busy || !name.trim()} onClick={() => (remember(), props.onCreate(name))}>
-        {t('Create a room')}
+      <button className="primary" disabled={busy || !name.trim()} onClick={() => (remember(), props.onCreate(name))}>
+        {props.connecting === 'create' ? <>{spinner} {t('Creating the room…')}</> : t('Create a room')}
       </button>
       <div className="join-row">
         <input value={code} maxLength={4} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder={t('CODE')} aria-label={t('Room code')} />
-        <button disabled={props.busy || !name.trim() || code.length !== 4} onClick={() => (remember(), props.onJoin(code, name))}>
-          {t('Join')}
+        <button disabled={busy || !name.trim() || code.length !== 4} onClick={() => (remember(), props.onJoin(code, name))}>
+          {props.connecting === 'join' ? <>{spinner} {t('Joining…')}</> : t('Join')}
         </button>
       </div>
+      {props.connecting && (
+        <p className="muted" role="status">
+          {t('Waiting for the server. If it was asleep, this can take about a minute.')}
+        </p>
+      )}
     </main>
   );
 }

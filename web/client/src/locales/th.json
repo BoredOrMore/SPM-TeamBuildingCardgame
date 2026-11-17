@@ -206,5 +206,8 @@
   "Investors": "Investors",
   "any role card": "การ์ด role ใดก็ได้",
   "any card": "การ์ดใดก็ได้",
-  "More when opened": "เปิดการ์ดเพื่ออ่านต่อ"
+  "More when opened": "เปิดการ์ดเพื่ออ่านต่อ",
+  "Creating the room…": "กำลังสร้างห้อง…",
+  "Joining…": "กำลังเข้าห้อง…",
+  "Waiting for the server. If it was asleep, this can take about a minute.": "กำลังรอ server ถ้า server หลับอยู่ อาจใช้เวลาประมาณ 1 นาที"
 }
