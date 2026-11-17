@@ -1,3 +1,8 @@
+/* the display face for headings and numbers (Bored, 2026-11-18): Bricolage Grotesque for Latin, Anuphan for Thai,
+   both SIL OFL and served from /fonts, so a game never waits on another site */
+@font-face { font-family: 'Head Hunter Display'; src: url('/fonts/bricolage-grotesque-800-latin.woff2') format('woff2'); font-weight: 600 900; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: 'Head Hunter Display'; src: url('/fonts/anuphan-700-thai.woff2') format('woff2'); font-weight: 600 900; font-display: swap; unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC; }
+
 :root {
   /* the interface is printed like the card art: two riso inks, blue and fluorescent pink, on cream paper */
   --bg: #f3efe6;
@@ -11,6 +16,7 @@
   /* the Meta frame colour (frameColors.meta in data/keywords.json) */
   --meta: #7c5cc4;
   --warn: #e0524a;
+  --display: 'Head Hunter Display', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--ink);
   /* paper grain, as on the printed art */
@@ -161,6 +167,9 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
 
+/* headings and numbers in the display face; card faces keep theirs (CARD_SPEC.md) */
+:is(.home h1, .code, h2, .now, .score, .track-round, .track-turn, .track-crisis, .seat-score, .pile-count, .meta-now, .opp-head) { font-family: var(--display); }
+
 /* fewer, larger blocks of ink, as on a printed poster (Bored, 2026-11-18): the masthead is one solid blue band,
    the opponents share one tinted band split by ink rules, and your team and hand are one block */
 .masthead { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; border: 2px solid var(--ink); border-radius: 8px; background: radial-gradient(circle, rgb(255 255 255 / 0.12) 1px, transparent 1.6px) 0 0 / 6px 6px, var(--accent); color: #fff; box-shadow: 4px 4px 0 var(--pink); }
@@ -172,7 +181,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .masthead .track-turn.done { background: rgb(255 255 255 / 0.3); border-color: transparent; color: #fff; }
 .masthead .track-turn.current { background: #fff; color: var(--accent); }
 .masthead .track-crisis { color: #fff; }
-.masthead .now, .masthead .now.yours { padding: 6px 10px; border: 0; border-radius: 4px; background: rgb(0 0 0 / 0.14); color: #fff; font-size: 1.05rem; }
+.masthead .now, .masthead .now.yours { padding: 6px 10px; border: 0; border-radius: 4px; background: rgb(0 0 0 / 0.14); color: #fff; font-size: 1.3rem; line-height: 1.2; letter-spacing: 0.01em; }
 .masthead .now.yours { background: radial-gradient(circle, rgb(255 92 158 / 0.7) 1.2px, transparent 1.8px) 0 0 / 6px 6px, var(--ink); }
 .opponents { gap: 0; border: 2px solid var(--ink); border-radius: 8px; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); overflow: hidden; }
 .opponents > .opponent { border: 0; border-radius: 0; background: transparent; }
