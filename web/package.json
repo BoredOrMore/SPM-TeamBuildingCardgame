@@ -17,6 +17,7 @@
     "@colyseus/core": "0.18.18",
     "@colyseus/sdk": "0.18.5",
     "@colyseus/ws-transport": "0.18.4",
+    "motion": "14.14.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "remixicon": "4.9.1"
