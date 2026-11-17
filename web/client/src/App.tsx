@@ -1,17 +1,21 @@
 // Screens: home (create or join), lobby, game table, and final scores.
 
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { animate } from 'motion/mini';
 import rulesJson from '../../../data/rules.json';
 import type { CardInstance, Choice } from '../../../src/index.js';
 import type { DecisionView, GameView, LobbyView, View } from '../../shared/protocol.js';
 import { Hand } from './Hand.js';
 import { RulebookButton } from './Rulebook.js';
-import { PlaybackOverlay, SPEEDS, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
+import { PlaybackOverlay, SPEEDS, reducedMotion, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
 import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SoundControls } from './SoundControls.js';
 import { setMusic, sfx } from './sound.js';
 import { LanguageButton, t, useLang } from './i18n.js';
 import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
+
+/** How long the round track's current dot takes to show that the turn moved on, in ms. */
+const TURN_SHIFT_MS = 560;
 
 /** Turns after which a Crisis card is drawn, from rules.json. */
 const CRISIS_AFTER: number[] = rulesJson.crisis.afterTurns;
@@ -218,6 +222,31 @@ function RoundTrack({ view }: { view: GameView }) {
   // the engine counts the next turn as soon as hands pass, so a Crisis drawn now sits before `turn`
   const crisisNow = view.stage === 'crisis';
   const done = (turn: number) => turn < view.turn;
+  const track = useRef<HTMLOListElement>(null);
+  // the dot that just became current grows and settles with a ring, so a glance shows the turn moved on
+  const spot = `${view.round}-${view.turn}-${crisisNow}`;
+  const lastSpot = useRef(spot);
+  useEffect(() => {
+    if (spot === lastSpot.current) return;
+    lastSpot.current = spot;
+    const dot = track.current?.querySelector<HTMLElement>('.current');
+    if (!dot || reducedMotion()) return;
+    const rest = getComputedStyle(dot);
+    const seconds = TURN_SHIFT_MS / 1000;
+    const grow = animate(dot, { transform: ['scale(0.5)', 'scale(1.9)', rest.transform === 'none' ? 'scale(1)' : rest.transform] }, { duration: seconds, ease: 'easeOut' });
+    const ring = animate(dot, { boxShadow: [`0 0 0 0 ${rest.backgroundColor}`, '0 0 0 12px rgb(0 0 0 / 0)', rest.boxShadow] }, { duration: seconds * 1.6, ease: 'easeOut' });
+    // Motion leaves the last frame as inline style; drop it so the dot follows its class again once it is done
+    const clear = () => {
+      dot.style.removeProperty('transform');
+      dot.style.removeProperty('box-shadow');
+    };
+    void Promise.all([grow, ring]).then(clear, clear);
+    return () => {
+      grow.stop();
+      ring.stop();
+      clear();
+    };
+  }, [spot]);
   return (
     <nav
       className="round-track"
@@ -227,7 +256,7 @@ function RoundTrack({ view }: { view: GameView }) {
         {t('Round {round}/{rounds}', { round: view.round, rounds: view.totalRounds })}{' '}
         <i className={view.passDirection === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line'} aria-label={t('passing {dir}', { dir: (view.passDirection === 'left' ? t('left') : t('right')) })} />
       </span>
-      <ol className="track-turns">
+      <ol className="track-turns" ref={track}>
         {Array.from({ length: view.totalTurns }, (_, i) => i + 1).map((turn) => (
           <Fragment key={turn}>
             <li className={`track-turn ${turn === view.turn && !crisisNow ? 'current' : done(turn) ? 'done' : ''}`} title={t('Turn {turn}', { turn })}>
