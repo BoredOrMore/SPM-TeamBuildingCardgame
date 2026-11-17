@@ -359,7 +359,7 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
 }
 
 /** Whether the player asked their system for less motion. */
-const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Centre of the first element matching a selector, or undefined when it is not on the page. */
 function centreOf(selector: string): { x: number; y: number } | undefined {
