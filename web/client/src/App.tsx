@@ -233,8 +233,19 @@ function RoundTrack({ view }: { view: GameView }) {
     if (!dot || reducedMotion()) return;
     const rest = getComputedStyle(dot);
     const seconds = TURN_SHIFT_MS / 1000;
-    animate(dot, { transform: ['scale(0.5)', 'scale(1.9)', rest.transform === 'none' ? 'scale(1)' : rest.transform] }, { duration: seconds, ease: 'easeOut' });
-    animate(dot, { boxShadow: [`0 0 0 0 ${rest.backgroundColor}`, '0 0 0 12px rgb(0 0 0 / 0)', rest.boxShadow] }, { duration: seconds * 1.6, ease: 'easeOut' });
+    const grow = animate(dot, { transform: ['scale(0.5)', 'scale(1.9)', rest.transform === 'none' ? 'scale(1)' : rest.transform] }, { duration: seconds, ease: 'easeOut' });
+    const ring = animate(dot, { boxShadow: [`0 0 0 0 ${rest.backgroundColor}`, '0 0 0 12px rgb(0 0 0 / 0)', rest.boxShadow] }, { duration: seconds * 1.6, ease: 'easeOut' });
+    // Motion leaves the last frame as inline style; drop it so the dot follows its class again once it is done
+    const clear = () => {
+      dot.style.removeProperty('transform');
+      dot.style.removeProperty('box-shadow');
+    };
+    void Promise.all([grow, ring]).then(clear, clear);
+    return () => {
+      grow.stop();
+      ring.stop();
+      clear();
+    };
   }, [spot]);
   return (
     <nav
