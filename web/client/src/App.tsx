@@ -310,6 +310,11 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
             {view.visibleCrisis.map((c) => (
               <Card key={c.uid} id={c.id} />
             ))}
+            {view.activeMeta.length + view.privateMeta.length > 0 && (
+              <span className="meta-label">
+                <i className="ri-global-line" /> <span className="label">{t('Meta: scores for everyone at round end')}</span>
+              </span>
+            )}
             {view.activeMeta.map((id) => (
               <Card key={id} id={id} />
             ))}
