@@ -171,7 +171,7 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
   return (
     <section className="hand">
       {picking && (
-        <div ref={zoneRef} className={`play-zone ${dragging ? 'armed' : ''} ${overZone ? 'over' : ''}`}>
+        <div ref={zoneRef} className={`play-zone ${dragging ? 'armed' : ''} ${overZone ? 'over' : ''} ${!dragging && !inZone.length ? 'waiting' : ''}`}>
           {inZone.length ? (
             inZone.map((c) => <Card key={c.uid} id={c.id} small onClick={() => toggle(c.uid)} />)
           ) : (
