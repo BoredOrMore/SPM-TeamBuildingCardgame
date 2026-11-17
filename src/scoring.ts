@@ -125,14 +125,12 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   // Step 2: role cards.
   const juniors = n(c, 'junior_dev');
   const juniorEff = effectOf(data, 'junior_dev');
-  const pmRule = (juniorEff.multipliers as Array<{ factor: number; conflictAtCount: number; conflictScore: number }>)[0]!;
+  const pmRule = juniorEff.partner as { pointsEach: number; conflictAtCount: number; conflictScore: number };
   const pms = n(c, 'project_manager');
-  let factor = 1;
-  if (pms >= pmRule.conflictAtCount) factor = pmRule.conflictScore;
-  else if (pms > 0) factor = pmRule.factor;
-  const juniorBase = tierScore(juniorEff.tiers as number[], juniors, juniorEff.pointsEachAfterTiers as number);
-  const pmNote = pms >= pmRule.conflictAtCount ? ` · ${pms} {PM}: = ${factor}` : pms > 0 ? ` × ${factor} ({PM})` : '';
-  add('Junior Developer', juniorBase * factor, `${juniors} {JUNIOR} = ${juniorBase}${pmNote}`);
+  const juniorBase = juniors * (juniorEff.points as number);
+  if (pms >= pmRule.conflictAtCount) add('Junior Developer', pmRule.conflictScore, `${juniors} {JUNIOR} · ${pms} {PM}: = ${pmRule.conflictScore}`);
+  else if (pms > 0) add('Junior Developer', juniorBase + juniors * pmRule.pointsEach, `${juniors} {JUNIOR} = ${juniorBase} + ${juniors * pmRule.pointsEach} ({PM})`);
+  else add('Junior Developer', juniorBase, `${juniors} {JUNIOR} = ${juniorBase}`);
   const pmPoints = effectOf(data, 'project_manager').points as number;
   add('Project Manager', pms * pmPoints, `${pms} × ${pmPoints}`);
 
@@ -176,7 +174,9 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
     const raw = metaPoints(id, effectOf(data, id), input, effective, groups);
     // Only bonuses are scaled [P35]; fractions round down [P32].
     const points = raw > 0 ? Math.floor(raw * data.rules.scoring.metaMultiplier) : raw;
-    add(`Meta: ${data.byId.get(id)?.name ?? id}`, points, data.byId.get(id)?.cardText);
+    const meta = data.byId.get(id);
+    // the score line explains itself with the whole card text, not only the line on the card's face
+    add(`Meta: ${meta?.name ?? id}`, points, meta?.cardText && [meta.cardText, ...(meta.cardTextMore ?? [])].join(' · '));
   }
 
   // Step 6: Crisis bonuses and play-time bonuses.

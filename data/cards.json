@@ -19,17 +19,15 @@
         "name": "Junior Developer",
         "type": "role",
         "quantity": 20,
-        "text": "Score 1/3/7 points based on quantity. Double with Project Manager.",
-        "cardText": "{JUNIOR} 1/3/7, +1 each after 3 · {SYNERGY}{PM}: 2/6/14, +2 each",
+        "text": "Score 2 points each. With a Project Manager, 1 more point each.",
+        "cardText": "+2 per {JUNIOR}",
+        "cardTextMore": ["with {PM}: +1 more each"],
         "effect": {
-          "kind": "tiered_count",
-          "tiers": [1, 3, 7],
-          "multipliers": [
-            { "kind": "project_manager", "factor": 2, "conflictAtCount": 2, "conflictScore": 0 }
-          ],
-          "pointsEachAfterTiers": 1
+          "kind": "per_card",
+          "points": 2,
+          "partner": { "cardId": "project_manager", "pointsEach": 1, "conflictAtCount": 2, "conflictScore": 0 }
         },
-        "placeholders": ["P40"]
+        "placeholders": ["P40", "P44"]
       },
       {
         "id": "senior_dev",
@@ -37,7 +35,8 @@
         "type": "role",
         "quantity": 10,
         "text": "3 points each, but only 1 point if no Junior Developer present.",
-        "cardText": "{SYNERGY}{JUNIOR}: +3 each (no {JUNIOR}: +1 each)",
+        "cardText": "with {JUNIOR}: +3 each",
+        "cardTextMore": ["no {JUNIOR}: +1 each"],
         "effect": {
           "kind": "per_card",
           "points": 3,
@@ -49,8 +48,9 @@
         "name": "Project Manager",
         "type": "role",
         "quantity": 5,
-        "text": "Doubles Junior Developer score. Two PM cause conflict (score = 0).",
-        "cardText": "+1 · Your {JUNIOR} score the {PM} row · 2 {PM}: {JUNIOR} = 0",
+        "text": "1 point. Each of your Junior Developers scores 1 more. Two PM cause conflict (Junior score = 0).",
+        "cardText": "+1 · each {JUNIOR} +1 more",
+        "cardTextMore": ["2 {PM}: {JUNIOR} = 0"],
         "effect": { "kind": "modifier_only", "modifies": "junior_dev", "points": 1 },
         "placeholders": ["P40"]
       },
@@ -106,7 +106,8 @@
         "type": "event",
         "quantity": 3,
         "text": "+5 points if you have all 4 role types.",
-        "cardText": "+1 per role type · {FULLTEAM} +1",
+        "cardText": "+1 per role type",
+        "cardTextMore": ["all 4 role types: +1 more"],
         "effect": { "kind": "role_types_and_full_team", "pointsPerRoleType": 1, "fullTeamPoints": 1, "disabledBy": ["scope_creep"] },
         "placeholders": ["P40"]
       },
@@ -138,7 +139,8 @@
         "type": "action",
         "quantity": 2,
         "text": "Convert Bug to QA or 2 Junior to 1 Senior.",
-        "cardText": "{BUG} → {QA} or {JUNIOR}{JUNIOR} → {SENIOR} · neither: +3",
+        "cardText": "Upgrade 1 card, or +3",
+        "cardTextMore": ["1 {BUG} becomes {QA}", "2 {JUNIOR} become 1 {SENIOR}", "neither: +3"],
         "timing": "on_reveal",
         "effect": {
           "kind": "convert",
@@ -159,7 +161,7 @@
         "type": "defense",
         "quantity": 2,
         "text": "Protect 1 card from being stolen or removed.",
-        "cardText": "{SHIELD} 1 of your {CARD}",
+        "cardText": "Protect 1 of your {CARD}",
         "timing": "on_reveal",
         "effect": {
           "kind": "protect_card",
@@ -176,7 +178,7 @@
         "type": "defense",
         "quantity": 2,
         "text": "Cancel 1 crisis penalty card.",
-        "cardText": "Cancel 1 {CRISIS} penalty, or +2",
+        "cardText": "Cancel 1 Crisis penalty, or +2",
         "timing": "scoring",
         "effect": {
           "kind": "cancel_crisis",
@@ -226,7 +228,7 @@
         "name": "Poaching",
         "quantity": 5,
         "text": "Player with Senior Dev steals from opponent.",
-        "cardText": "{POACH} Most {EMPLOYEE} takes 1 {CARD} from an opponent",
+        "cardText": "{POACH} Most {EMPLOYEE}: take 1 card from an opponent",
         "persistent": false,
         "effect": {
           "kind": "steal",
@@ -244,7 +246,8 @@
         "name": "Layoff",
         "quantity": 4,
         "text": "Everyone loses 1 Junior Developer.",
-        "cardText": "Everyone discards 1 {JUNIOR} (none: 1 {EMPLOYEE})",
+        "cardText": "Everyone discards 1 {JUNIOR}",
+        "cardTextMore": ["no {JUNIOR}: discard 1 {EMPLOYEE}"],
         "persistent": false,
         "effect": { "kind": "each_player_discards", "count": 1, "cardIds": ["junior_dev"], "chooser": "self", "ifNone": "any_role_card" },
         "placeholders": ["P40"]
@@ -303,7 +306,7 @@
         "name": "Scope Creep",
         "quantity": 2,
         "text": "Coffee and Investors worth 0 points.",
-        "cardText": "{COFFEE}, {FREELANCE} and {INVESTORS} = 0",
+        "cardText": "Coffee, Freelance and Investors = 0",
         "persistent": true,
         "effect": { "kind": "disable_cards", "cardIds": ["coffee", "freelance", "investors"] },
         "placeholders": ["P40"]
@@ -333,7 +336,8 @@
         "name": "Unicorn Hype",
         "quantity": 1,
         "text": "+15 points if have all 4 roles and no bug.",
-        "cardText": "+3 per role type · {CLEAN} +3",
+        "cardText": "+3 per role type",
+        "cardTextMore": ["{CLEAN}: +3 more"],
         "persistent": true,
         "effect": { "kind": "role_types_and_clean", "pointsPerRoleType": 3, "cleanPoints": 3 },
         "placeholders": ["P40"]
@@ -343,7 +347,8 @@
         "name": "Funding Round",
         "quantity": 2,
         "text": "Everyone picks 1 card from discard pile.",
-        "cardText": "Everyone takes 1 {CARD} from the discard pile (empty: the deck)",
+        "cardText": "Everyone takes 1 {CARD} from the discard pile",
+        "cardTextMore": ["pile empty: from the deck"],
         "persistent": false,
         "effect": { "kind": "each_player_takes_from_discard", "count": 1, "ifEmpty": "main_deck" },
         "placeholders": ["P11", "P40"]
@@ -369,7 +374,8 @@
         "name": "Product Launch",
         "quantity": 1,
         "text": "Complete team get +5 points (+3 for all 4 roles, +2 more if no bug).",
-        "cardText": "+1 per role type · {CLEAN} +1",
+        "cardText": "+1 per role type",
+        "cardTextMore": ["{CLEAN}: +1 more"],
         "persistent": true,
         "effect": { "kind": "role_types_and_clean", "pointsPerRoleType": 1, "cleanPoints": 1, "stacksWith": ["unicorn_hype"] },
         "placeholders": ["P20", "P40"]
@@ -379,7 +385,8 @@
         "name": "Viral Success",
         "quantity": 1,
         "text": "Designer get +1-2 bonus points (+2 if most Designer, +1 otherwise).",
-        "cardText": "Most {DESIGNER} +2 · other {DESIGNER} owners +1",
+        "cardText": "Most {DESIGNER}: +2",
+        "cardTextMore": ["everyone else with {DESIGNER}: +1"],
         "persistent": true,
         "effect": {
           "kind": "ranked_bonus",
@@ -395,7 +402,8 @@
         "name": "Merger Offer",
         "quantity": 1,
         "text": "Two players negotiate card trade for +2 each.",
-        "cardText": "Trade 1 {CARD} with a player who agrees: +2 each · no deal: you +2",
+        "cardText": "Trade 1 {CARD} with a willing player: +2 each",
+        "cardTextMore": ["no deal: you +2"],
         "persistent": true,
         "effect": {
           "kind": "negotiated_trade",
@@ -412,24 +420,24 @@
     "meta": [
       { "id": "developer_shortage", "name": "Developer Shortage", "quantity": 1, "text": "Each Junior Dev worth +2 points.", "cardText": "+1 per {JUNIOR}", "effect": { "kind": "per_card_bonus", "cardId": "junior_dev", "points": 1 }, "placeholders": ["P40"] },
       { "id": "senior_talent_war", "name": "Senior Talent War", "quantity": 1, "text": "Each Senior Dev worth +2 points.", "cardText": "+1 per {SENIOR}", "effect": { "kind": "per_card_bonus", "cardId": "senior_dev", "points": 1 }, "placeholders": ["P40"] },
-      { "id": "startup_accelerator", "name": "Startup Accelerator", "quantity": 1, "text": "If you have exactly 3-4 total employee cards, gain +7 points.", "cardText": "3-4 {EMPLOYEE}: +4 · 5+ {EMPLOYEE}: +1", "effect": { "kind": "employee_bands", "bands": [{ "min": 3, "max": 4, "points": 4 }, { "min": 5, "points": 1 }] }, "placeholders": ["P40"] },
-      { "id": "coding_bootcamp_era", "name": "Coding Bootcamp Era", "quantity": 1, "text": "+2 points per Junior Dev if you have no Senior Devs.", "cardText": "+1 per {JUNIOR} · no {SENIOR}: +1 more each", "effect": { "kind": "per_card_graded", "per": "junior_dev", "points": 1, "bonusEach": 1, "condition": { "maxCount": { "senior_dev": 0 } } }, "placeholders": ["P40"] },
-      { "id": "tech_giant_poaching", "name": "Tech Giant Poaching", "quantity": 1, "text": "If you have more total employee cards than any other player, gain +6 points.", "cardText": "Most {EMPLOYEE}: +4 · second most: +2", "effect": { "kind": "employee_rank", "points": [4, 2] }, "placeholders": ["P40"] },
-      { "id": "design_led_companies", "name": "Design-Led Companies", "quantity": 1, "text": "+2 per Designer if you have more Designers than Devs.", "cardText": "+1 per {DESIGNER} · more {DESIGNER} than devs: +1 more each", "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "moreThan": ["designer", "developer"] } }, "placeholders": ["P40"] },
-      { "id": "user_experience_premium", "name": "User Experience Premium", "quantity": 1, "text": "If 3+ Designers, gain +7 points but each Bug is -4 instead of -3.", "cardText": "+1 per {DESIGNER} · 3+ {DESIGNER}: +4 more · Everyone: each {BUG} = -4", "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusFlat": 4, "condition": { "minCount": { "designer": 3 } }, "override": { "cardId": "bug", "points": -4 } }, "placeholders": ["P40"] },
-      { "id": "quality_design_movement", "name": "Quality Design Movement", "quantity": 1, "text": "+3 per Designer if you have zero Bugs and zero Coffee.", "cardText": "+1 per {DESIGNER} · {CLEAN}: +1 more each", "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "maxCount": { "bug": 0 } } }, "placeholders": ["P40"] },
-      { "id": "design_thinking_boom", "name": "Design Thinking Boom", "quantity": 1, "text": "Designers worth +3 each but only if you have no Project Manager.", "cardText": "+1 per {DESIGNER} · no {PM}: +1 more each", "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "maxCount": { "project_manager": 0 } } }, "placeholders": ["P40"] },
-      { "id": "pixel_perfect_culture", "name": "Pixel Perfect Culture", "quantity": 1, "text": "+2 per Designer if you have fewest total cards among all players.", "cardText": "+1 per {DESIGNER} · fewest {CARD}: +1 more each", "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "fewestTotalCards": true } }, "placeholders": ["P40"] },
-      { "id": "agile_at_scale", "name": "Agile at Scale", "quantity": 1, "text": "PM multiplier becomes x2.5 instead of x2, but only if you have 4+ Juniors.", "cardText": "{SYNERGY}{PM}: +1 per {JUNIOR}", "effect": { "kind": "per_card_graded", "per": "junior_dev", "points": 0, "bonusEach": 1, "condition": { "minCount": { "project_manager": 1 } } }, "placeholders": ["P40"] },
-      { "id": "self_organizing_teams", "name": "Self-Organizing Teams", "quantity": 1, "text": "+2 per employee if you have no PM and no Investors.", "cardText": "no {PM} or {INVESTORS}: +1 per {EMPLOYEE} · otherwise +2", "effect": { "kind": "per_card_graded", "per": "employee", "points": 0, "bonusEach": 1, "condition": { "maxCount": { "project_manager": 0, "investors": 0 } }, "otherwise": 2 }, "placeholders": ["P40"] },
+      { "id": "startup_accelerator", "name": "Startup Accelerator", "quantity": 1, "text": "If you have exactly 3-4 total employee cards, gain +7 points.", "cardText": "3-4 {EMPLOYEE}: +4", "cardTextMore": ["5+ {EMPLOYEE}: +1"], "effect": { "kind": "employee_bands", "bands": [{ "min": 3, "max": 4, "points": 4 }, { "min": 5, "points": 1 }] }, "placeholders": ["P40"] },
+      { "id": "coding_bootcamp_era", "name": "Coding Bootcamp Era", "quantity": 1, "text": "+2 points per Junior Dev if you have no Senior Devs.", "cardText": "+1 per {JUNIOR}", "cardTextMore": ["no {SENIOR}: +1 more each"], "effect": { "kind": "per_card_graded", "per": "junior_dev", "points": 1, "bonusEach": 1, "condition": { "maxCount": { "senior_dev": 0 } } }, "placeholders": ["P40"] },
+      { "id": "tech_giant_poaching", "name": "Tech Giant Poaching", "quantity": 1, "text": "If you have more total employee cards than any other player, gain +6 points.", "cardText": "Most {EMPLOYEE}: +4", "cardTextMore": ["second most: +2"], "effect": { "kind": "employee_rank", "points": [4, 2] }, "placeholders": ["P40"] },
+      { "id": "design_led_companies", "name": "Design-Led Companies", "quantity": 1, "text": "+2 per Designer if you have more Designers than Devs.", "cardText": "+1 per {DESIGNER}", "cardTextMore": ["more {DESIGNER} than devs: +1 more each"], "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "moreThan": ["designer", "developer"] } }, "placeholders": ["P40"] },
+      { "id": "user_experience_premium", "name": "User Experience Premium", "quantity": 1, "text": "If 3+ Designers, gain +7 points but each Bug is -4 instead of -3.", "cardText": "Everyone: each {BUG} = -4", "cardTextMore": ["+1 per {DESIGNER}", "3+ {DESIGNER}: +4 more"], "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusFlat": 4, "condition": { "minCount": { "designer": 3 } }, "override": { "cardId": "bug", "points": -4 } }, "placeholders": ["P40"] },
+      { "id": "quality_design_movement", "name": "Quality Design Movement", "quantity": 1, "text": "+3 per Designer if you have zero Bugs and zero Coffee.", "cardText": "+1 per {DESIGNER}", "cardTextMore": ["{CLEAN}: +1 more each"], "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "maxCount": { "bug": 0 } } }, "placeholders": ["P40"] },
+      { "id": "design_thinking_boom", "name": "Design Thinking Boom", "quantity": 1, "text": "Designers worth +3 each but only if you have no Project Manager.", "cardText": "+1 per {DESIGNER}", "cardTextMore": ["no {PM}: +1 more each"], "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "maxCount": { "project_manager": 0 } } }, "placeholders": ["P40"] },
+      { "id": "pixel_perfect_culture", "name": "Pixel Perfect Culture", "quantity": 1, "text": "+2 per Designer if you have fewest total cards among all players.", "cardText": "+1 per {DESIGNER}", "cardTextMore": ["fewest cards: +1 more each"], "effect": { "kind": "per_card_graded", "per": "designer", "points": 1, "bonusEach": 1, "condition": { "fewestTotalCards": true } }, "placeholders": ["P40"] },
+      { "id": "agile_at_scale", "name": "Agile at Scale", "quantity": 1, "text": "PM multiplier becomes x2.5 instead of x2, but only if you have 4+ Juniors.", "cardText": "with {PM}: +1 per {JUNIOR}", "effect": { "kind": "per_card_graded", "per": "junior_dev", "points": 0, "bonusEach": 1, "condition": { "minCount": { "project_manager": 1 } } }, "placeholders": ["P40"] },
+      { "id": "self_organizing_teams", "name": "Self-Organizing Teams", "quantity": 1, "text": "+2 per employee if you have no PM and no Investors.", "cardText": "no PM or Investors: +1 per {EMPLOYEE}", "cardTextMore": ["otherwise +2"], "effect": { "kind": "per_card_graded", "per": "employee", "points": 0, "bonusEach": 1, "condition": { "maxCount": { "project_manager": 0, "investors": 0 } }, "otherwise": 2 }, "placeholders": ["P40"] },
       { "id": "diverse_team_bonus", "name": "Diverse Team Bonus", "quantity": 1, "text": "+2 per role type you have (max +8 for 4 types).", "cardText": "+1 per role type you have (max +4)", "effect": { "kind": "per_role_group_bonus", "points": 1, "max": 4 }, "placeholders": ["P40"] },
       { "id": "small_team_advantage", "name": "Small Team Advantage", "quantity": 1, "text": "+1 point per card slot not used.", "cardText": "+1 per unused card slot", "effect": { "kind": "per_unused_slot", "points": 1, "slotBaseline": "turns_in_game" }, "placeholders": ["P4"] },
-      { "id": "zero_defect_premium", "name": "Zero Defect Premium", "quantity": 1, "text": "+8 points if zero bugs, but you score -5 per bug instead of -3.", "cardText": "{CLEAN} +4 · Everyone: each {BUG} = -5", "effect": { "kind": "flat_if_with_override", "points": 4, "condition": { "maxCount": { "bug": 0 } }, "override": { "cardId": "bug", "points": -5 } }, "placeholders": ["P40"] },
-      { "id": "test_first_development", "name": "Test-First Development", "quantity": 1, "text": "+3 per QA Tester if you have more QA than Designers.", "cardText": "+1 per {QA} · more {QA} than {DESIGNER}: +1 more each", "effect": { "kind": "per_card_graded", "per": "qa_tester", "points": 1, "bonusEach": 1, "condition": { "moreThan": ["qa", "designer"] } }, "placeholders": ["P40"] },
-      { "id": "quality_over_quantity", "name": "Quality Over Quantity", "quantity": 1, "text": "+2 per QA if you have 8 or fewer total cards.", "cardText": "+1 per {QA} · 8 or fewer {CARD}: +1 more each", "effect": { "kind": "per_card_graded", "per": "qa_tester", "points": 1, "bonusEach": 1, "condition": { "maxTotalCards": 8 } }, "placeholders": ["P40"] },
-      { "id": "venture_capital_boom", "name": "Venture Capital Boom", "quantity": 1, "text": "Investors worth +8 instead of +5, but only if you have no Coffee.", "cardText": "+2 per {INVESTORS} · {LEAN}{COFFEE}: +3 more each", "effect": { "kind": "per_card_graded", "per": "investors", "points": 2, "bonusEach": 3, "condition": { "maxCount": { "coffee": 0 } } }, "placeholders": ["P40"] },
-      { "id": "bootstrap_success", "name": "Bootstrap Success", "quantity": 1, "text": "+2 per employee if you have no Investors and no Freelance.", "cardText": "no {INVESTORS} or {FREELANCE}: +1 per {EMPLOYEE} · otherwise +2", "effect": { "kind": "per_card_graded", "per": "employee", "points": 0, "bonusEach": 1, "condition": { "maxCount": { "investors": 0, "freelance": 0 } }, "otherwise": 2 }, "placeholders": ["P40"] },
-      { "id": "unicorn_rush", "name": "Unicorn Rush", "quantity": 1, "text": "Unicorn Hype is +20 (instead of +15) and only requires 3 role types, but you lose -2 points per Coffee.", "cardText": "3+ role types and {CLEAN}: +6 · -2 per {COFFEE}", "effect": { "kind": "flat_if_with_penalty", "points": 6, "requires": { "roleGroups": 3 }, "condition": { "maxCount": { "bug": 0 } }, "penalty": { "cardId": "coffee", "pointsEach": -2 } }, "placeholders": ["P39", "P40"] }
+      { "id": "zero_defect_premium", "name": "Zero Defect Premium", "quantity": 1, "text": "+8 points if zero bugs, but you score -5 per bug instead of -3.", "cardText": "Everyone: each {BUG} = -5", "cardTextMore": ["{CLEAN} +4"], "effect": { "kind": "flat_if_with_override", "points": 4, "condition": { "maxCount": { "bug": 0 } }, "override": { "cardId": "bug", "points": -5 } }, "placeholders": ["P40"] },
+      { "id": "test_first_development", "name": "Test-First Development", "quantity": 1, "text": "+3 per QA Tester if you have more QA than Designers.", "cardText": "+1 per {QA}", "cardTextMore": ["more {QA} than {DESIGNER}: +1 more each"], "effect": { "kind": "per_card_graded", "per": "qa_tester", "points": 1, "bonusEach": 1, "condition": { "moreThan": ["qa", "designer"] } }, "placeholders": ["P40"] },
+      { "id": "quality_over_quantity", "name": "Quality Over Quantity", "quantity": 1, "text": "+2 per QA if you have 8 or fewer total cards.", "cardText": "+1 per {QA}", "cardTextMore": ["8 or fewer cards: +1 more each"], "effect": { "kind": "per_card_graded", "per": "qa_tester", "points": 1, "bonusEach": 1, "condition": { "maxTotalCards": 8 } }, "placeholders": ["P40"] },
+      { "id": "venture_capital_boom", "name": "Venture Capital Boom", "quantity": 1, "text": "Investors worth +8 instead of +5, but only if you have no Coffee.", "cardText": "+2 per {INVESTORS}", "cardTextMore": ["no {COFFEE}: +3 more each"], "effect": { "kind": "per_card_graded", "per": "investors", "points": 2, "bonusEach": 3, "condition": { "maxCount": { "coffee": 0 } } }, "placeholders": ["P40"] },
+      { "id": "bootstrap_success", "name": "Bootstrap Success", "quantity": 1, "text": "+2 per employee if you have no Investors and no Freelance.", "cardText": "no Investors or Freelance: +1 per {EMPLOYEE}", "cardTextMore": ["otherwise +2"], "effect": { "kind": "per_card_graded", "per": "employee", "points": 0, "bonusEach": 1, "condition": { "maxCount": { "investors": 0, "freelance": 0 } }, "otherwise": 2 }, "placeholders": ["P40"] },
+      { "id": "unicorn_rush", "name": "Unicorn Rush", "quantity": 1, "text": "Unicorn Hype is +20 (instead of +15) and only requires 3 role types, but you lose -2 points per Coffee.", "cardText": "3+ role types and {CLEAN}: +6", "cardTextMore": ["-2 per {COFFEE}"], "effect": { "kind": "flat_if_with_penalty", "points": 6, "requires": { "roleGroups": 3 }, "condition": { "maxCount": { "bug": 0 } }, "penalty": { "cardId": "coffee", "pointsEach": -2 } }, "placeholders": ["P39", "P40"] }
     ],
     "support": [
       { "id": "rule_card", "name": "Rule", "quantity": 1, "text": "Quick reference sheet." },

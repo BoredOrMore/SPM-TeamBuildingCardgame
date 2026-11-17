@@ -13,11 +13,11 @@ function mainCardsInPlay(state: GameState): string[] {
 }
 
 describe('setup', () => {
-  it('deals 7 cards to 3 and 4 players, with 3 Meta cards', () => {
+  it('deals 7 cards to 3 and 4 players, with 1 Meta card in the first round [P42]', () => {
     expect(createGame(data, { players: 3, seed: 1 }).players.map((p) => p.hand.length)).toEqual([7, 7, 7]);
     const four = createGame(data, { players: 4, seed: 1 });
     expect(four.players.map((p) => p.hand.length)).toEqual([7, 7, 7, 7]);
-    expect(four.activeMeta).toHaveLength(3);
+    expect(four.activeMeta).toHaveLength(1);
   });
 
   it('rejects unsupported player counts', () => {

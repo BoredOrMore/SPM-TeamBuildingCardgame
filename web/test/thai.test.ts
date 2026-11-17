@@ -8,6 +8,7 @@ const cards = JSON.parse(read('../../data/cards.json')) as CardsFile;
 const keywords = JSON.parse(read('../../data/keywords.json')) as { keywords: Array<{ reminder?: string; meaning?: string }>; icons: Array<{ reminder?: string; meaning?: string }> };
 const th = JSON.parse(read('../client/src/locales/th.json')) as Record<string, string>;
 const cardsTh = JSON.parse(read('../client/src/locales/cards.th.json')) as Record<string, string>;
+const cardsMoreTh = JSON.parse(read('../client/src/locales/cards.more.th.json')) as Record<string, string[]>;
 const srcDir = fileURLToPath(new URL('../client/src/', import.meta.url));
 const sources = readdirSync(srcDir)
   .filter((f) => f.endsWith('.tsx'))
@@ -49,6 +50,13 @@ describe('Thai translation', () => {
     expect(withText.filter((c) => cardsTh[c.id] === undefined).map((c) => c.id)).toEqual([]);
     expect(Object.keys(cardsTh).filter((id) => !withText.some((c) => c.id === id))).toEqual([]);
     const differ = withText.filter((c) => codesAndNumbers(c.cardText!).join() !== codesAndNumbers(cardsTh[c.id]!).join()).map((c) => c.id);
+    expect(differ).toEqual([]);
+  });
+
+  it('has Thai for every further line of a card, line for line, with the same codes and numbers', () => {
+    const withMore = Object.values(cards.decks).flat().filter((c) => c.cardTextMore);
+    expect(Object.keys(cardsMoreTh).sort()).toEqual(withMore.map((c) => c.id).sort());
+    const differ = withMore.filter((c) => c.cardTextMore!.map(codesAndNumbers).join('|') !== cardsMoreTh[c.id]!.map(codesAndNumbers).join('|')).map((c) => c.id);
     expect(differ).toEqual([]);
   });
 });

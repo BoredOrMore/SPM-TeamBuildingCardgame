@@ -115,7 +115,7 @@
   "Tie: most Role cards over all rounds wins. Still tied: a shared win.": "ถ้าเสมอ: ใครมีการ์ด Role มากที่สุดรวมทุกรอบชนะ ถ้ายังเสมอ: ชนะร่วมกัน",
   "A round": "หนึ่งรอบ",
   "New hand of **{n} cards**, empty team.": "แจกการ์ดใหม่ **{n} ใบ** ทีมเริ่มว่าง",
-  "**{n} Meta cards** turn over. They score for everyone at the end of the round.": "เปิด **การ์ด Meta {n} ใบ** ให้คะแนนกับทุกคนตอนจบรอบ",
+  "**Meta cards** turn over: {n} by round. They score for everyone at the end of the round.": "เปิด **การ์ด Meta** ตามรอบ: {n} ใบ ให้คะแนนกับทุกคนตอนจบรอบ",
   "**{n} turns.** After each one, pass your hand on: {directions}, one way per round.": "**{n} เทิร์น** จบแต่ละเทิร์นส่งการ์ดในมือต่อ: {directions} รอบละทาง",
   "After turns **{turns}**: a Crisis card. An Ongoing Crisis stays until the round ends.": "หลังเทิร์น **{turns}**: จั่ว Crisis 1 ใบ Crisis แบบ Ongoing อยู่จนจบรอบ",
   "End of the round: every team scores, then all teams are cleared.": "จบรอบ: ทุกทีมนับคะแนน แล้วล้างทีมทั้งหมด",
@@ -193,12 +193,8 @@
   "Happens once, as soon as this card is revealed.": "ทำงานครั้งเดียว ทันทีที่เปิดการ์ดใบนี้",
   "Stays face up and keeps working until the round ends.": "หงายอยู่และทำงานต่อจนจบรอบ",
   "Counts only when the round is scored.": "นับเฉพาะตอนนับคะแนนจบรอบ",
-  "Bonus if your team has at least 1 of the card shown.": "โบนัสถ้าทีมคุณมีการ์ดที่แสดงอย่างน้อย 1 ใบ",
-  "Bonus if your team has all 4 role types.": "โบนัสถ้าทีมคุณมี role ครบทั้ง 4 ประเภท",
   "Bonus if your team has no Bug left after QA fixes.": "โบนัสถ้าทีมคุณไม่มี Bug เหลือหลัง QA แก้แล้ว",
-  "Bonus if your team has none of the cards shown.": "โบนัสถ้าทีมคุณไม่มีการ์ดที่แสดงเลย",
   "Takes, swaps or gives cards between teams.": "เอา สลับ หรือให้การ์ดระหว่างทีม",
-  "This card cannot be poached or discarded.": "การ์ดใบนี้ถูกแย่งหรือถูกทิ้งไม่ได้",
   "Junior Developer": "Junior Developer",
   "Senior Developer": "Senior Developer",
   "Project Manager": "Project Manager",
@@ -210,5 +206,5 @@
   "Investors": "Investors",
   "any role card": "การ์ด role ใดก็ได้",
   "any card": "การ์ดใดก็ได้",
-  "a Crisis card": "การ์ด Crisis"
+  "More when opened": "เปิดการ์ดเพื่ออ่านต่อ"
 }

@@ -32,12 +32,13 @@ Every card a player reads follows the keyword system in `data/keywords.json` [P3
 10. **Every card does something whenever it comes into play.** Give a condition a graded reward (`+N per role type`) or a fallback (`or +1`, `no deal: you +2`) instead of all or nothing, Meta cards included [P40]. A card cancelled by another card counts as that other card's effect. Check with the no-impact audit after changing a card.
 2. **Timing keywords live on the card frame, not in the text** — Onboard, Ongoing and Payday come from the card's `timing`, `persistent` and deck (every Meta card is Payday) (test).
 3. **At most 2 condition or interaction keywords per card**, each placed before the number it unlocks: `{CLEAN} +8` (test).
-4. **One line** — at most `maxTextChars`, counting each code as one icon (test).
+4. **One line** — the face (`cardText`) and each further line (`cardTextMore`) is at most `maxTextChars`, counting each code as one icon (test).
 5. **Only plus and minus** — no multipliers and no "instead of" overrides. The only exceptions are the cards in `pendingSimplify`, until the team decides [P39]; remove a card from that list when its text is simplified (test).
 6. **Same effect, same words** across cards: `+N per {X}`, `{X} = 0`, `Everyone discards 1 {X}`, `Leader` and `Last place`.
-7. **`cardText` must mean exactly what `text` and `effect` do.** A change in meaning is a rule change: edit `effect`, then rerun the balance simulation.
+7. **`cardText` and `cardTextMore` together must mean exactly what `text` and `effect` do.** A change in meaning is a rule change: edit `effect`, then rerun the balance simulation.
 8. **Adding, renaming or removing a code** means updating `keywords.json` (including its `icon`), every card that uses it, and the icon mapping in `/mnt/project-files/graphics/icon-mapping.md`.
-11. **Every `cardText` has a Thai line** in `web/client/src/locales/cards.th.json` with the same codes and numbers, and every keyword `reminder` and `meaning` has Thai in `web/client/src/locales/th.json` (test). Change the Thai together with the English.
+11. **Every `cardText` has a Thai line** in `web/client/src/locales/cards.th.json` and every `cardTextMore` line one in `cards.more.th.json`, with the same codes and numbers, and every keyword `reminder` and `meaning` has Thai in `web/client/src/locales/th.json` (test). Change the Thai together with the English.
+12. **The face says one thing; the rest opens.** `cardText` holds the main effect and `cardTextMore` the further conditions, one per line, shown when the card is opened (hover or hold). At most `maxIconsPerLine` icons on the face and on each further line, and never two icons side by side (test). An icon means one thing only, with amounts as numbers (`2 {JUNIOR}`, not the icon twice); write a word where an icon would be the third on a line or stands for something few cards use (`with`, `no`, `Protect`, `Crisis`, `no PM or Investors`).
 
 ## Card face rules
 

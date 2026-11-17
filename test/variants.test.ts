@@ -110,4 +110,37 @@ describe('balance knobs in data', () => {
     expect(event.visibleTo).toEqual([2]);
     expect(() => variant((_, rules) => (rules.setup.privateMetaPerPlayer = 10))).toThrow(DataError);
   });
+
+  it('shows the Meta count listed for each round [P42]', () => {
+    const same = variant((_, rules) => (rules.rounds.activeMetaByRound = []));
+    const shown = (gameData?: GameData) =>
+      playRandomGame(4, 3, gameData)
+        .events.filter((e) => e.type === 'round_started')
+        .map((e) => (e.activeMeta as string[]).length);
+    expect(shown()).toEqual([1, 2, 3]);
+    expect(shown(same)).toEqual([3, 3, 3]);
+    expect(() => variant((_, rules) => (rules.rounds.activeMetaByRound = [1, 2]))).toThrow(DataError);
+  });
+
+  it('keeps at most maxPersistent Crisis cards face up [P43]', () => {
+    const capped = variant((_, rules) => (rules.crisis.maxPersistent = 1));
+    /** The most Crisis cards face up at once over 30 games. */
+    const most = (gameData?: GameData) => {
+      let max = 0;
+      for (let seed = 1; seed <= 30; seed++) {
+        const state = createGame(gameData ?? data, { players: 4, seed });
+        while (state.stage !== 'ended') {
+          const d = currentDecision(state);
+          const p = state.players.find((x) => !x.picked)!;
+          if (d) applyActionInPlace(gameData ?? data, state, { type: 'choose', player: d.player, decisionId: d.id, option: 0 });
+          else applyActionInPlace(gameData ?? data, state, { type: 'pick', player: p.seat, cards: p.hand.slice(0, state.picksRequired).map((c) => c.uid) });
+          max = Math.max(max, state.visibleCrisis.length);
+        }
+      }
+      return max;
+    };
+    expect(most(capped)).toBe(1);
+    expect(most()).toBeGreaterThan(1);
+    expect(() => variant((_, rules) => (rules.crisis.maxPersistent = -1))).toThrow(DataError);
+  });
 });

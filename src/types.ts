@@ -26,6 +26,8 @@ export interface CardDef {
   text: string;
   /** Printed text with keyword and icon codes such as {POACH} (data/keywords.json) */
   cardText?: string;
+  /** Further lines of the printed text, shown only when the card is opened (hover or hold) */
+  cardTextMore?: string[];
   timing?: 'on_reveal' | 'scoring';
   persistent?: boolean;
   effect?: Effect;
@@ -43,8 +45,8 @@ export interface RulesFile {
   players: { min: number; max: number };
   setup: { activeMetaCount: number; privateMetaPerPlayer: number; handSize: Record<string, number> };
   turns: { count: Record<string, number> };
-  rounds: { count: number; passDirection: Array<'left' | 'right'>; teamsAtRoundEnd: 'discard' | 'out_of_game' };
-  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean };
+  rounds: { count: number; passDirection: Array<'left' | 'right'>; teamsAtRoundEnd: 'discard' | 'out_of_game'; activeMetaByRound: number[] };
+  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean; maxPersistent: number };
   scoring: { metaMultiplier: number };
   testCases: Array<{
     name: string;
