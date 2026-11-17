@@ -301,19 +301,22 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
 
   return (
     <main className="game">
-      <header className="topbar">
-        <RoundTrack view={view} />
-        <span className="muted room">{t('Room {code}', { code: view.code })}</span>
-        <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
-          <i className="ri-trophy-line" /> {view.yourTotal}
-        </span>
-        <Log view={view} />
-        <RulebookButton />
-        <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
-      </header>
-      <p className={`now ${yours ? 'yours' : ''}`} role="status">
-        {playing ? t('Showing what happened…') : nowLine(view)}
-      </p>
+      {/* one solid blue band: the round, your score and controls, and what happens now */}
+      <div className="masthead">
+        <header className="topbar">
+          <RoundTrack view={view} />
+          <span className="muted room">{t('Room {code}', { code: view.code })}</span>
+          <span className="score" title={t('{total} over all rounds, {round} this round', { total: view.yourTotal, round: view.yourScore.total })}>
+            <i className="ri-trophy-line" /> {view.yourTotal}
+          </span>
+          <Log view={view} />
+          <RulebookButton />
+          <SettingsMenu game={{ speed, onToggleSpeed, combos, onToggleCombos: toggleCombos }} />
+        </header>
+        <p className={`now ${yours ? 'yours' : ''}`} role="status">
+          {playing ? t('Showing what happened…') : nowLine(view)}
+        </p>
+      </div>
 
       <div className="table" ref={table.box}>
         <div className="table-fit" ref={table.content}>
@@ -366,14 +369,17 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
         </div>
       </div>
 
-      <section className="my-team" data-zone={`seat-${view.you}`}>
-        <h2>
-          {t('Your team')} <SeatScore score={me.score} round={view.round} />
-        </h2>
-        <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
-      </section>
+      {/* your side of the table is one block: your team on top, your hand below */}
+      <div className="mine">
+        <section className="my-team" data-zone={`seat-${view.you}`}>
+          <h2>
+            {t('Your team')} <SeatScore score={me.score} round={view.round} />
+          </h2>
+          <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
+        </section>
 
-      <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
+        <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
+      </div>
       {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
       {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
     </main>

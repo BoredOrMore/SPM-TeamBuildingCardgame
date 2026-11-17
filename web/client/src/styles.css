@@ -160,6 +160,27 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .app.in-game .my-team h2 { flex: none; margin: 0; }
 .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
 .my-team h2, .hand h2 { font-size: 0.85rem; margin-bottom: 4px; }
+
+/* fewer, larger blocks of ink, as on a printed poster (Bored, 2026-11-18): the masthead is one solid blue band,
+   the opponents share one tinted band split by ink rules, and your team and hand are one block */
+.masthead { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; border: 2px solid var(--ink); border-radius: 8px; background: radial-gradient(circle, rgb(255 255 255 / 0.12) 1px, transparent 1.6px) 0 0 / 6px 6px, var(--accent); color: #fff; box-shadow: 4px 4px 0 var(--pink); }
+.masthead .muted { color: rgb(255 255 255 / 0.8); }
+/* the buttons stay paper stickers on the band, in ink */
+.masthead :is(button, summary) { color: var(--ink); }
+.masthead .tag { color: #fff; }
+.masthead .track-turn { border-color: rgb(255 255 255 / 0.55); color: #fff; }
+.masthead .track-turn.done { background: rgb(255 255 255 / 0.3); border-color: transparent; color: #fff; }
+.masthead .track-turn.current { background: #fff; color: var(--accent); }
+.masthead .track-crisis { color: #fff; }
+.masthead .now, .masthead .now.yours { padding: 6px 10px; border: 0; border-radius: 4px; background: rgb(0 0 0 / 0.14); color: #fff; font-size: 1.05rem; }
+.masthead .now.yours { background: radial-gradient(circle, rgb(255 92 158 / 0.7) 1.2px, transparent 1.8px) 0 0 / 6px 6px, var(--ink); }
+.opponents { gap: 0; border: 2px solid var(--ink); border-radius: 8px; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); overflow: hidden; }
+.opponents > .opponent { border: 0; border-radius: 0; background: transparent; }
+.opponents > .opponent + .opponent { border-left: 2px solid var(--ink); }
+.opponents > .opponent.acting { background: color-mix(in srgb, var(--pink) 22%, var(--bg)); box-shadow: inset 0 0 0 3px var(--pink); }
+.mine { flex: none; display: flex; flex-direction: column; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); }
+.mine > .my-team { border: 0; border-bottom: 2px solid var(--ink); border-radius: 6px 6px 0 0; background: color-mix(in srgb, var(--pink) 18%, var(--bg)); }
+.mine > .hand { border: 0; border-radius: 0 0 6px 6px; background: transparent; }
 .team-chip { display: inline-flex; align-items: center; gap: 2px; }
 .team-chip .count { font-size: 0.8rem; }
 .hand-cards.from-right { animation: hand-in-right 400ms ease-out; }
@@ -186,7 +207,9 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .app.in-game .game { gap: 6px; }
   .app.in-game :is(.goals, .sheet-source) > .card { flex-basis: 150px; max-width: none; grid-template-columns: 48px 1fr; gap: 2px 6px; }
   .app.in-game :is(.goals, .sheet-source) > .card .card-top { width: 48px; }
-  .app.in-game .opponents { grid-template-columns: 1fr; gap: 6px; }
+  .app.in-game .opponents { grid-template-columns: 1fr; gap: 0; }
+  .opponents > .opponent + .opponent { border-left: 0; border-top: 2px solid var(--ink); }
+  .masthead { padding: 4px 6px 6px; gap: 4px; box-shadow: 3px 3px 0 var(--pink); }
   .app.in-game .opponent, .app.in-game .my-team { display: flex; align-items: center; gap: 6px; padding: 6px 8px; }
   .app.in-game .opp-head, .app.in-game .my-team h2 { flex: none; flex-wrap: nowrap; margin: 0; }
   .app.in-game .opponent .mini-team, .app.in-game .my-team .mini-team { flex-wrap: wrap; min-width: 0; }
