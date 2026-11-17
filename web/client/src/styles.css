@@ -199,6 +199,13 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .last-play-names { display: block; font-family: system-ui, sans-serif; font-weight: 600; font-size: 0.75rem; color: var(--muted); }
 }
 @container plays (max-height: 84px) { .last-plays-row { display: none; } }
+/* the cards are only a picture here: pointing at them shows the player's score instead of the card's tooltip */
+.last-play { cursor: default; }
+.last-play .card { pointer-events: none; }
+.score-pop { position: fixed; z-index: 45; transform: translate(-50%, -100%); width: 320px; max-height: 60dvh; overflow-y: auto; padding: 8px 12px 10px; background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 5px 5px 0 var(--pink); pointer-events: none; }
+.score-pop h3 { margin: 0 0 4px; font-family: var(--display); font-size: 1rem; }
+.score-pop p { margin: 0; font-size: 0.85rem; }
+.score-pop .breakdown { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; }
 
 /* fewer, larger blocks of ink, as on a printed poster (Bored, 2026-11-18): the masthead is one solid blue band,
    the opponents share one tinted band split by ink rules, and your team and hand are one block */
