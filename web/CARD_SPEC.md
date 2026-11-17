@@ -27,7 +27,7 @@ Figma card is 548 × 768. Sizes below are in Figma px and as a share of card wid
 | Action | `magic` |
 | Defense | `shield-check` |
 | Boost | `arrow-up-circle` |
-| Crisis | `alarm-warning` (`CRISIS`) |
+| Crisis | `alarm-warning` |
 | Meta | `global` |
 
 All icons are Remix Icon 4.9.1 Line (`ri-<icon>-line`).
@@ -72,6 +72,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 - Your decision opens as a sheet at the bottom of the screen (above the rules panel when it is open), always whole on screen; it is not part of the table, so the table's shrink never moves or scales it.
 - A card's size never changes with its content: everything inside scales with the card's width, and text that does not fit shrinks.
 - In card text, points are bold and conditions plain (`+1 per {DESIGNER}` shows **+1** bold), and each part split by ` · ` starts a new line. Small tiles keep the parts on one line, separated by `·`.
+- A card face shows only `cardText`. A card that says more (`cardTextMore`) ends its face text with a dim `more` mark (three dots), and the full card shown on hover or hold adds those lines under the face text, one per line.
 - Card text shows in the player's language (EN or TH, the topbar button). Thai text comes from `client/src/locales/cards.th.json` with the same codes and numbers as `cardText`; the card name, icons and footer label stay English.
 
 ## Checklist
@@ -80,7 +81,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 2. The type badge is top left and its icon follows the table above.
 3. The timing badge is top right, its icon comes from data as in Timing, and Role and Event cards leave it empty.
 4. The name pill overlaps the art's bottom edge and is centered.
-5. Card text is centered, uses icons for every code and chips for card icons, shows points bold and conditions plain, and puts each ` · ` part on its own line.
+5. Card text is centered, uses icons for every code and chips for card icons, shows points bold and conditions plain, and puts each ` · ` part on its own line. A face with further lines shows the `more` mark, and the opened card shows every line.
 6. The footer shows the type label.
 7. The card keeps the size in Sizes for where it is shown whatever its content, and every card in a row has the same size.
 8. Hover (mouse) and hold (touch) show the full card with Tooltips, on top of everything and whole on screen.

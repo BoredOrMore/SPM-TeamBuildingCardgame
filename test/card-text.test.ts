@@ -7,6 +7,7 @@ import { data, placeholders } from './helpers.js';
 const keywords = JSON.parse(readFileSync(fileURLToPath(new URL('../data/keywords.json', import.meta.url)), 'utf8')) as {
   maxConditionKeywordsPerCard: number;
   maxTextChars: number;
+  maxIconsPerLine: number;
   bannedPatterns: string[];
   placeholders: string[];
   keywords: Array<{ code: string; icon: string; group: 'timing' | 'condition' | 'interaction' }>;
@@ -22,6 +23,11 @@ const banned = keywords.bannedPatterns.map((p) => new RegExp(p, 'i'));
 /** Every card a player reads (support cards are reference sheets). */
 const printed = Object.entries(data.cards.decks).flatMap(([deck, cards]) => (deck === 'support' ? [] : cards));
 
+/** Every line a card can show: its face, then the lines only the opened card shows. */
+function lines(card: (typeof printed)[number]): string[] {
+  return [card.cardText!, ...(card.cardTextMore ?? [])];
+}
+
 /** Codes such as {POACH} used in a card text, in order. */
 function codes(text: string): string[] {
   return [...text.matchAll(/\{([A-Z]+)\}/g)].map((m) => m[1]!);
@@ -33,7 +39,7 @@ describe('card text follows the keyword rules (AGENTS.md)', () => {
   });
 
   it('uses only codes defined in keywords.json', () => {
-    for (const card of printed) for (const code of codes(card.cardText!)) expect(known, `${card.id} -> {${code}}`).toContain(code);
+    for (const card of printed) for (const code of codes(lines(card).join(' '))) expect(known, `${card.id} -> {${code}}`).toContain(code);
   });
 
   it('gives every code an icon, so cards never show a code as text', () => {
@@ -51,23 +57,31 @@ describe('card text follows the keyword rules (AGENTS.md)', () => {
   });
 
   it('leaves timing keywords to the card frame', () => {
-    for (const card of printed) expect(codes(card.cardText!).filter((c) => timing.has(c)), card.id).toEqual([]);
+    for (const card of printed) expect(codes(lines(card).join(' ')).filter((c) => timing.has(c)), card.id).toEqual([]);
   });
 
   it('has at most the allowed number of condition and interaction keywords', () => {
     for (const card of printed) {
-      const used = new Set(codes(card.cardText!).filter((c) => keywords.keywords.some((k) => k.code === c)));
+      const used = new Set(codes(lines(card).join(' ')).filter((c) => keywords.keywords.some((k) => k.code === c)));
       expect(used.size, card.id).toBeLessThanOrEqual(keywords.maxConditionKeywordsPerCard);
     }
   });
 
   it('fits on one line, counting each code as one icon', () => {
-    for (const card of printed) expect(card.cardText!.replace(/\{[A-Z]+\}/g, '#').length, card.id).toBeLessThanOrEqual(keywords.maxTextChars);
+    for (const card of printed) for (const line of lines(card)) expect(line.replace(/\{[A-Z]+\}/g, '#').length, card.id).toBeLessThanOrEqual(keywords.maxTextChars);
+  });
+
+  it('never puts two icons side by side', () => {
+    for (const card of printed) for (const line of lines(card)) expect(line, card.id).not.toMatch(/\}\s*\{/);
+  });
+
+  it('has at most the allowed number of icons on the face and on each further line', () => {
+    for (const card of printed) for (const line of lines(card)) expect(codes(line).length, `${card.id}: ${line}`).toBeLessThanOrEqual(keywords.maxIconsPerLine);
   });
 
   it('has no multipliers or overrides except cards still waiting on a decision [P39]', () => {
     for (const card of printed) {
-      const hit = banned.some((re) => re.test(card.cardText!));
+      const hit = banned.some((re) => lines(card).some((line) => re.test(line)));
       expect(hit, card.id).toBe(keywords.pendingSimplify.includes(card.id));
     }
   });

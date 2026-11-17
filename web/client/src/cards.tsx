@@ -6,11 +6,14 @@ import keywordsJson from '../../../data/keywords.json';
 import type { CardDef, CardInstance, CardsFile, Choice, GameEvent } from '../../../src/index.js';
 import type { DecisionView, GameView } from '../../shared/protocol.js';
 import { lang, t } from './i18n.js';
+import cardsMoreTh from './locales/cards.more.th.json';
 import cardsTh from './locales/cards.th.json';
 
 const cards = cardsJson as unknown as CardsFile;
 /** Thai card text by card id, with the same {CODES} and numbers as the English. */
 const CARD_TEXT_TH = cardsTh as Record<string, string>;
+/** Thai for each card's further lines (`cardTextMore`), line for line. */
+const CARD_TEXT_MORE_TH = cardsMoreTh as Record<string, string[]>;
 type Deck = keyof CardsFile['decks'];
 
 /** Every card definition by id, with the deck it comes from. */
@@ -133,8 +136,16 @@ function cardTextOf(def: CardDef): string | undefined {
   return th;
 }
 
-/** Card text with every {CODE} drawn as its icon. */
-export function CardText({ text }: { text: string }) {
+/** A card's further lines in the current language: what its face leaves for the opened card. */
+function cardTextMoreOf(def: CardDef): string[] {
+  if (!def.cardTextMore || lang() === 'en') return def.cardTextMore ?? [];
+  const th = CARD_TEXT_MORE_TH[def.id];
+  if (th === undefined) throw new Error(`No Thai for the further lines of ${def.id}`);
+  return th;
+}
+
+/** Card text with every {CODE} drawn as its icon; `more` marks a face whose card says more when opened. */
+export function CardText({ text, more }: { text: string; more?: boolean }) {
   return (
     <>
       {text.split(' · ').map((line, l) => (
@@ -146,6 +157,7 @@ export function CardText({ text }: { text: string }) {
           })}
         </span>
       ))}
+      {more && <i className="ri-more-line text-more" aria-label={t('More when opened')} />}
     </>
   );
 }
@@ -248,7 +260,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 /** Keyword and icon codes on a card, in order of first use, then the timing in its top-right badge. */
 function codesOf(id: string): IconCode[] {
   const def = CARD_DEFS.get(id);
-  const text = def?.cardText ?? '';
+  const text = [def?.cardText ?? '', ...(def?.cardTextMore ?? [])].join(' ');
   const codes = [...new Set([...text.matchAll(/\{([A-Z]+)\}/g)].map((m) => m[1]!))];
   const timing = def && def.deck !== 'support' ? timingCode(def) : undefined;
   return [...codes.map((c) => ICONS.get(c)).filter((k): k is IconCode => !!k), ...(timing ? [timing] : [])];
@@ -328,11 +340,11 @@ function CardTooltip({ tip }: { tip: Tip }) {
   );
 }
 
-/** A card face at full size, with no handlers of its own. */
+/** A card at full size with its whole text, the lines its face leaves out included; no handlers of its own. */
 function FullCard({ id }: { id: string }) {
   return (
     <div className="card preview-card" style={{ '--frame': frameColor(CARD_DEFS.get(id)) } as React.CSSProperties}>
-      <CardFace id={id} />
+      <CardFace id={id} opened />
     </div>
   );
 }
@@ -352,7 +364,7 @@ function CardPreview({ id }: { id: string }) {
 }
 
 /** Name bar and text of a card, without any behaviour. */
-function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; chip?: boolean; shield?: boolean }) {
+function CardFace({ id, small, chip, shield, opened }: { id: string; small?: boolean; chip?: boolean; shield?: boolean; opened?: boolean }) {
   const def = CARD_DEFS.get(id);
   const art = def && hasArt(def.deck) ? artUrl(id) : undefined;
   if (chip) {
@@ -373,16 +385,18 @@ function CardFace({ id, small, chip, shield }: { id: string; small?: boolean; ch
           {def?.name ?? id}
           {shield && <i className="ri-shield-line" aria-label={t('protected')} />}
         </span>
-        {!small && <span className="card-text">{def?.cardText ? <CardText text={cardTextOf(def)!} /> : def?.text}</span>}
+        {!small && <span className="card-text">{def?.cardText ? <CardText text={cardTextOf(def)!} more={!!def.cardTextMore} /> : def?.text}</span>}
       </>
     );
   }
-  return <PrintedFace def={def} art={art} shield={shield} />;
+  return <PrintedFace def={def} art={art} shield={shield} opened={opened} />;
 }
 
 /** The printed card (CARD_SPEC.md): fixed shape, so its text shrinks rather than the card growing. */
-function PrintedFace({ def, art, shield }: { def: CardDef & { deck: Deck }; art: string | undefined; shield?: boolean }) {
-  const text = cardTextOf(def);
+function PrintedFace({ def, art, shield, opened }: { def: CardDef & { deck: Deck }; art: string | undefined; shield?: boolean; opened?: boolean }) {
+  const face = cardTextOf(def);
+  // the opened card (hover or hold) adds the lines its face leaves out
+  const text = face && opened ? [face, ...cardTextMoreOf(def)].join(' · ') : face;
   const textRef = useFitText(text ?? def.text);
   // the printed card: art with a type badge top left and a timing badge top right, the name on the art's edge, text, type label
   const timing = timingCode(def);
@@ -398,7 +412,7 @@ function PrintedFace({ def, art, shield }: { def: CardDef & { deck: Deck }; art:
         {shield && <i className="ri-shield-line" aria-label={t('protected')} />}
       </span>
       <span ref={textRef} className="card-text">
-        {text ? <CardText text={text} /> : def.text}
+        {text ? <CardText text={text} more={!!def.cardTextMore && !opened} /> : def.text}
       </span>
       <span className="card-footer">{(def.type ?? def.deck).toUpperCase()}</span>
     </>

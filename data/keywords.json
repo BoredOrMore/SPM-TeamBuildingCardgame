@@ -1,6 +1,7 @@
 {
   "maxConditionKeywordsPerCard": 2,
   "maxTextChars": 70,
+  "maxIconsPerLine": 2,
   "frameColors": { "role": "#3B82C4", "event": "#E9A23B", "action": "#F07A52", "defense": "#5B7A99", "boost": "#4CAF6A", "crisis": "#E0524A", "meta": "#7C5CC4" },
   "iconInk": "#2B2A33",
   "iconSet": "Remix Icon 4.9.1, Line style: <icon>-line.svg",
@@ -37,31 +38,10 @@
       "hearthstone": "Deathrattle (resolves later)"
     },
     {
-      "code": "SYNERGY",
-      "icon": "links",
-      "group": "condition",
-      "reminder": "Bonus if your team has at least 1 of the card shown.",
-      "hearthstone": "Combo"
-    },
-    {
-      "code": "FULLTEAM",
-      "icon": "star",
-      "group": "condition",
-      "reminder": "Bonus if your team has all 4 role types.",
-      "hearthstone": "-"
-    },
-    {
       "code": "CLEAN",
       "icon": "sparkling",
       "group": "condition",
       "reminder": "Bonus if your team has no Bug left after QA fixes.",
-      "hearthstone": "-"
-    },
-    {
-      "code": "LEAN",
-      "icon": "forbid",
-      "group": "condition",
-      "reminder": "Bonus if your team has none of the cards shown.",
       "hearthstone": "-"
     },
     {
@@ -70,13 +50,6 @@
       "group": "interaction",
       "reminder": "Takes, swaps or gives cards between teams.",
       "hearthstone": "Steal"
-    },
-    {
-      "code": "SHIELD",
-      "icon": "shield",
-      "group": "interaction",
-      "reminder": "This card cannot be poached or discarded.",
-      "hearthstone": "Divine Shield"
     }
   ],
   "icons": [
@@ -144,12 +117,6 @@
       "code": "CARD",
       "icon": "stack",
       "meaning": "any card"
-    },
-    {
-      "code": "CRISIS",
-      "chip": "crisis",
-      "icon": "alarm-warning",
-      "meaning": "a Crisis card"
     }
   ],
   "pendingSimplify": []

@@ -26,6 +26,8 @@ export interface CardDef {
   text: string;
   /** Printed text with keyword and icon codes such as {POACH} (data/keywords.json) */
   cardText?: string;
+  /** Further lines of the printed text, shown only when the card is opened (hover or hold) */
+  cardTextMore?: string[];
   timing?: 'on_reveal' | 'scoring';
   persistent?: boolean;
   effect?: Effect;

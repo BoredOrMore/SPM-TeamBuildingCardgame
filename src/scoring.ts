@@ -174,7 +174,9 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
     const raw = metaPoints(id, effectOf(data, id), input, effective, groups);
     // Only bonuses are scaled [P35]; fractions round down [P32].
     const points = raw > 0 ? Math.floor(raw * data.rules.scoring.metaMultiplier) : raw;
-    add(`Meta: ${data.byId.get(id)?.name ?? id}`, points, data.byId.get(id)?.cardText);
+    const meta = data.byId.get(id);
+    // the score line explains itself with the whole card text, not only the line on the card's face
+    add(`Meta: ${meta?.name ?? id}`, points, meta?.cardText && [meta.cardText, ...(meta.cardTextMore ?? [])].join(' · '));
   }
 
   // Step 6: Crisis bonuses and play-time bonuses.
