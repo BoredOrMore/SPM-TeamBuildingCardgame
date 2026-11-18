@@ -31,6 +31,8 @@ const DECISION_CARD: Record<string, string> = { merger_propose: 'merger_offer', 
 const SAME_CAUSE_HOLD = 0.5;
 /** How many spotlight lengths a Crisis stays, so its card can turn over and be read. */
 const CRISIS_HOLD = 2;
+/** How many spotlight lengths a step stays when it lowers the viewer's score, so they can read what cost them points. */
+const LOSS_HOLD = 2.5;
 /** Events after which a score change has more causes than one spotlight, so no step claims it. */
 const MIXED_SCORE = new Set(['cards_revealed', 'teams_updated', 'round_started', 'round_ended']);
 /** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
@@ -343,7 +345,12 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
           // skipping passes everything but a round's standings, which wait for a tap
           if ((skipping.current && !s.standings) || s.logOnly) continue;
           // players' events often arrive one view at a time, so a run of one card's effects is sped up here, not merged
-          const step = s.cause && s.cause === lastCause.current ? { ...s, hold: SAME_CAUSE_HOLD } : s;
+          const lost = s.yourScore !== undefined && s.yourScore.to < s.yourScore.from;
+          const step = lost
+            ? { ...s, hold: Math.max(s.hold ?? 1, LOSS_HOLD) }
+            : s.cause && s.cause === lastCause.current
+              ? { ...s, hold: SAME_CAUSE_HOLD }
+              : s;
           lastCause.current = s.cause;
           setStep(step);
           if (s.sound) sfx(s.sound);
