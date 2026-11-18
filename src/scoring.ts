@@ -157,6 +157,13 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
     const each = effectOf(data, id).points as number;
     add(label, scopeCreep ? 0 : n(c, id) * each, `${n(c, id)} × ${each}`);
   }
+  // Coffee majority: tied players share a rank and the next count still takes the next rank (Bored, 2026-11-18).
+  const coffees = n(c, 'coffee');
+  if (!scopeCreep && coffees > 0) {
+    const higher = new Set(input.teams.map((t) => countCards(t).get('coffee') ?? 0).filter((k) => k > coffees)).size;
+    const rankPoints = effectOf(data, 'coffee').rankPoints as number[];
+    add('Coffee rank', rankPoints[higher] ?? 0, higher === 0 ? 'most {COFFEE}' : 'second most {COFFEE}');
+  }
   const invEff = effectOf(data, 'investors');
   const allGroups = Object.keys(data.cards.roleGroups).length;
   const fullTeam = groups >= allGroups;

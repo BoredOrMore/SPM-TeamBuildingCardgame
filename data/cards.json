@@ -78,9 +78,10 @@
         "name": "Coffee",
         "type": "event",
         "quantity": 5,
-        "text": "+1 point (wild card bonus).",
+        "text": "+1 point each. The player with the most Coffee gets +3 more and the next most +2 more; tied players share the rank.",
         "cardText": "+1",
-        "effect": { "kind": "per_card", "points": 1, "disabledBy": ["scope_creep"] }
+        "cardTextMore": ["Most {COFFEE}: +3", "second most: +2"],
+        "effect": { "kind": "per_card", "points": 1, "disabledBy": ["scope_creep"], "rankPoints": [3, 2] }
       },
       {
         "id": "bug",
