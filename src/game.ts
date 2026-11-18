@@ -16,6 +16,9 @@ import type {
 
 export class IllegalAction extends Error {}
 
+/** Decisions the player confirms even with one option: deals, and Crises that take a card from their team. */
+const ASK_EVEN_IF_ONE: ReadonlySet<DecisionKind> = new Set(['merger_respond', 'merger_propose', 'burnout', 'layoff']);
+
 export interface NewGameOptions {
   players: number;
   seed: number;
@@ -246,7 +249,7 @@ function advance(data: GameData, state: GameState): void {
         emit(state, { type: 'no_effect', player: head.player, decision: head.kind, source: head.source });
         continue;
       }
-      if (head.options.length === 1 && head.kind !== 'merger_respond' && head.kind !== 'merger_propose') {
+      if (head.options.length === 1 && !ASK_EVEN_IF_ONE.has(head.kind)) {
         state.queue.shift();
         resolveChoice(data, state, head, head.options[0]!);
         continue;
@@ -362,12 +365,7 @@ function drawCrisis(data: GameData, state: GameState): void {
       for (const seat of order) enqueue(state, seat, 'funding_round', card.id);
       break;
     case 'layoff':
-      for (const seat of order) {
-        const p = state.players[seat]!;
-        const junior = p.team.find((c) => c.id === 'junior_dev' && !p.protected.includes(c.uid));
-        if (junior) moveToDiscard(state, p, junior.uid, 'layoff');
-        else enqueue(state, seat, 'layoff', card.id); // no Junior: discard any role card instead
-      }
+      for (const seat of order) enqueue(state, seat, 'layoff', card.id);
       break;
     case 'poaching': {
       // The player with the most role cards takes; ties random [P6].
@@ -512,8 +510,13 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     }
     case 'nda':
       return unprotected(me).filter((c) => c.uid !== d.source).map((c) => ({ kind: 'nda' as const, protect: c.uid })); // [P30]
+    case 'layoff': {
+      // A Junior goes if there is one; with no Junior, any role card instead.
+      const junior = unprotected(me).find((c) => c.id === 'junior_dev');
+      if (junior) return [{ kind: 'discard' as const, uid: junior.uid }];
+      return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
+    }
     case 'burnout':
-    case 'layoff':
       return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
     case 'poaching':
       return opponents(state, d.player).flatMap((o) => distinctById(unprotected(o)).map((c) => ({ kind: 'take' as const, opponent: o.seat, uid: c.uid })));

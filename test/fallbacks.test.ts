@@ -36,6 +36,12 @@ describe('every card has an effect when it comes into play', () => {
     expect([ids(state, 0), ids(state, 1), ids(state, 2)]).toEqual([['coffee', 'designer'], ['coffee'], ['bug', 'coffee']]);
   });
 
+  it('Layoff asks the player to confirm even when only one card can go', () => {
+    const state = revealCrisis('layoff', [['junior_dev', 'junior_dev'], [], []]);
+    const d = currentDecision(state)!;
+    expect([d.kind, d.player, d.options!.length]).toEqual(['layoff', 0, 1]);
+  });
+
   it('Poaching lets the player with the most role cards take a card, Senior or not', () => {
     const state = revealCrisis('poaching', [['designer', 'qa_tester'], ['coffee'], ['bug']]);
     const d = currentDecision(state)!;
