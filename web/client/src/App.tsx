@@ -454,7 +454,8 @@ function LastPlays({ view }: { view: GameView }) {
   return (
     <section className="last-plays" aria-label={t('Just played')}>
       <h2 className="last-plays-title">{t('Just played')}</h2>
-      <div className="last-plays-row">
+      {/* card and player counts size the cards so the row fits the width, as when everyone plays 2 */}
+      <div className="last-plays-row" style={{ '--cards': plays.reduce((n, p) => n + p.cards.length, 0), '--players': plays.length } as React.CSSProperties}>
         {plays.map((p) => (
           <div
             key={p.player}

@@ -412,6 +412,17 @@ function flightArc(dx: number, dy: number): string[] {
   });
 }
 
+/** Cards in a row, a run of cards with the same owner as one group; cards with no owner are each their own. */
+function groupsByOwner(cards: SpotCard[]): Array<{ owner?: string; cards: SpotCard[] }> {
+  const groups: Array<{ owner?: string; cards: SpotCard[] }> = [];
+  for (const c of cards) {
+    const last = groups[groups.length - 1];
+    if (c.owner && last?.owner === c.owner) last.cards.push(c);
+    else groups.push({ owner: c.owner, cards: [c] });
+  }
+  return groups;
+}
+
 /** The spotlight for the step playing now, with seat pulses and bonus numbers. Tap to skip. */
 export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | undefined; speed: Speed; onSkip: () => void; onNext: () => void }) {
   const cards = useRef<HTMLDivElement>(null);
@@ -501,21 +512,27 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
           </div>
         ) : step.flip ? (
           <div ref={cards} className={`spot-cards flip-row ${step.cards.length === 1 ? 'single' : ''}`}>
-            {step.cards.map((c, i) => (
-              <div
-                key={i}
-                className="flip-card spot-card"
-                style={{ '--flip-ms': `${TIMING[speed].flipMs}ms`, '--flip-delay': `${(c.seatOrder ?? 0) * TIMING[speed].flipStaggerMs}ms` } as React.CSSProperties}
-              >
-                <div className="flip-inner">
-                  <div className="flip-back">
-                    <CardBack deck={c.back ?? 'main'} />
-                  </div>
-                  <div className="flip-front">
-                    <Card id={c.id} />
-                  </div>
+            {groupsByOwner(step.cards).map((g, k) => (
+              <div key={k} className="flip-group">
+                <div className="flip-group-cards">
+                  {g.cards.map((c, i) => (
+                    <div
+                      key={i}
+                      className="flip-card spot-card"
+                      style={{ '--flip-ms': `${TIMING[speed].flipMs}ms`, '--flip-delay': `${(c.seatOrder ?? 0) * TIMING[speed].flipStaggerMs}ms` } as React.CSSProperties}
+                    >
+                      <div className="flip-inner">
+                        <div className="flip-back">
+                          <CardBack deck={c.back ?? 'main'} />
+                        </div>
+                        <div className="flip-front">
+                          <Card id={c.id} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {c.owner && <span className="flip-owner">{c.owner}</span>}
+                {g.owner && <span className="flip-owner">{g.owner}</span>}
               </div>
             ))}
           </div>
