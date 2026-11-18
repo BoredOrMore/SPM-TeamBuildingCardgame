@@ -81,6 +81,11 @@ function Rulebook({ onClose }: { onClose: () => void }) {
         {tab === 'Icons' && (
           <>
             <p>{t('Top left of a card: its role or type. Top right: when it works. Point at or hold a card to see its icons explained.')}</p>
+            {/* the marks on hand cards while you pick */}
+            <ul className="rules">
+              <Rule icon="links-line">{t('On a card in your hand: it scores more with the cards already in your team.')}</Rule>
+              <Rule icon="global-line">{t('+N on a card in your hand: the points it adds from this round’s Meta.')}</Rule>
+            </ul>
             <div className="glossary">
               <IconGlossary />
             </div>
