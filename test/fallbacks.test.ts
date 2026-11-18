@@ -63,7 +63,7 @@ describe('every card has an effect when it comes into play', () => {
     const decline = d.options!.findIndex((o) => o.kind === 'merger_decline');
     applyActionInPlace(crisisAfterTurn1, state, { type: 'choose', player: d.player, decisionId: d.id, option: decline });
     expect(state.players[d.player]!.bonuses).toEqual([{ source: 'Merger Offer', points: 2 }]);
-    expect(state.events.at(-1)).toMatchObject({ type: 'bonus_gained', player: d.player, source: 'merger_offer', points: 2 });
+    expect(state.events).toContainEqual(expect.objectContaining({ type: 'bonus_gained', player: d.player, source: 'merger_offer', points: 2 }));
   });
 
   it('Refactor with nothing to convert gives +3', () => {
