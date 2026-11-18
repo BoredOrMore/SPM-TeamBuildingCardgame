@@ -132,6 +132,7 @@
   "**Hire.** Every other card joins its owner's team.": "**จ้าง** การ์ดอื่นทั้งหมดเข้าทีมของเจ้าของ",
   "**Pass.** Hands move to the next player.": "**ส่งต่อ** การ์ดในมือส่งไปให้ผู้เล่นคนถัดไป",
   "**Crisis.** Only after turns {turns}.": "**Crisis** เฉพาะหลังเทิร์น {turns}",
+  "**Crisis.** Only after turns {turns}, never the same one twice in a round.": "**Crisis** เฉพาะหลังเทิร์น {turns} และใบเดียวกันไม่ขึ้นซ้ำใน round เดียวกัน",
   "End of each round, in this order": "ตอนจบแต่ละรอบ ตามลำดับนี้",
   "Good to know": "ควรรู้",
   "**Complete team**: at least 1 Developer (Junior or Senior), Project Manager, Designer and QA. Some cards pay more for it.": "**ทีมครบ**: มี Developer (Junior หรือ Senior), Project Manager, Designer และ QA อย่างละอย่างน้อย 1 ใบ บางการ์ดให้คะแนนเพิ่มเมื่อทีมครบ",
