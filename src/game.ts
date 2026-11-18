@@ -611,11 +611,15 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
       emit(state, { type: 'hand_revealed', player: them.seat, cards: them.hand.map((c) => ({ ...c })), visibleTo: [me.seat] });
       const points = data.byId.get('phone_screen')!.effect!.points as number;
       me.bonuses.push({ source: 'Phone Screen', points });
+      emit(state, { type: 'bonus_gained', player: me.seat, source: 'phone_screen', points });
       break;
     }
     case 'refactor': {
       if (choice.mode === 'points') {
-        me.bonuses.push({ source: 'Refactor', points: data.byId.get('refactor')!.effect!.fallbackPoints as number });
+        const points = data.byId.get('refactor')!.effect!.fallbackPoints as number;
+        me.bonuses.push({ source: 'Refactor', points });
+        // onlyOption: nothing could be converted, so the points were the only choice
+        emit(state, { type: 'bonus_gained', player: me.seat, source: 'refactor', points, onlyOption: d.options!.length === 1 });
         break;
       }
       const [removeId, removeCount, addId] = choice.mode === 'bug_to_qa' ? ['bug', 1, 'qa_tester'] : ['junior_dev', 2, 'senior_dev'];
@@ -669,6 +673,7 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
       const eff = data.byId.get('pivot_or_persevere')!.effect!;
       const persevere = (eff.options as Array<{ id: string; points?: number }>).find((o) => o.id === 'persevere')!;
       me.bonuses.push({ source: 'Persevere', points: persevere.points! });
+      emit(state, { type: 'bonus_gained', player: me.seat, source: 'pivot_or_persevere', points: persevere.points! });
       break;
     }
     case 'pivot': {
@@ -684,7 +689,7 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
       break;
     }
     case 'merger_decline':
-      mergerFallback(data, me);
+      mergerFallback(data, state, me);
       break;
     case 'merger_offer':
       enqueue(state, choice.target, 'merger_respond', d.source, { proposer: me.seat, offer: choice });
@@ -702,16 +707,19 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
         proposer.bonuses.push({ source: 'Merger Offer', points });
         me.bonuses.push({ source: 'Merger Offer', points });
         emit(state, { type: 'cards_swapped', players: [proposer.seat, me.seat], cards: [{ ...give }, { ...take }] });
-      } else mergerFallback(data, proposer);
+        for (const p of [proposer, me]) emit(state, { type: 'bonus_gained', player: p.seat, source: 'merger_offer', points });
+      } else mergerFallback(data, state, proposer);
       break;
     }
     case 'merger_reject':
-      mergerFallback(data, state.players[d.context!.proposer!]!);
+      mergerFallback(data, state, state.players[d.context!.proposer!]!);
       break;
   }
 }
 
 /** Merger Offer with no deal still gives the drawing player its fallback points. */
-function mergerFallback(data: GameData, drawer: PlayerState): void {
-  drawer.bonuses.push({ source: 'Merger Offer', points: data.byId.get('merger_offer')!.effect!.pointsIfNoDeal as number });
+function mergerFallback(data: GameData, state: GameState, drawer: PlayerState): void {
+  const points = data.byId.get('merger_offer')!.effect!.pointsIfNoDeal as number;
+  drawer.bonuses.push({ source: 'Merger Offer', points });
+  emit(state, { type: 'bonus_gained', player: drawer.seat, source: 'merger_offer', points });
 }
