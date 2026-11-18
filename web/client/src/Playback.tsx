@@ -17,8 +17,8 @@ export type Speed = (typeof SPEEDS)[number];
  * and how long the reveal flips each card, one seat after another `flipStaggerMs` apart.
  */
 const TIMING: Record<Speed, { spotlightMs: number; flightMs: number; flipMs: number; flipStaggerMs: number }> = {
-  normal: { spotlightMs: 1500, flightMs: 550, flipMs: 400, flipStaggerMs: 80 },
-  fast: { spotlightMs: 750, flightMs: 300, flipMs: 250, flipStaggerMs: 50 },
+  normal: { spotlightMs: 1100, flightMs: 450, flipMs: 350, flipStaggerMs: 70 },
+  fast: { spotlightMs: 600, flightMs: 250, flipMs: 200, flipStaggerMs: 40 },
 };
 /** Events that change nothing a player needs to watch; the status bar already says whose turn it is. */
 /** Effects that come from a card: their spotlight says which card, and whose. */
@@ -31,8 +31,8 @@ const DECISION_CARD: Record<string, string> = { merger_propose: 'merger_offer', 
 const SAME_CAUSE_HOLD = 0.5;
 /** How many spotlight lengths a Crisis stays, so its card can turn over and be read. */
 const CRISIS_HOLD = 2;
-/** How many spotlight lengths a step stays when it lowers the viewer's score, so they can read what cost them points. */
-const LOSS_HOLD = 2.5;
+/** How many spotlight lengths a step stays when it lowers the viewer's score, so they can read what cost them points (about 3.75 s at normal speed). */
+const LOSS_HOLD = 3.4;
 /** Events after which a score change has more causes than one spotlight, so no step claims it. */
 const MIXED_SCORE = new Set(['cards_revealed', 'teams_updated', 'round_started', 'round_ended']);
 /** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
