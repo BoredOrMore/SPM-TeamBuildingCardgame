@@ -12,7 +12,7 @@ import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, preload
 import { SettingsMenu } from './Settings.js';
 import { setMusic, sfx } from './sound.js';
 import { t, useLang } from './i18n.js';
-import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
+import { createRoom, joinRoom, rejoin, wakeServer, type Connection, type Handlers } from './net.js';
 
 /** How long the round track's current dot takes to show that the turn moved on, in ms. */
 const TURN_SHIFT_MS = 560;
@@ -83,6 +83,7 @@ export function App() {
   });
 
   useEffect(() => {
+    wakeServer();
     void rejoin(handlers.current).then((c) => c && setConn(c));
   }, []);
 

@@ -11,6 +11,16 @@ const SERVER_URL: string = import.meta.env.VITE_SERVER_URL ?? `${location.protoc
 
 const client = new Client(SERVER_URL);
 
+/**
+ * Sends the room server a plain request so a sleeping free host starts booting while the player types a name;
+ * the answer itself does not matter.
+ */
+export function wakeServer(): void {
+  fetch(SERVER_URL.replace(/^ws/, 'http'), { mode: 'no-cors' }).catch(() => {
+    // still asleep or offline: Create and Join say so when they are pressed
+  });
+}
+
 export interface Handlers {
   onView: (view: View) => void;
   onError: (message: string) => void;
