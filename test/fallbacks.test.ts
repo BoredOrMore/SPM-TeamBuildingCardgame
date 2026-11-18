@@ -36,6 +36,12 @@ describe('every card has an effect when it comes into play', () => {
     expect([ids(state, 0), ids(state, 1), ids(state, 2)]).toEqual([['coffee', 'designer'], ['coffee'], ['bug', 'coffee']]);
   });
 
+  it('Layoff asks the player to confirm even when only one card can go', () => {
+    const state = revealCrisis('layoff', [['junior_dev', 'junior_dev'], [], []]);
+    const d = currentDecision(state)!;
+    expect([d.kind, d.player, d.options!.length]).toEqual(['layoff', 0, 1]);
+  });
+
   it('Poaching lets the player with the most role cards take a card, Senior or not', () => {
     const state = revealCrisis('poaching', [['designer', 'qa_tester'], ['coffee'], ['bug']]);
     const d = currentDecision(state)!;
@@ -57,6 +63,7 @@ describe('every card has an effect when it comes into play', () => {
     const decline = d.options!.findIndex((o) => o.kind === 'merger_decline');
     applyActionInPlace(crisisAfterTurn1, state, { type: 'choose', player: d.player, decisionId: d.id, option: decline });
     expect(state.players[d.player]!.bonuses).toEqual([{ source: 'Merger Offer', points: 2 }]);
+    expect(state.events).toContainEqual(expect.objectContaining({ type: 'bonus_gained', player: d.player, source: 'merger_offer', points: 2 }));
   });
 
   it('Refactor with nothing to convert gives +3', () => {

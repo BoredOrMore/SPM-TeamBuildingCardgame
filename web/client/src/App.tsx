@@ -454,7 +454,8 @@ function LastPlays({ view }: { view: GameView }) {
   return (
     <section className="last-plays" aria-label={t('Just played')}>
       <h2 className="last-plays-title">{t('Just played')}</h2>
-      <div className="last-plays-row">
+      {/* card and player counts size the cards so the row fits the width, as when everyone plays 2 */}
+      <div className="last-plays-row" style={{ '--cards': plays.reduce((n, p) => n + p.cards.length, 0), '--players': plays.length } as React.CSSProperties}>
         {plays.map((p) => (
           <div
             key={p.player}
@@ -650,11 +651,29 @@ function CardPicker({ view, options, onChoose }: { view: GameView; options: Choi
   );
 }
 
-/** Your decision as a sheet over the hand: the card that asks, then one tile per option. */
+/** The other player whose cards an option takes or trades for, if any. */
+function playerOf(c: Choice): number | undefined {
+  if (c.kind === 'take' || c.kind === 'headhunt') return c.opponent;
+  if (c.kind === 'merger_offer') return c.target;
+  return undefined;
+}
+
+/**
+ * Your decision as a sheet over the hand: the card that asks, then one tile per option.
+ * When options reach into more than one player's team, you pick the player first, then their card (Bored, 2026-11-18).
+ */
 function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision: DecisionView; onChoose: (option: number) => void }) {
   const [open, setOpen] = useState(true);
+  const [player, setPlayer] = useState<number>();
   const source = idOfUid(view, decision.source);
   const offer = decision.context?.offer;
+  const all = decision.options!.map((o, i) => ({ o, i }));
+  const players = [...new Set(all.map((x) => playerOf(x.o)).filter((seat) => seat !== undefined))];
+  const byPlayer = players.length > 1;
+  const choosingPlayer = byPlayer && player === undefined;
+  // the options on screen: before a player is picked, only those that take no one's card; after, that player's and those
+  const shown = all.filter((x) => !byPlayer || playerOf(x.o) === undefined || playerOf(x.o) === player);
+  const choose = (k: number) => onChoose(shown[k]!.i);
   return (
     <section className={`sheet ${open ? '' : 'closed'}`} aria-label={t('Your decision')}>
       <button className="sheet-head" onClick={() => setOpen((o) => !o)}>
@@ -673,12 +692,34 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
               {t('{who} offers: {offer}', { who: view.players[decision.context?.proposer ?? -1]?.name ?? t('They'), offer: choiceLabel(view, offer) })}
             </div>
           )}
-          {decision.options!.some((o) => pickPlan(view, o)) && (
-            <CardPicker key={decision.id} view={view} options={decision.options!} onChoose={onChoose} />
+          {choosingPlayer && (
+            <div className="sheet-options">
+              <div className="picker-prompt">{t('Choose a player')}</div>
+              {players.map((seat) => (
+                <button key={seat} className="option" onClick={() => setPlayer(seat)}>
+                  <span>
+                    <b>{view.players[seat]?.name}</b> <i className="ri-star-line" /> {view.players[seat]?.score}
+                  </span>
+                  <span className="option-cards">
+                    {view.players[seat]?.team.map((c) => (
+                      <Card key={c.uid} id={c.id} chip />
+                    ))}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {byPlayer && player !== undefined && (
+            <button className="link" onClick={() => setPlayer(undefined)}>
+              <i className="ri-arrow-left-line" /> {t('{who}’s team · change player', { who: view.players[player]?.name ?? '?' })}
+            </button>
+          )}
+          {!choosingPlayer && shown.some((x) => pickPlan(view, x.o)) && (
+            <CardPicker key={`${decision.id}-${player}`} view={view} options={shown.map((x) => x.o)} onChoose={choose} />
           )}
           <div className="sheet-options">
-            {decision.options!.map((o, i) => pickPlan(view, o) ? null : (
-              <button key={i} className="option" onClick={() => onChoose(i)}>
+            {shown.map(({ o }, i) => pickPlan(view, o) ? null : (
+              <button key={i} className="option" onClick={() => choose(i)}>
                 {choiceCards(o).length > 0 && (
                   <span className="option-cards">
                     {choiceCards(o).map((uid) => (

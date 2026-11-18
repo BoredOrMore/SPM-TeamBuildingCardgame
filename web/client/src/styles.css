@@ -182,7 +182,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
 .last-play-cards { display: flex; gap: 6px; }
 /* the popup row look (CARD_SPEC.md): art, badges and name, every card the same size, as tall as the room allows */
 /* art, badges and name only, so the card ends under its name */
-.last-play .card { width: clamp(72px, calc((100cqh - 80px) * 520 / 540), 170px); aspect-ratio: auto; min-height: 0; padding-bottom: 6px; box-shadow: 4px 4px 0 var(--pink); }
+.last-play .card { width: min(clamp(72px, calc((100cqh - 80px) * 520 / 540), 170px), calc((100cqw - var(--players) * 16px - var(--cards) * 6px) / var(--cards))); aspect-ratio: auto; min-height: 0; padding-bottom: 6px; box-shadow: 4px 4px 0 var(--pink); }
 .last-play .card .card-text, .last-play .card .card-footer { display: none; }
 .last-play .card .card-name { font-size: 0.8rem; padding: 3px 6px; line-height: 1.15; }
 .last-play-owner { font-family: var(--display); font-weight: 800; font-size: 0.9rem; }
@@ -193,7 +193,7 @@ button.link { background: none; border: 0; color: var(--accent); cursor: pointer
   .last-plays-title { display: none; }
   .last-play { flex-direction: row; gap: 6px; }
   /* only the art and badges, square, so no empty paper is left under it */
-  .last-play .card { width: clamp(56px, calc(100cqh - 14px), 150px); aspect-ratio: 520 / 540; overflow: hidden; }
+  .last-play .card { width: min(clamp(56px, calc(100cqh - 14px), 150px), calc((100cqw - var(--players) * (9em + 22px) - var(--cards) * 6px) / var(--cards))); aspect-ratio: 520 / 540; overflow: hidden; }
   .last-play .card .card-name { display: none; }
   .last-play-owner { display: flex; flex-direction: column; max-width: 9em; line-height: 1.15; }
   .last-play-names { display: block; font-family: system-ui, sans-serif; font-weight: 600; font-size: 0.75rem; color: var(--muted); }
@@ -482,6 +482,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 @media (max-width: 600px) { .spot-cards:has(> :nth-child(2)) .card { width: min(240px, 44vw); } }
 .spot-icon { font-size: 3.5rem; color: #fff; }
 .spot-cause { margin: 0 0 -4px; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); color: var(--ink); font-weight: 700; font-size: 0.85rem; }
+.spot-score { margin: 0; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; }
+.spot-score.down { color: var(--warn); }
+.spot-score.up { color: #2e8b57; }
 .spot-line { margin: 0; padding: 10px 16px; border-radius: 6px; background: var(--ink); box-shadow: 4px 4px 0 var(--pink); color: #fff; font-weight: 600; font-size: 1.05rem; text-align: center; }
 .seat-score { position: relative; display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-weight: 700; font-size: 0.9rem; }
 .score-delta { position: absolute; left: 100%; top: -4px; margin-left: 4px; font-size: 1rem; animation: score-rise 1400ms ease-out forwards; pointer-events: none; }
@@ -502,6 +505,13 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 /* the reveal: every pick starts as a Main back and turns over, one seat after another */
 .flip-row { flex-wrap: wrap; max-width: min(92vw, 640px); }
+/* each player's picks stay together over one name, so a turn of 2 picks each reads player by player */
+.flip-group { display: flex; flex-direction: column; align-items: center; }
+.flip-group-cards { display: flex; gap: 6px; }
+.flip-row:has(.flip-group-cards > :nth-child(2)) { max-width: min(92vw, 960px); }
+/* 2 picks each: two players a row on a phone, three on wider screens */
+.flip-row:has(.flip-group-cards > :nth-child(2)) .flip-card { width: min(80px, calc((92vw - 36px) / 4)); }
+@media (min-width: 601px) { .flip-row:has(.flip-group-cards > :nth-child(2)) .flip-card { width: 120px; } }
 /* four picks fit one row on a phone */
 .flip-card { width: min(96px, calc((92vw - 36px) / 4)); perspective: 800px; }
 .flip-owner { display: block; margin-top: 6px; text-align: center; color: #fff; font-weight: 600; font-size: 0.9rem; text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); }
@@ -522,7 +532,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 @media (min-width: 601px) { .flip-row.single .flip-card { width: 300px; } }
 .flip-row.single .flip-front .card .card-text { display: block; }
 /* the scores after a round, and the per-round table on the results screen */
-.standings { display: flex; flex-direction: column; gap: 12px; min-width: min(320px, 88vw); padding: 16px; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); box-shadow: 6px 6px 0 var(--pink); cursor: default; }
+.standings { display: flex; flex-direction: column; gap: 12px; min-width: min(320px, 88vw); padding: 16px; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); box-shadow: 6px 6px 0 var(--pink); cursor: default; max-height: calc(100dvh - 32px); overflow-y: auto; }
+.standings h3 { margin: 4px 0 0; font-size: 0.9rem; }
+.standings .breakdown { margin: 0; padding: 0; }
 .standings table, .standings-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .standings th, .standings td, .standings-table th, .standings-table td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); }
 .standings th:first-child, .standings td:first-child, .standings-table th:first-child, .standings-table td:first-child { text-align: left; }

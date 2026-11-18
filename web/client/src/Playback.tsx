@@ -3,9 +3,9 @@
 
 import { animate } from 'motion/mini';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { CardInstance, GameEvent, ScoreResult } from '../../../src/index.js';
+import type { CardInstance, GameEvent, ScoreLine, ScoreResult } from '../../../src/index.js';
 import type { GameView, View } from '../../shared/protocol.js';
-import { Card, CardBack, cardName, eventLine, idOfUid, isAction, isCrisis, type BackDeck } from './cards.js';
+import { Card, CardBack, CardText, cardName, eventLine, idOfUid, isAction, isCrisis, type BackDeck } from './cards.js';
 import { t } from './i18n.js';
 import { sfx, type Sfx } from './sound.js';
 
@@ -31,6 +31,8 @@ const DECISION_CARD: Record<string, string> = { merger_propose: 'merger_offer', 
 const SAME_CAUSE_HOLD = 0.5;
 /** How many spotlight lengths a Crisis stays, so its card can turn over and be read. */
 const CRISIS_HOLD = 2;
+/** Events after which a score change has more causes than one spotlight, so no step claims it. */
+const MIXED_SCORE = new Set(['cards_revealed', 'teams_updated', 'round_started', 'round_ended']);
 /** How many spotlight lengths the reveal stays, so every player's card can be seen with its owner. */
 const REVEAL_HOLD = 1.6;
 /** How small a card is when it lands, against its spotlight size, and how faded. */
@@ -84,6 +86,8 @@ interface Standing {
   round: number;
   /** points over every round so far */
   total: number;
+  /** how this round's points add up; the viewer's row only */
+  lines?: ScoreLine[];
 }
 
 export interface Step {
@@ -104,6 +108,8 @@ export interface Step {
   logOnly?: boolean;
   /** the card that made this happen, and whose it is: "Bot 1's Headhunt", "Crisis: Poaching" */
   cause?: string;
+  /** the viewer's score before and after this step, when this step is what changed it */
+  yourScore?: { from: number; to: number };
   /** the round's scores, shown until the player taps the button that says `goOn` */
   standings?: Standing[];
   goOn?: string;
@@ -153,6 +159,7 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
         name: s.seat === view.you ? t('You') : (view.players[s.seat]?.name ?? '?'),
         round: s.total,
         total: view.roundScores.slice(0, round).reduce((sum, r) => sum + r[s.seat]!.total, 0),
+        lines: s.seat === view.you ? s.lines : undefined,
       }));
       const goOn = round < view.totalRounds ? t('Start round {round}', { round: round + 1 }) : t('See final results');
       return { icon: 'ri-flag-line', seats: [], cards: [], standings: standings.sort((a, b) => b.total - a.total), goOn };
@@ -170,6 +177,15 @@ function stepFor(view: GameView, e: SeqEvent): Omit<Step, 'key' | 'line'> {
       return { icon: e.direction === 'left' ? 'ri-arrow-left-line' : 'ri-arrow-right-line', seats: [], cards: [], logOnly: true };
     case 'hands_swapped':
       return { icon: 'ri-repeat-line', seats: [], cards: [] };
+    case 'hand_revealed':
+      // only the player who looks gets this event: their peek turns the hand over in front of them
+      return {
+        icon: 'ri-eye-line',
+        seats: [e.player as number],
+        flip: true,
+        hold: REVEAL_HOLD,
+        cards: (e.cards as CardInstance[]).map((c, seatOrder) => ({ id: c.id, seatOrder })),
+      };
     default:
       return { icon: 'ri-information-line', seats: [], cards: [] };
   }
@@ -269,6 +285,20 @@ export function stepsFor(view: GameView, events: SeqEvent[]): Step[] {
   return steps;
 }
 
+/**
+ * Says on the last step that touched the viewer how their score changed, when nothing else in the batch changed it:
+ * a steal or a Crisis discard then reads "Your score: 11 → 6" next to its cause.
+ */
+function withYourScore(steps: Step[], events: SeqEvent[], before: View | undefined, after: GameView): Step[] {
+  if (before?.phase !== 'game' || events.some((e) => MIXED_SCORE.has(e.type))) return steps;
+  const from = before.players[after.you]!.score;
+  const to = after.players[after.you]!.score;
+  let i = steps.length - 1;
+  while (i >= 0 && (steps[i]!.logOnly || !steps[i]!.seats.includes(after.you))) i--;
+  if (from === to || i < 0) return steps;
+  return steps.map((s, k) => (k === i ? { ...s, yourScore: { from, to } } : s));
+}
+
 /** Highest event seq in a view, or -1. */
 const lastSeqOf = (view: GameView) => view.events.reduce((m, e) => Math.max(m, e.seq), -1);
 
@@ -308,7 +338,8 @@ export function usePlayback(view: View | undefined, speed: Speed): { shown: View
       if (next.phase === 'game' && shownRef.current?.phase === 'game') {
         const fresh = next.events.filter((e) => e.seq > lastSeq.current && (!opening || e.type === 'round_started'));
         // labels and positions come from the board still on screen, where the cards are now
-        for (const s of stepsFor(next, fresh)) {
+        const steps = withYourScore(stepsFor(next, fresh), fresh, shownRef.current, next);
+        for (const s of steps) {
           // skipping passes everything but a round's standings, which wait for a tap
           if ((skipping.current && !s.standings) || s.logOnly) continue;
           // players' events often arrive one view at a time, so a run of one card's effects is sped up here, not merged
@@ -381,6 +412,17 @@ function flightArc(dx: number, dy: number): string[] {
   });
 }
 
+/** Cards in a row, a run of cards with the same owner as one group; cards with no owner are each their own. */
+function groupsByOwner(cards: SpotCard[]): Array<{ owner?: string; cards: SpotCard[] }> {
+  const groups: Array<{ owner?: string; cards: SpotCard[] }> = [];
+  for (const c of cards) {
+    const last = groups[groups.length - 1];
+    if (c.owner && last?.owner === c.owner) last.cards.push(c);
+    else groups.push({ owner: c.owner, cards: [c] });
+  }
+  return groups;
+}
+
 /** The spotlight for the step playing now, with seat pulses and bonus numbers. Tap to skip. */
 export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | undefined; speed: Speed; onSkip: () => void; onNext: () => void }) {
   const cards = useRef<HTMLDivElement>(null);
@@ -444,27 +486,53 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
                 ))}
               </tbody>
             </table>
+            <h3>{t('Your points this round')}</h3>
+            {step.standings.map((r) =>
+              r.lines ? (
+                <ul key={r.seat} className="breakdown" aria-label={t('Your points this round')}>
+                  {r.lines.map((l, i) => (
+                    <li key={i}>
+                      <span>
+                        <b>{cardName(l.label)}</b>
+                        {l.detail && (
+                          <span className="muted detail">
+                            <CardText text={l.detail} />
+                          </span>
+                        )}
+                      </span>
+                      <b className={l.points < 0 ? 'minus' : 'plus'}>{l.points > 0 ? `+${l.points}` : l.points}</b>
+                    </li>
+                  ))}
+                </ul>
+              ) : null,
+            )}
             <button className="primary" onClick={onNext}>
               {step.goOn}
             </button>
           </div>
         ) : step.flip ? (
           <div ref={cards} className={`spot-cards flip-row ${step.cards.length === 1 ? 'single' : ''}`}>
-            {step.cards.map((c, i) => (
-              <div
-                key={i}
-                className="flip-card spot-card"
-                style={{ '--flip-ms': `${TIMING[speed].flipMs}ms`, '--flip-delay': `${(c.seatOrder ?? 0) * TIMING[speed].flipStaggerMs}ms` } as React.CSSProperties}
-              >
-                <div className="flip-inner">
-                  <div className="flip-back">
-                    <CardBack deck={c.back ?? 'main'} />
-                  </div>
-                  <div className="flip-front">
-                    <Card id={c.id} />
-                  </div>
+            {groupsByOwner(step.cards).map((g, k) => (
+              <div key={k} className="flip-group">
+                <div className="flip-group-cards">
+                  {g.cards.map((c, i) => (
+                    <div
+                      key={i}
+                      className="flip-card spot-card"
+                      style={{ '--flip-ms': `${TIMING[speed].flipMs}ms`, '--flip-delay': `${(c.seatOrder ?? 0) * TIMING[speed].flipStaggerMs}ms` } as React.CSSProperties}
+                    >
+                      <div className="flip-inner">
+                        <div className="flip-back">
+                          <CardBack deck={c.back ?? 'main'} />
+                        </div>
+                        <div className="flip-front">
+                          <Card id={c.id} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {c.owner && <span className="flip-owner">{c.owner}</span>}
+                {g.owner && <span className="flip-owner">{g.owner}</span>}
               </div>
             ))}
           </div>
@@ -483,6 +551,11 @@ export function PlaybackOverlay({ step, speed, onSkip, onNext }: { step: Step | 
         {!step.standings && (
           <p className="spot-line">
             {step.cards.length > 0 && <i className={step.icon} />} {step.line}
+          </p>
+        )}
+        {step.yourScore && (
+          <p className={`spot-score ${step.yourScore.to < step.yourScore.from ? 'down' : 'up'}`}>
+            {t('Your score: {from} → {to}', { from: String(step.yourScore.from), to: String(step.yourScore.to) })}
           </p>
         )}
       </div>
