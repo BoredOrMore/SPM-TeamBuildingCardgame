@@ -8,7 +8,7 @@ import type { DecisionView, GameView, LobbyView, View } from '../../shared/proto
 import { Hand } from './Hand.js';
 import { RulebookButton } from './Rulebook.js';
 import { PlaybackOverlay, SPEEDS, reducedMotion, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
-import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
+import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, preloadArt, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SettingsMenu } from './Settings.js';
 import { setMusic, sfx } from './sound.js';
 import { t, useLang } from './i18n.js';
@@ -170,6 +170,8 @@ function Home(props: { busy: boolean; connecting: 'create' | 'join' | undefined;
 function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
   const isHost = view.seats[view.you]?.isHost ?? false;
   const canStart = view.seats.length >= view.minPlayers;
+  // the art loads while players gather, so the first reveal is not grey
+  useEffect(preloadArt, []);
   // a pop each time someone sits down
   const seats = useRef(view.seats.length);
   useEffect(() => {
