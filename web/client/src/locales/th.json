@@ -219,5 +219,7 @@
   "Language": "ภาษา",
   "Nothing to convert: {who} gained {points} point(s) from {card}": "ไม่มีอะไรให้แปลง: {who} ได้ {points} คะแนนจาก {card}",
   "Your score: {from} → {to}": "คะแนนของคุณ: {from} → {to}",
+  "Choose a player": "เลือกผู้เล่น",
+  "{who}’s team · change player": "ทีมของ {who} · เปลี่ยนผู้เล่น",
   "Your points this round": "คะแนนของคุณใน round นี้"
 }
