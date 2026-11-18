@@ -90,6 +90,7 @@ export interface PlayerState {
 export type DecisionKind =
   | 'headhunt'
   | 'phone_screen'
+  | 'phone_screen_discard'
   | 'refactor'
   | 'nda'
   | 'burnout'
@@ -105,6 +106,8 @@ export type DecisionKind =
 export type Choice =
   | { kind: 'headhunt'; opponent: number; give: string; take: string }
   | { kind: 'phone_screen'; opponent: number }
+  | { kind: 'hand_discard'; opponent: number; uid: string }
+  | { kind: 'phone_screen_points' }
   | { kind: 'refactor'; mode: 'bug_to_qa' | 'juniors_to_senior' | 'points' }
   | { kind: 'nda'; protect: string }
   | { kind: 'discard'; uid: string }
@@ -127,7 +130,11 @@ export interface Decision {
   source: string;
   /** filled when the decision reaches the front of the queue */
   options?: Choice[];
-  context?: { proposer?: number; offer?: Extract<Choice, { kind: 'merger_offer' }> };
+  context?: { proposer?: number; offer?: Extract<Choice, { kind: 'merger_offer' }>;
+    /** Phone Screen: whose hand was peeked, and who receives that hand next */
+    target?: number;
+    receiver?: number;
+  };
 }
 
 export type Stage = 'pick' | 'actions' | 'nda' | 'crisis' | 'ended';

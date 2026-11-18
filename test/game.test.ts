@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deckSize } from '../src/data.js';
-import { applyAction, createGame, IllegalAction } from '../src/game.js';
-import type { GameState } from '../src/types.js';
+import { applyAction, createGame, currentDecision, IllegalAction } from '../src/game.js';
+import type { Choice, GameState } from '../src/types.js';
 import { data, playRandomGame } from './helpers.js';
 
 function mainCardsInPlay(state: GameState): string[] {
@@ -82,5 +82,45 @@ describe('full games with random moves', () => {
 
   it('is reproducible from the seed', () => {
     expect(JSON.stringify(playRandomGame(3, 42).result)).toBe(JSON.stringify(playRandomGame(3, 42).result));
+  });
+});
+
+describe('Phone Screen', () => {
+  /** A 3-player game on turn 1 where seat 0 played Phone Screen and has just looked at seat 1's hand. */
+  function peeked(): GameState {
+    let s = createGame(data, { players: 3, seed: 7 });
+    s.players[0]!.hand[0]!.id = 'phone_screen';
+    for (const p of s.players.slice(1)) p.hand[0]!.id = 'coffee';
+    for (const p of s.players) s = applyAction(data, s, { type: 'pick', player: p.seat, cards: [p.hand[0]!.uid] }).state;
+    const look = currentDecision(s)!;
+    expect(look.kind).toBe('phone_screen');
+    const option = look.options!.findIndex((o) => o.kind === 'phone_screen' && o.opponent === 1);
+    return applyAction(data, s, { type: 'choose', player: 0, decisionId: look.id, option }).state;
+  }
+
+  it('discards the chosen card from the peeked hand, refills it from the deck, and tells who receives that hand', () => {
+    const s = peeked();
+    const d = currentDecision(s)!;
+    expect(d.kind).toBe('phone_screen_discard');
+    expect(d.context).toEqual({ target: 1, receiver: 2 });
+    const option = d.options!.findIndex((o) => o.kind === 'hand_discard');
+    const target = d.options![option] as Extract<Choice, { kind: 'hand_discard' }>;
+    const top = s.mainRemaining[0]!;
+    const { state, events } = applyAction(data, s, { type: 'choose', player: 0, decisionId: d.id, option });
+    expect(state.discard.map((c) => c.uid)).toContain(target.uid);
+    expect(events.find((e) => e.type === 'hand_card_discarded')!.visibleTo).toEqual([0, 1]);
+    // hands have been passed on: seat 2 now holds seat 1's old hand, still 6 cards
+    const received = state.players[2]!.hand.map((c) => c.uid);
+    expect(received).toHaveLength(6);
+    expect(received).not.toContain(target.uid);
+    expect(received).toContain(top.uid);
+  });
+
+  it('gives +2 when the player takes the points instead', () => {
+    const s = peeked();
+    const d = currentDecision(s)!;
+    const option = d.options!.findIndex((o) => o.kind === 'phone_screen_points');
+    const { state } = applyAction(data, s, { type: 'choose', player: 0, decisionId: d.id, option });
+    expect(state.players[0]!.bonuses).toEqual([{ source: 'Phone Screen', points: 2 }]);
   });
 });

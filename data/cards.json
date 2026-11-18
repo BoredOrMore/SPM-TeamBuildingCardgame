@@ -128,10 +128,11 @@
         "name": "Phone Screen",
         "type": "action",
         "quantity": 2,
-        "text": "Look at opponent's hand, get +1 point.",
-        "cardText": "Look at 1 opponent's hand, +1",
+        "text": "Look at one opponent's hand, then discard 1 card from it (that hand draws 1 card from the deck) or get +2 points.",
+        "cardText": "Look at 1 opponent's hand",
+        "cardTextMore": ["discard 1 card from it, or +2"],
         "timing": "on_reveal",
-        "effect": { "kind": "peek_hand", "target": "one_opponent", "points": 1 },
+        "effect": { "kind": "peek_hand_discard", "target": "one_opponent", "fallbackPoints": 2 },
         "placeholders": ["P8"]
       },
       {

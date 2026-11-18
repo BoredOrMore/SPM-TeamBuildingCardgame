@@ -562,6 +562,7 @@ function choiceCards(c: Choice): string[] {
     case 'discard':
     case 'take':
     case 'take_discard':
+    case 'hand_discard':
       return [c.uid];
     case 'give':
       return c.uids;
@@ -685,6 +686,11 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
           {cardName(source) !== source && (
             <div className="sheet-source">
               <Card id={source} />
+            </div>
+          )}
+          {decision.kind === 'phone_screen_discard' && (
+            <div className="sheet-offer">
+              {t('This hand goes to {who} next', { who: decision.context?.receiver === view.you ? t('you') : (view.players[decision.context?.receiver ?? -1]?.name ?? '?') })}
             </div>
           )}
           {offer && (

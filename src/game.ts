@@ -498,6 +498,14 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
       );
     case 'phone_screen':
       return opponents(state, d.player).map((o) => ({ kind: 'phone_screen' as const, opponent: o.seat }));
+    case 'phone_screen_discard': {
+      // The peeked hand is about to be passed on, so the discard hurts whoever receives it.
+      const them = state.players[d.context!.target!]!;
+      return [
+        { kind: 'phone_screen_points' as const },
+        ...distinctById(them.hand).map((c) => ({ kind: 'hand_discard' as const, opponent: them.seat, uid: c.uid })),
+      ];
+    }
     case 'refactor': {
       // The new card comes from the undealt main deck, or the discard pile if the data allows it [P27].
       const c = countCards(me.team);
@@ -609,9 +617,26 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
     case 'phone_screen': {
       const them = state.players[choice.opponent]!;
       emit(state, { type: 'hand_revealed', player: them.seat, cards: them.hand.map((c) => ({ ...c })), visibleTo: [me.seat] });
-      const points = data.byId.get('phone_screen')!.effect!.points as number;
+      const step = passDirection(data, state) === 'left' ? 1 : -1;
+      enqueue(state, me.seat, 'phone_screen_discard', d.source, { target: them.seat, receiver: (them.seat + step + state.playerCount) % state.playerCount });
+      break;
+    }
+    case 'phone_screen_points': {
+      const points = data.byId.get('phone_screen')!.effect!.fallbackPoints as number;
       me.bonuses.push({ source: 'Phone Screen', points });
       emit(state, { type: 'bonus_gained', player: me.seat, source: 'phone_screen', points });
+      break;
+    }
+    case 'hand_discard': {
+      const them = state.players[choice.opponent]!;
+      const i = them.hand.findIndex((c) => c.uid === choice.uid);
+      if (i < 0) throw new Error(`card ${choice.uid} not in hand of ${them.seat}`);
+      const [card] = them.hand.splice(i, 1);
+      state.discard.push(card!);
+      emit(state, { type: 'hand_card_discarded', player: them.seat, by: me.seat, card: { ...card! }, visibleTo: [me.seat, them.seat] });
+      // A refill keeps every hand the same size, so nobody misses a pick.
+      const drawn = drawFromMain(state);
+      if (drawn) them.hand.push(drawn);
       break;
     }
     case 'refactor': {
