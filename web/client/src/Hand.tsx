@@ -192,7 +192,15 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
             inZone.map((c) => <Card key={c.uid} id={c.id} small onClick={() => toggle(c.uid)} />)
           ) : (
             <span className="muted">
-              <i className="ri-drag-move-2-line" /> {need === 1 ? t('Drag a card here to play it') : t('Drag {n} cards here to play them', { n: need })}
+              {window.matchMedia('(pointer: coarse)').matches ? (
+                <>
+                  <i className="ri-hand" /> {need === 1 ? t('Tap a card twice to play it') : t('Tap {n} cards twice to play them', { n: need })}
+                </>
+              ) : (
+                <>
+                  <i className="ri-drag-move-2-line" /> {need === 1 ? t('Drag a card here to play it') : t('Drag {n} cards here to play them', { n: need })}
+                </>
+              )}
             </span>
           )}
           {need > 1 && (

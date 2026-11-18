@@ -752,6 +752,8 @@ function nowLine(view: GameView): string {
   if (view.stage !== 'pick') return t('Resolving…');
   if (!view.picked) {
     const need = Math.min(view.picksRequired, view.hand.length);
+    // on touch a tap opens the card and a second tap plays it, so the line says that instead of dragging
+    if (window.matchMedia('(pointer: coarse)').matches) return need === 1 ? t('Pick 1 card: tap it, then tap again to play') : t('Pick {n} cards: tap each, then tap again to play', { n: need });
     return need === 1 ? t('Pick 1 card: drag up to play') : t('Pick {n} cards: drag up to play', { n: need });
   }
   const waiting = view.players.filter((p) => p.seat !== view.you && !p.hasPicked).map((p) => p.name);
