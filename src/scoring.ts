@@ -103,7 +103,10 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const qaEff = effectOf(data, 'qa_tester');
   const bugEff = effectOf(data, 'bug');
   const pairs = Math.min(n(c, 'qa_tester'), n(c, 'bug'));
-  const leftoverBug = n(c, 'bug') - pairs;
+  // Every full set of unfixed Bugs becomes a Feature, which is no longer a Bug for Meta or {CLEAN}.
+  const featureRule = bugEff.feature as { setSize: number; points: number };
+  const features = Math.floor((n(c, 'bug') - pairs) / featureRule.setSize);
+  const leftoverBug = n(c, 'bug') - pairs - features * featureRule.setSize;
   // Bug overrides from Meta apply to everyone, the harshest wins [P31].
   let bugValue = bugEff.points as number;
   let bugRule: string | undefined;
@@ -116,6 +119,7 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   }
   const fixed = pairs > 0 ? ` · fixed ${pairs} {BUG}` : '';
   add('QA Tester', n(c, 'qa_tester') * (qaEff.points as number), `${n(c, 'qa_tester')} × ${qaEff.points as number}${fixed}`);
+  add('Feature', features * featureRule.points, `${features * featureRule.setSize} {BUG} = ${features} × ${featureRule.points}`);
   add('Bug (no QA to fix it)', leftoverBug * bugValue, `${leftoverBug} × ${bugValue}${bugRule ? ` (${bugRule})` : ''}`);
 
   const effective: Counts = new Map(c);
@@ -152,6 +156,13 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   for (const [id, label] of [['coffee', 'Coffee'], ['freelance', 'Freelance']] as const) {
     const each = effectOf(data, id).points as number;
     add(label, scopeCreep ? 0 : n(c, id) * each, `${n(c, id)} × ${each}`);
+  }
+  // Coffee majority: tied players share a rank and the next count still takes the next rank (Bored, 2026-11-18).
+  const coffees = n(c, 'coffee');
+  if (!scopeCreep && coffees > 0) {
+    const higher = new Set(input.teams.map((t) => countCards(t).get('coffee') ?? 0).filter((k) => k > coffees)).size;
+    const rankPoints = effectOf(data, 'coffee').rankPoints as number[];
+    add('Coffee rank', rankPoints[higher] ?? 0, higher === 0 ? 'most {COFFEE}' : 'second most {COFFEE}');
   }
   const invEff = effectOf(data, 'investors');
   const allGroups = Object.keys(data.cards.roleGroups).length;

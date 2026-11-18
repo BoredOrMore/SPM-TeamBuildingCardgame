@@ -498,6 +498,14 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
       );
     case 'phone_screen':
       return opponents(state, d.player).map((o) => ({ kind: 'phone_screen' as const, opponent: o.seat }));
+    case 'phone_screen_discard': {
+      // The peeked hand is about to be passed on, so the discard hurts whoever receives it.
+      const them = state.players[d.context!.target!]!;
+      return [
+        { kind: 'phone_screen_points' as const },
+        ...distinctById(them.hand).map((c) => ({ kind: 'hand_discard' as const, opponent: them.seat, uid: c.uid })),
+      ];
+    }
     case 'refactor': {
       // The new card comes from the undealt main deck, or the discard pile if the data allows it [P27].
       const c = countCards(me.team);
@@ -513,11 +521,11 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     case 'layoff': {
       // A Junior goes if there is one; with no Junior, any role card instead.
       const junior = unprotected(me).find((c) => c.id === 'junior_dev');
-      if (junior) return [{ kind: 'discard' as const, uid: junior.uid }];
-      return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
+      if (junior) return withShields(data, me, d.kind, [{ kind: 'discard' as const, uid: junior.uid }]);
+      return withShields(data, me, d.kind, distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid })));
     }
     case 'burnout':
-      return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
+      return withShields(data, me, d.kind, distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid })));
     case 'poaching':
       return opponents(state, d.player).flatMap((o) => distinctById(unprotected(o)).map((c) => ({ kind: 'take' as const, opponent: o.seat, uid: c.uid })));
     case 'hostile_takeover': {
@@ -550,6 +558,13 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     case 'merger_respond':
       return [{ kind: 'merger_accept' }, { kind: 'merger_reject' }];
   }
+}
+
+/** Discard options plus a card that can go instead (Freelance), only when the Crisis takes something at all. */
+function withShields(data: GameData, me: PlayerState, kind: DecisionKind, options: Choice[]): Choice[] {
+  if (options.length === 0) return options;
+  const shields = distinctById(unprotected(me).filter((c) => (data.byId.get(c.id)?.effect?.shieldsFrom as string[] | undefined)?.includes(kind)));
+  return [...options, ...shields.map((c) => ({ kind: 'discard' as const, uid: c.uid }))];
 }
 
 /** Card combinations with duplicates by card id removed, as uid lists. */
@@ -609,9 +624,26 @@ function resolveChoice(data: GameData, state: GameState, d: Decision, choice: Ch
     case 'phone_screen': {
       const them = state.players[choice.opponent]!;
       emit(state, { type: 'hand_revealed', player: them.seat, cards: them.hand.map((c) => ({ ...c })), visibleTo: [me.seat] });
-      const points = data.byId.get('phone_screen')!.effect!.points as number;
+      const step = passDirection(data, state) === 'left' ? 1 : -1;
+      enqueue(state, me.seat, 'phone_screen_discard', d.source, { target: them.seat, receiver: (them.seat + step + state.playerCount) % state.playerCount });
+      break;
+    }
+    case 'phone_screen_points': {
+      const points = data.byId.get('phone_screen')!.effect!.fallbackPoints as number;
       me.bonuses.push({ source: 'Phone Screen', points });
       emit(state, { type: 'bonus_gained', player: me.seat, source: 'phone_screen', points });
+      break;
+    }
+    case 'hand_discard': {
+      const them = state.players[choice.opponent]!;
+      const i = them.hand.findIndex((c) => c.uid === choice.uid);
+      if (i < 0) throw new Error(`card ${choice.uid} not in hand of ${them.seat}`);
+      const [card] = them.hand.splice(i, 1);
+      state.discard.push(card!);
+      emit(state, { type: 'hand_card_discarded', player: them.seat, by: me.seat, card: { ...card! }, visibleTo: [me.seat, them.seat] });
+      // A refill keeps every hand the same size, so nobody misses a pick.
+      const drawn = drawFromMain(state);
+      if (drawn) them.hand.push(drawn);
       break;
     }
     case 'refactor': {

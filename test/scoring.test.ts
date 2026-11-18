@@ -36,9 +36,17 @@ describe('events', () => {
     expect(score({ investors: 1, senior_dev: 1, project_manager: 1, designer: 1, qa_tester: 1 }).total).toBe(1 + 1 + 2 + 3 + 5);
   });
 
+  it('Coffee: +1 each, most +3 more, second most +2 more; tied players share the rank', () => {
+    expect(score({ coffee: 2 }, { others: [{ coffee: 1 }, {}] }).total).toBe(2 + 3);
+    expect(score({ coffee: 1 }, { others: [{ coffee: 2 }, {}] }).total).toBe(1 + 2);
+    expect(score({ coffee: 2 }, { others: [{ coffee: 2 }, { coffee: 1 }] }).total).toBe(2 + 3);
+    expect(score({ coffee: 1 }, { others: [{ coffee: 2 }, { coffee: 2 }] }).total).toBe(1 + 2);
+    expect(score({ coffee: 1 }, { others: [{ coffee: 3 }, { coffee: 2 }] }).total).toBe(1);
+  });
+
   it('Scope Creep zeroes Coffee, Freelance and Investors', () => {
     const spec = { coffee: 2, freelance: 1, investors: 1, junior_dev: 1, project_manager: 1, designer: 1, qa_tester: 1 };
-    expect(score(spec).total).toBe(2 + 2 + 5 + 3 + 1 + 2 + 3);
+    expect(score(spec).total).toBe(2 + 3 + 2 + 5 + 3 + 1 + 2 + 3); // + 3 for the most Coffee
     expect(score(spec, { crisis: ['scope_creep'] }).total).toBe(3 + 1 + 2 + 3);
   });
 });
@@ -80,8 +88,8 @@ describe('crisis bonuses', () => {
   });
 
   it('Unicorn Rush: +6 with 3 roles and no Bug, Coffee -2 always [P39]', () => {
-    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(2 + 2 + 3 + 1 + 6 - 2);
-    expect(score({ junior_dev: 1, designer: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(2 + 2 + 1 - 2);
+    expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(2 + 2 + 3 + 1 + 3 + 6 - 2); // + 3 for the most Coffee
+    expect(score({ junior_dev: 1, designer: 1, coffee: 1 }, { meta: ['unicorn_rush'] }).total).toBe(2 + 2 + 1 + 3 - 2);
     expect(score({ junior_dev: 1, designer: 1, qa_tester: 1, bug: 2 }, { meta: ['unicorn_rush'] }).total).toBe(2 + 2 + 3 - 3);
   });
 
@@ -107,6 +115,14 @@ describe('meta cards', () => {
     expect(score({ junior_dev: 3 }, { meta: ['developer_shortage'] }).total).toBe(6 + 3);
   });
 
+  it('every 3 Bugs left after QA fixes become a Feature worth +5 that is no longer a Bug', () => {
+    expect(score({ bug: 3 }).total).toBe(5);
+    expect(score({ bug: 7 }).total).toBe(10 - 3);
+    expect(score({ bug: 4, qa_tester: 1 }).total).toBe(3 + 5);
+    expect(score({ bug: 2, qa_tester: 1 }).total).toBe(3 - 3);
+    expect(score({ bug: 3, junior_dev: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(5 + 2 + 4);
+  });
+
   it('Zero Defect Premium: +4 clean, -5 per Bug otherwise', () => {
     expect(score({ junior_dev: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(2 + 4);
     expect(score({ bug: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(-5);
@@ -115,7 +131,7 @@ describe('meta cards', () => {
   it('Venture Capital Boom: +2 per Investors, +3 more each without Coffee', () => {
     const full = { junior_dev: 1, project_manager: 1, designer: 1, qa_tester: 1, investors: 1 };
     expect(score(full, { meta: ['venture_capital_boom'] }).total).toBe(3 + 1 + 2 + 3 + 5 + 5);
-    expect(score({ ...full, coffee: 1 }, { meta: ['venture_capital_boom'] }).total).toBe(3 + 1 + 2 + 3 + 5 + 1 + 2);
+    expect(score({ ...full, coffee: 1 }, { meta: ['venture_capital_boom'] }).total).toBe(3 + 1 + 2 + 3 + 5 + 1 + 3 + 2); // + 3 for the most Coffee
   });
 
   it('graded Meta cards give a base per card and more when the condition holds [P40]', () => {

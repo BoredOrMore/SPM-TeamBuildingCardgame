@@ -601,12 +601,15 @@ export function idOfUid(view: GameView, uid: string): string {
   const all: CardInstance[] = [...view.hand, ...view.discard, ...view.visibleCrisis, ...view.players.flatMap((p) => [...p.team, ...p.revealed])];
   // a played Action card leaves the table, but the reveal that showed it is still in the recent events
   for (const e of view.events) if (e.type === 'cards_revealed') for (const r of e.cards as Array<{ cards: CardInstance[] }>) all.push(...r.cards);
+  // a hand you peeked at with Phone Screen is only in that event
+  for (const e of view.events) if (e.type === 'hand_revealed') all.push(...(e.cards as CardInstance[]));
   return all.find((c) => c.uid === uid)?.id ?? uid;
 }
 
 const DECISION_TITLES: Record<DecisionView['kind'], () => string> = {
   headhunt: () => t('Headhunt: swap one of your cards for one of theirs'),
   phone_screen: () => t('Phone Screen: look at a player’s hand'),
+  phone_screen_discard: () => t('Phone Screen: discard 1 card from that hand, or +2'),
   refactor: () => t('Refactor: choose how to clean up'),
   nda: () => t('NDA: protect one card'),
   burnout: () => t('Burnout: discard one employee'),
@@ -643,6 +646,10 @@ export function choiceLabel(view: GameView, c: Choice): string {
       return t('Give {give}, take {take} from {who}', { give: name(c.give), take: name(c.take), who: who(c.opponent) });
     case 'phone_screen':
       return t('Look at {who}’s hand', { who: who(c.opponent) });
+    case 'hand_discard':
+      return t('Discard {card} from {who}’s hand', { card: name(c.uid), who: who(c.opponent) });
+    case 'phone_screen_points':
+      return t('Take +{n}', { n: String(CARD_DEFS.get('phone_screen')!.effect!.fallbackPoints) });
     case 'refactor':
       return { bug_to_qa: () => t('Turn a Bug into a QA Tester'), juniors_to_senior: () => t('Turn Juniors into a Senior'), points: () => t('Take the points') }[c.mode]();
     case 'nda':
@@ -721,6 +728,10 @@ export function eventLine(view: GameView, e: GameEvent): string | undefined {
       const cards = (e.cards as CardInstance[]).map(card).join(', ');
       return e.player === view.you ? t('Your hand: {cards}', { cards }) : t('{who}’s hand: {cards}', { who: who(e.player), cards });
     }
+    case 'hand_card_discarded':
+      return e.player === view.you
+        ? t('{who} discarded {card} from your hand', { who: who(e.by), card: card(e.card) })
+        : t('{who} discarded {card} from {whose}’s hand', { who: who(e.by), card: card(e.card), whose: who(e.player) });
     case 'private_meta_dealt':
       return t('Your secret goal: {cards}', { cards: (e.meta as string[]).map(cardName).join(', ') });
     case 'no_effect':

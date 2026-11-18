@@ -1,6 +1,6 @@
 // Messages between the room server and the browser client, and the per-seat view the server sends.
 
-import type { Bonus, CardInstance, Choice, DecisionKind, GameEvent, ScoreLine, ScoreResult, Stage } from '../../src/index.js';
+import type { Bonus, CardInstance, Choice, Decision, DecisionKind, GameEvent, ScoreLine, ScoreResult, Stage } from '../../src/index.js';
 
 export const ROOM_NAME = 'head_hunter';
 
@@ -44,7 +44,7 @@ export interface DecisionView {
   kind: DecisionKind;
   source: string;
   options?: Choice[];
-  context?: { proposer?: number; offer?: Extract<Choice, { kind: 'merger_offer' }> };
+  context?: Decision['context'];
 }
 
 /** Game screen: everything one seat is allowed to see. */

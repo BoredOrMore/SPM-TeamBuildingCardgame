@@ -2,7 +2,7 @@
 import { applyActionInPlace, createGame, currentDecision, gameTotals } from './game.js';
 import { nextRandom, randomInt, shuffle } from './rng.js';
 import { scorePlayer } from './scoring.js';
-import type { Action, Bot, CardInstance, Choice, GameData, GameState } from './types.js';
+import type { Action, Bot, CardInstance, Choice, Decision, GameData, GameState } from './types.js';
 
 /** Safety stop for a game loop; a real game takes far fewer steps. */
 const MAX_STEPS = 10_000;
@@ -149,9 +149,21 @@ function cardValue(data: GameData, state: GameState, seat: number, card: CardIns
       return best - base;
     }
     case 'phone_screen':
-      return data.byId.get('phone_screen')!.effect!.points as number;
+      return data.byId.get('phone_screen')!.effect!.fallbackPoints as number;
     case 'refactor':
       return Math.max(0, ...(['bug_to_qa', 'juniors_to_senior'] as const).map((mode) => scoreWith(data, state, seat, refactored(team, mode)) - base));
+    case 'bug': {
+      // Plans toward a Feature: the gain of finishing the set of Bugs, shared over the picks it takes, if the round has those picks left.
+      const gain = scoreWith(data, state, seat, [...team, card]) - base;
+      const setSize = (data.byId.get('bug')!.effect!.feature as { setSize: number }).setSize;
+      const count = (id: string) => team.filter((c) => c.id === id).length;
+      const unfixed = count('bug') + 1 - Math.min(count('qa_tester'), count('bug') + 1);
+      const more = (setSize - (unfixed % setSize)) % setSize;
+      const picksLeft = state.players[seat]!.hand.length - 1;
+      if (more === 0 || more > picksLeft) return gain;
+      const extra = Array.from({ length: more }, (_, i) => ({ uid: `planned-bug-${i}`, id: 'bug' }));
+      return Math.max(gain, (scoreWith(data, state, seat, [...team, card, ...extra]) - base) / (more + 1));
+    }
     default: {
       const gain = scoreWith(data, state, seat, [...team, card]) - base;
       return card.id === 'nda' ? gain + NDA_VALUE : gain;
@@ -193,11 +205,32 @@ function optionValues(data: GameData, state: GameState, seat: number, holder: { 
       return mode === 'points' ? scoreWith(data, state, seat, me.team) + points : scoreWith(data, state, seat, refactored(me.team, mode));
     });
   }
+  if (decision.kind === 'phone_screen' || decision.kind === 'phone_screen_discard') return phoneScreenValues(data, state, seat, decision);
   const world = determinize(data, state, seat, holder);
   return decision.options!.map((_, option) => {
     const sim = structuredClone(world);
     applyActionInPlace(data, sim, { type: 'choose', player: seat, decisionId: decision.id, option });
     return margin(data, sim, seat);
+  });
+}
+
+/**
+ * Phone Screen judged without replaying a world: a peeked hand is hidden in a determinized one.
+ * Peek the hand that goes next to the leading opponent; then discard the card its receiver gains most from, or take the points.
+ */
+function phoneScreenValues(data: GameData, state: GameState, seat: number, decision: Decision): number[] {
+  const step = data.rules.rounds.passDirection[state.round - 1] === 'left' ? 1 : -1;
+  const receiverOf = (owner: number) => (owner + step + state.playerCount) % state.playerCount;
+  const totals = gameTotals(data, state);
+  const points = data.byId.get('phone_screen')!.effect!.fallbackPoints as number;
+  return decision.options!.map((o) => {
+    if (o.kind === 'phone_screen') return receiverOf(o.opponent) === seat ? -Infinity : totals[receiverOf(o.opponent)]!;
+    if (o.kind === 'phone_screen_points') return points;
+    if (o.kind !== 'hand_discard') throw new Error(`unexpected Phone Screen option ${o.kind}`);
+    const receiver = state.players[receiverOf(o.opponent)]!;
+    const card = state.players[o.opponent]!.hand.find((c) => c.uid === o.uid)!;
+    const gain = scoreWith(data, state, receiver.seat, [...receiver.team, card], seat) - scoreWith(data, state, receiver.seat, receiver.team, seat);
+    return receiver.seat === seat ? -gain : gain;
   });
 }
 
@@ -248,8 +281,9 @@ function candidateActions(data: GameData, state: GameState, seat: number, holder
   if (decision) {
     const values = optionValues(data, state, seat, holder);
     const order = values.map((_, i) => i).sort((a, b) => values[b]! - values[a]!);
-    // Refactor cannot be replayed in a determinized world (see optionValues), so it stays greedy.
-    return order.slice(0, decision.kind === 'refactor' ? 1 : MAX_OPTIONS).map((option) => ({ type: 'choose', player: seat, decisionId: decision.id, option }));
+    // Refactor and Phone Screen cannot be replayed in a determinized world (see optionValues), so they stay greedy.
+    const greedyOnly = decision.kind === 'refactor' || decision.kind === 'phone_screen' || decision.kind === 'phone_screen_discard';
+    return order.slice(0, greedyOnly ? 1 : MAX_OPTIONS).map((option) => ({ type: 'choose', player: seat, decisionId: decision.id, option }));
   }
   const me = state.players[seat]!;
   const seen = new Set<string>();

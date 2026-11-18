@@ -9,7 +9,7 @@
   "freelance": "+2",
   "investors": "+1 ต่อประเภท role",
   "headhunt": "{POACH} สลับ 1 {CARD} กับคู่แข่ง",
-  "phone_screen": "ดูมือคู่แข่ง 1 คน, +1",
+  "phone_screen": "ดูมือคู่แข่ง 1 คน",
   "refactor": "Upgrade การ์ด 1 ใบ หรือ +3",
   "nda": "ป้องกัน {CARD} ของคุณ 1 ใบ",
   "tech_debt_payoff": "ยกเลิกโทษของ Crisis 1 ใบ หรือ +2",

@@ -562,6 +562,7 @@ function choiceCards(c: Choice): string[] {
     case 'discard':
     case 'take':
     case 'take_discard':
+    case 'hand_discard':
       return [c.uid];
     case 'give':
       return c.uids;
@@ -580,6 +581,8 @@ function pickPlan(view: GameView, c: Choice): { uids: string[]; prompts: string[
       return { uids: [c.give, c.take], prompts: [t('Pick a card from your team to give'), t('Pick a card to take')], ordered: true };
     case 'merger_offer':
       return { uids: [c.give, c.take], prompts: [t('Pick a card from your team to offer'), t('Pick a card you want in return')], ordered: true };
+    case 'hand_discard':
+      return { uids: [c.uid], prompts: [t('Pick 1 card to discard from {who}’s hand', { who: who(c.opponent) })], ordered: true };
     case 'give':
       return { uids: c.uids, prompts: [c.uids.length === 1 ? t('Pick 1 card to give to {who}', { who: who(c.to) }) : t('Pick {n} cards to give to {who}', { n: c.uids.length, who: who(c.to) })], ordered: false };
     case 'pivot':
@@ -685,6 +688,11 @@ function DecisionSheet({ view, decision, onChoose }: { view: GameView; decision:
           {cardName(source) !== source && (
             <div className="sheet-source">
               <Card id={source} />
+            </div>
+          )}
+          {decision.kind === 'phone_screen_discard' && (
+            <div className="sheet-offer">
+              {t('This hand goes to {who} next', { who: decision.context?.receiver === view.you ? t('you') : (view.players[decision.context?.receiver ?? -1]?.name ?? '?') })}
             </div>
           )}
           {offer && (
