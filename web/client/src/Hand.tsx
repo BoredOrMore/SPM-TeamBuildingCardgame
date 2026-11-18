@@ -43,12 +43,16 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
   const [peek, setPeek] = useState<{ uid: string; id: string }>();
 
   const need = Math.min(view.picksRequired, view.hand.length);
-  const picking = view.stage === 'pick' && !view.picked;
+  // the cards just sent count as played at once: the view saying so can wait behind a reveal still playing back
+  const [sent, setSent] = useState<string[]>([]);
+  const played = view.picked ?? (sent.length ? sent : undefined);
+  const picking = view.stage === 'pick' && !played;
 
   // a new turn or a new hand clears anything half-staged
   const handKey = view.hand.map((c) => c.uid).join();
   useEffect(() => {
     setStaged([]);
+    setSent([]);
     setPeek(undefined);
   }, [handKey, view.turn]);
 
@@ -62,6 +66,7 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
 
   const play = (uids: string[]) => {
     sfx('play');
+    setSent(uids);
     onPlay(uids);
   };
 
@@ -182,13 +187,13 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
   };
 
   // a played card leaves the hand at once and waits in the zone until everyone reveals
-  const inZone = view.hand.filter((c) => (view.picked ?? staged).includes(c.uid));
-  const inHand = view.hand.filter((c) => !view.picked?.includes(c.uid));
+  const inZone = view.hand.filter((c) => (played ?? staged).includes(c.uid));
+  const inHand = view.hand.filter((c) => !played?.includes(c.uid));
   const dragging = drag?.dragging ? drag : undefined;
 
   return (
     <section className="hand">
-      {(picking || (view.stage === 'pick' && !!view.picked)) && (
+      {(picking || (view.stage === 'pick' && !!played)) && (
         <div ref={zoneRef} className={`play-zone ${dragging ? 'armed' : ''} ${overZone ? 'over' : ''} ${!dragging && !inZone.length ? 'waiting' : ''}`}>
           {inZone.length ? (
             inZone.map((c) => <Card key={c.uid} id={c.id} small onClick={picking ? () => toggle(c.uid) : undefined} />)
