@@ -50,6 +50,7 @@ export function parseGameData(cards: CardsFile, rules: RulesFile): GameData {
     throw new DataError('setup.privateMetaPerPlayer must be a whole number >= 0 that fits the Meta deck');
   }
   if (typeof rules.crisis.previewNext !== 'boolean') throw new DataError('crisis.previewNext must be true or false');
+  if (typeof rules.crisis.noRepeatInRound !== 'boolean') throw new DataError('crisis.noRepeatInRound must be true or false');
   if (typeof rules.scoring?.metaMultiplier !== 'number' || rules.scoring.metaMultiplier < 0) {
     throw new DataError('scoring.metaMultiplier must be a number >= 0');
   }

@@ -61,6 +61,29 @@ describe('balance knobs in data', () => {
     }
   });
 
+  it('never draws the same Crisis twice in a round when noRepeatInRound is on [P45]', () => {
+    /** The most times one Crisis id was drawn within a single round of a game. */
+    const mostRepeats = (gameData: GameData, seed: number): number => {
+      const counts = new Map<string, number>();
+      let most = 0;
+      for (const e of playRandomGame(4, seed, gameData).events) {
+        if (e.type === 'round_started') counts.clear();
+        if (e.type !== 'crisis_drawn') continue;
+        const id = (e.card as { id: string }).id;
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+        most = Math.max(most, counts.get(id)!);
+      }
+      return most;
+    };
+    const repeats = variant((_, rules) => (rules.crisis.noRepeatInRound = false));
+    let repeated = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      expect(mostRepeats(data, seed)).toBeLessThanOrEqual(1);
+      if (mostRepeats(repeats, seed) > 1) repeated++;
+    }
+    expect(repeated).toBeGreaterThan(0);
+  });
+
   it('Refactor takes QA from the discard pile only when addFrom allows it [P27]', () => {
     const play = (gameData: GameData) => {
       const state = createGame(gameData, { players: 3, seed: 5 });
