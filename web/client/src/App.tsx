@@ -71,11 +71,16 @@ export function App() {
   };
   const shown = playback.shown;
   const [toast, setToast] = useState<string>();
+  /** How many moves the server has turned down, so the hand can take back cards it showed as played. */
+  const [rejected, setRejected] = useState(0);
   /** Which request is waiting on the server, so the home screen can say so. */
   const [connecting, setConnecting] = useState<'create' | 'join'>();
   const handlers = useRef<Handlers>({
     onView: setView,
-    onError: setToast,
+    onError: (message) => {
+      setToast(message);
+      setRejected((n) => n + 1);
+    },
     onLeave: () => {
       setConn(undefined);
       setView(undefined);
@@ -118,7 +123,7 @@ export function App() {
       ) : shown.phase === 'lobby' ? (
         <Lobby view={shown} conn={conn} />
       ) : (
-        <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} />
+        <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} rejected={rejected} />
       )}
       {!(shown?.phase === 'game' && !shown.result) && (
         <div className="corner">
@@ -281,7 +286,7 @@ function RoundTrack({ view }: { view: GameView }) {
   );
 }
 
-function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; conn: Connection; playing: boolean; speed: Speed; onToggleSpeed: () => void }) {
+function Game({ view, conn, playing, speed, onToggleSpeed, rejected }: { view: GameView; conn: Connection; playing: boolean; speed: Speed; onToggleSpeed: () => void; rejected: number }) {
   const me = view.players[view.you]!;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
   const yours = !playing && !view.result && (!!myDecision || (view.stage === 'pick' && !view.picked));
@@ -387,7 +392,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
           <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
         </section>
 
-        <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
+        <Hand view={view} showCombos={combos} rejected={rejected} onPlay={(cards) => conn.send('pick', { cards })} />
       </div>
       {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
       {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}

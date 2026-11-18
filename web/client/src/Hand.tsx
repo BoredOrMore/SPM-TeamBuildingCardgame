@@ -29,7 +29,7 @@ interface Drag {
 }
 
 /** Hand cards with drag-and-hold onto a play zone; tap-to-select plus a Play button still works. */
-export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos: boolean; onPlay: (uids: string[]) => void }) {
+export function Hand({ view, showCombos, rejected, onPlay }: { view: GameView; showCombos: boolean; rejected: number; onPlay: (uids: string[]) => void }) {
   const preview = usePreview();
   const [staged, setStaged] = useState<string[]>([]);
   const [drag, setDrag] = useState<Drag>();
@@ -46,6 +46,8 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
   // the cards just sent count as played at once: the view saying so can wait behind a reveal still playing back
   const [sent, setSent] = useState<string[]>([]);
   const played = view.picked ?? (sent.length ? sent : undefined);
+  // a move the server turns down gives the cards back
+  useEffect(() => setSent([]), [rejected]);
   const picking = view.stage === 'pick' && !played;
 
   // a new turn or a new hand clears anything half-staged
