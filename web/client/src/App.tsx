@@ -19,8 +19,8 @@ const TURN_SHIFT_MS = 560;
 
 /** Turns after which a Crisis card is drawn, from rules.json. */
 const CRISIS_AFTER: number[] = rulesJson.crisis.afterTurns;
-/** What each stage of a turn is called on the round track. */
-const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pick'), actions: () => t('Actions'), nda: () => t('NDA'), crisis: () => t('Crisis'), ended: () => t('Round over') };
+/** What each stage of a turn is called on the round track; the NDA stage is named for what it does. */
+const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pick'), actions: () => t('Actions'), nda: () => t('Protect'), crisis: () => t('Crisis'), ended: () => t('Round over') };
 
 const NAME_KEY = 'hh_name';
 const SPEED_KEY = 'hh_speed';
