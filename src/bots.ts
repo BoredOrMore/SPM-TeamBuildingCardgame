@@ -152,6 +152,18 @@ function cardValue(data: GameData, state: GameState, seat: number, card: CardIns
       return data.byId.get('phone_screen')!.effect!.fallbackPoints as number;
     case 'refactor':
       return Math.max(0, ...(['bug_to_qa', 'juniors_to_senior'] as const).map((mode) => scoreWith(data, state, seat, refactored(team, mode)) - base));
+    case 'bug': {
+      // Plans toward a Feature: the gain of finishing the set of Bugs, shared over the picks it takes, if the round has those picks left.
+      const gain = scoreWith(data, state, seat, [...team, card]) - base;
+      const setSize = (data.byId.get('bug')!.effect!.feature as { setSize: number }).setSize;
+      const count = (id: string) => team.filter((c) => c.id === id).length;
+      const unfixed = count('bug') + 1 - Math.min(count('qa_tester'), count('bug') + 1);
+      const more = (setSize - (unfixed % setSize)) % setSize;
+      const picksLeft = state.players[seat]!.hand.length - 1;
+      if (more === 0 || more > picksLeft) return gain;
+      const extra = Array.from({ length: more }, (_, i) => ({ uid: `planned-bug-${i}`, id: 'bug' }));
+      return Math.max(gain, (scoreWith(data, state, seat, [...team, card, ...extra]) - base) / (more + 1));
+    }
     default: {
       const gain = scoreWith(data, state, seat, [...team, card]) - base;
       return card.id === 'nda' ? gain + NDA_VALUE : gain;
