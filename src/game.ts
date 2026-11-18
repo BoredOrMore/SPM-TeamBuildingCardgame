@@ -73,6 +73,7 @@ export function createGame(data: GameData, opts: NewGameOptions): GameState {
     crisisDeck,
     crisisDiscard: [],
     visibleCrisis: [],
+    crisisThisRound: [],
     activeMeta: active.map((c) => c.id),
     unusedMeta: meta.map((c) => c.id),
     queue: [],
@@ -102,6 +103,7 @@ function startRound(data: GameData, state: GameState): void {
   state.picksRequired = 1;
   state.crunchNextTurn = false;
   state.stage = 'pick';
+  state.crisisThisRound = [];
   emit(state, { type: 'round_started', round: state.round, direction: passDirection(data, state), activeMeta: state.activeMeta });
   emit(state, { type: 'turn_started', picksRequired: state.picksRequired });
   previewCrisis(data, state);
@@ -346,6 +348,7 @@ function activeMetaCount(data: GameData, round: number): number {
 function drawCrisis(data: GameData, state: GameState): void {
   nextCrisis(data, state);
   const card = state.crisisDeck.shift()!;
+  state.crisisThisRound.push(card.id);
   const drawer = pickRandom(state, seatOrder(state));
   const def = data.byId.get(card.id)!;
   emit(state, { type: 'crisis_drawn', card: { ...card }, drawer });
@@ -419,21 +422,27 @@ function drawCrisis(data: GameData, state: GameState): void {
 
 /**
  * The Crisis card that will be drawn next, left on top of the deck. Cards whose per-game
- * limit is used up [P34] move to the bottom first, so a preview always matches the draw.
+ * limit is used up [P34], or already drawn this round [P45], move to the bottom first,
+ * so a preview always matches the draw. When none of the deck can come up, the discard is shuffled in.
  */
 function nextCrisis(data: GameData, state: GameState): CardInstance {
   if (state.crisisDeck.length === 0) {
     state.crisisDeck = shuffle(state, state.crisisDiscard);
     state.crisisDiscard = [];
   }
-  const { cards, max } = data.rules.crisis.limitedPerGame;
-  const drawn = [...state.visibleCrisis, ...state.crisisDiscard].filter((c) => cards.includes(c.id)).length;
-  for (let tries = 0; tries < state.crisisDeck.length; tries++) {
-    const card = state.crisisDeck[0]!;
-    if (!cards.includes(card.id) || drawn < max) return card;
-    state.crisisDeck.push(state.crisisDeck.shift()!);
+  const { limitedPerGame, noRepeatInRound } = data.rules.crisis;
+  const drawn = [...state.visibleCrisis, ...state.crisisDiscard].filter((c) => limitedPerGame.cards.includes(c.id)).length;
+  const canCome = (id: string): boolean =>
+    (!limitedPerGame.cards.includes(id) || drawn < limitedPerGame.max) && !(noRepeatInRound && state.crisisThisRound.includes(id));
+  for (let pass = 0; pass < 2; pass++) {
+    for (let tries = 0; tries < state.crisisDeck.length; tries++) {
+      const card = state.crisisDeck[0]!;
+      if (canCome(card.id)) return card;
+      state.crisisDeck.push(state.crisisDeck.shift()!);
+    }
+    state.crisisDeck.push(...shuffle(state, state.crisisDiscard.splice(0)));
   }
-  throw new Error('every Crisis card left is over its per-game limit');
+  throw new Error('every Crisis card left is over its per-game limit or already drawn this round');
 }
 
 /** Whether the leader is far enough ahead of last place for a catch-up Crisis to act [P33]. */

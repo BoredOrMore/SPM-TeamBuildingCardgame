@@ -150,7 +150,13 @@ function ATurn() {
       <Rule icon="magic-line">{rich(t('**Actions.** Action cards work, one player at a time. If you must choose, a sheet opens.'))}</Rule>
       <Rule icon="team-line">{rich(t("**Hire.** Every other card joins its owner's team."))}</Rule>
       <Rule icon="arrow-left-right-line">{rich(t('**Pass.** Hands move to the next player.'))}</Rule>
-      <Rule icon="alarm-warning-line">{rich(t('**Crisis.** Only after turns {turns}.', { turns: rules.crisis.afterTurns.join(', ') }))}</Rule>
+      <Rule icon="alarm-warning-line">
+        {rich(
+          rules.crisis.noRepeatInRound
+            ? t('**Crisis.** Only after turns {turns}, never the same one twice in a round.', { turns: rules.crisis.afterTurns.join(', ') })
+            : t('**Crisis.** Only after turns {turns}.', { turns: rules.crisis.afterTurns.join(', ') }),
+        )}
+      </Rule>
     </ol>
   );
 }

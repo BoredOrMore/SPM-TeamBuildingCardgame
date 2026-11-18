@@ -51,7 +51,8 @@
     "limitedPerGame": { "cards": [], "max": 0 },
     "previewNext": false,
     "maxPersistent": 0,
-    "placeholders": ["P14", "P34", "P36", "P43"]
+    "noRepeatInRound": true,
+    "placeholders": ["P14", "P34", "P36", "P43", "P45"]
   },
   "discardPile": {
     "sources": ["burnout", "layoff", "refactor", "pivot_or_persevere"],

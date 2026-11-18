@@ -80,6 +80,11 @@ const hasArt = (deck: Deck) => deck !== 'support';
 /** Where a card's art lives, exported from Figma as `<card id>.webp`. */
 export const artUrl = (id: string) => `${import.meta.env.BASE_URL}cards/art/${id}.webp`;
 
+/** Starts loading every card's art, so a reveal never shows an empty frame while its image arrives. */
+export function preloadArt(): void {
+  for (const def of CARD_DEFS.values()) if (hasArt(def.deck)) new Image().src = artUrl(def.id);
+}
+
 /** Display name of a card id. */
 export function cardName(id: string): string {
   return CARD_DEFS.get(id)?.name ?? id;

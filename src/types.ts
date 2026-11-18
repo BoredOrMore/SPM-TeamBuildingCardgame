@@ -46,7 +46,7 @@ export interface RulesFile {
   setup: { activeMetaCount: number; privateMetaPerPlayer: number; handSize: Record<string, number> };
   turns: { count: Record<string, number> };
   rounds: { count: number; passDirection: Array<'left' | 'right'>; teamsAtRoundEnd: 'discard' | 'out_of_game'; activeMetaByRound: number[] };
-  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean; maxPersistent: number };
+  crisis: { afterTurns: number[]; limitedPerGame: { cards: string[]; max: number }; previewNext: boolean; maxPersistent: number; noRepeatInRound: boolean };
   scoring: { metaMultiplier: number };
   testCases: Array<{
     name: string;
@@ -179,6 +179,8 @@ export interface GameState {
   crisisDeck: CardInstance[];
   crisisDiscard: CardInstance[];
   visibleCrisis: CardInstance[];
+  /** ids of the Crisis cards drawn this round */
+  crisisThisRound: string[];
   activeMeta: string[];
   /** Meta card ids out of play; hidden from everyone */
   unusedMeta: string[];

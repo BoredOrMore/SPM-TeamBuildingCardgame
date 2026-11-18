@@ -8,19 +8,19 @@ import type { DecisionView, GameView, LobbyView, View } from '../../shared/proto
 import { Hand } from './Hand.js';
 import { RulebookButton } from './Rulebook.js';
 import { PlaybackOverlay, SPEEDS, reducedMotion, stepsFor, usePlayback, type Speed, type Step } from './Playback.js';
-import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, choiceLabel, decisionTitle, idOfUid } from './cards.js';
+import { Card, CardBack, CardText, MetaBoard, PreviewProvider, cardName, preloadArt, choiceLabel, decisionTitle, idOfUid } from './cards.js';
 import { SettingsMenu } from './Settings.js';
 import { setMusic, sfx } from './sound.js';
 import { t, useLang } from './i18n.js';
-import { createRoom, joinRoom, rejoin, type Connection, type Handlers } from './net.js';
+import { createRoom, joinRoom, rejoin, wakeServer, type Connection, type Handlers } from './net.js';
 
 /** How long the round track's current dot takes to show that the turn moved on, in ms. */
 const TURN_SHIFT_MS = 560;
 
 /** Turns after which a Crisis card is drawn, from rules.json. */
 const CRISIS_AFTER: number[] = rulesJson.crisis.afterTurns;
-/** What each stage of a turn is called on the round track. */
-const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pick'), actions: () => t('Actions'), nda: () => t('NDA'), crisis: () => t('Crisis'), ended: () => t('Round over') };
+/** What each stage of a turn is called on the round track; the NDA stage is named for what it does. */
+const STEP_NAMES: Record<GameView['stage'], () => string> = { pick: () => t('Pick'), actions: () => t('Actions'), nda: () => t('Protect'), crisis: () => t('Crisis'), ended: () => t('Round over') };
 
 const NAME_KEY = 'hh_name';
 const SPEED_KEY = 'hh_speed';
@@ -71,11 +71,16 @@ export function App() {
   };
   const shown = playback.shown;
   const [toast, setToast] = useState<string>();
+  /** How many moves the server has turned down, so the hand can take back cards it showed as played. */
+  const [rejected, setRejected] = useState(0);
   /** Which request is waiting on the server, so the home screen can say so. */
   const [connecting, setConnecting] = useState<'create' | 'join'>();
   const handlers = useRef<Handlers>({
     onView: setView,
-    onError: setToast,
+    onError: (message) => {
+      setToast(message);
+      setRejected((n) => n + 1);
+    },
     onLeave: () => {
       setConn(undefined);
       setView(undefined);
@@ -83,6 +88,7 @@ export function App() {
   });
 
   useEffect(() => {
+    wakeServer();
     void rejoin(handlers.current).then((c) => c && setConn(c));
   }, []);
 
@@ -117,7 +123,7 @@ export function App() {
       ) : shown.phase === 'lobby' ? (
         <Lobby view={shown} conn={conn} />
       ) : (
-        <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} />
+        <Game view={shown} conn={conn} playing={!!playback.step} speed={speed} onToggleSpeed={toggleSpeed} rejected={rejected} />
       )}
       {!(shown?.phase === 'game' && !shown.result) && (
         <div className="corner">
@@ -170,6 +176,8 @@ function Home(props: { busy: boolean; connecting: 'create' | 'join' | undefined;
 function Lobby({ view, conn }: { view: LobbyView; conn: Connection }) {
   const isHost = view.seats[view.you]?.isHost ?? false;
   const canStart = view.seats.length >= view.minPlayers;
+  // the art loads while players gather, so the first reveal is not grey
+  useEffect(preloadArt, []);
   // a pop each time someone sits down
   const seats = useRef(view.seats.length);
   useEffect(() => {
@@ -278,7 +286,7 @@ function RoundTrack({ view }: { view: GameView }) {
   );
 }
 
-function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; conn: Connection; playing: boolean; speed: Speed; onToggleSpeed: () => void }) {
+function Game({ view, conn, playing, speed, onToggleSpeed, rejected }: { view: GameView; conn: Connection; playing: boolean; speed: Speed; onToggleSpeed: () => void; rejected: number }) {
   const me = view.players[view.you]!;
   const myDecision = view.decision?.player === view.you ? view.decision : undefined;
   const yours = !playing && !view.result && (!!myDecision || (view.stage === 'pick' && !view.picked));
@@ -384,7 +392,7 @@ function Game({ view, conn, playing, speed, onToggleSpeed }: { view: GameView; c
           <TeamChips team={me.team} protectedUids={me.protected} zone={`team-${view.you}`} />
         </section>
 
-        <Hand view={view} showCombos={combos} onPlay={(cards) => conn.send('pick', { cards })} />
+        <Hand view={view} showCombos={combos} rejected={rejected} onPlay={(cards) => conn.send('pick', { cards })} />
       </div>
       {/* outside .table-fit: its scale would pin this fixed sheet to the table instead of the screen */}
       {myDecision?.options && !playing && <DecisionSheet view={view} decision={myDecision} onChoose={(option) => conn.send('choose', { decisionId: myDecision.id, option })} />}
@@ -752,6 +760,8 @@ function nowLine(view: GameView): string {
   if (view.stage !== 'pick') return t('Resolving…');
   if (!view.picked) {
     const need = Math.min(view.picksRequired, view.hand.length);
+    // on touch a tap opens the card and a second tap plays it, so the line says that instead of dragging
+    if (window.matchMedia('(pointer: coarse)').matches) return need === 1 ? t('Pick 1 card: tap it, then tap again to play') : t('Pick {n} cards: tap each, then tap again to play', { n: need });
     return need === 1 ? t('Pick 1 card: drag up to play') : t('Pick {n} cards: drag up to play', { n: need });
   }
   const waiting = view.players.filter((p) => p.seat !== view.you && !p.hasPicked).map((p) => p.name);
@@ -763,7 +773,8 @@ function Log({ view }: { view: GameView }) {
   const turns: Array<{ title: string; steps: Step[] }> = [];
   for (const e of view.events) {
     if (e.type === 'turn_started' || !turns.length) turns.push({ title: e.type === 'turn_started' ? t('Round {round} · Turn {turn}', { round: String(e.round), turn: String(e.turn) }) : t('Earlier'), steps: [] });
-    // the flip only shows cards turning over; the per-player lines that follow say who played what
+    // the flip only shows cards turning over; the per-player lines that follow say who played what.
+    // Each effect names its cause, so a Crisis steal after the pass reads as the Crisis, not as a late Action.
     turns[turns.length - 1]!.steps.push(...stepsFor(view, [e]).filter((s) => !s.flip));
   }
   return (
@@ -781,7 +792,11 @@ function Log({ view }: { view: GameView }) {
               <ul>
                 {t.steps.map((st) => (
                   <li key={st.key}>
-                    <i className={st.icon} /> {st.line}
+                    <i className={st.icon} />
+                    <span>
+                      {st.cause && <span className="log-cause">{st.cause} · </span>}
+                      {st.line}
+                    </span>
                   </li>
                 ))}
               </ul>

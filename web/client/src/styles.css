@@ -304,6 +304,7 @@ button.picker-tile.picked { border-color: var(--accent); }
 .log ul { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; }
 .log li { display: flex; gap: 6px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
 .log li i { color: var(--muted); }
+.log-cause { color: var(--muted); }
 .log summary { cursor: pointer; font-weight: 600; }
 /* the log is a topbar button that opens a list under it */
 .topbar .log summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 4px 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); font-size: 0.8rem; }
@@ -567,7 +568,8 @@ button.picker-tile.picked { border-color: var(--accent); }
 
 /* settings: one gear button opens every on/off choice in a panel under it */
 .settings { position: relative; }
-.corner { position: fixed; top: 10px; right: 10px; z-index: 30; display: flex; gap: 6px; }
+/* scrolls away with the page, so on a long results screen it never sits on top of a player's card */
+.corner { position: absolute; top: 10px; right: 10px; z-index: 30; display: flex; gap: 6px; }
 .settings-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.8rem; }
 .settings-panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 290px; max-width: calc(100vw - 24px);
