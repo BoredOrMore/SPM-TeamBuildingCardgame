@@ -696,6 +696,7 @@ export function eventLine(view: GameView, e: GameEvent): string | undefined {
         : t('{who} swapped {card} for {whose}’s {other}', { who: who(a), card: card(x), whose: who(b), other: card(y) });
     }
     case 'bonus_gained':
+      if (e.onlyOption) return t('Nothing to convert: {who} gained {points} point(s) from {card}', { who: who(e.player), points: String(e.points), card: cardName(String(e.source)) });
       return t('{who} gained {points} point(s) from {card}', { who: who(e.player), points: String(e.points), card: cardName(String(e.source)) });
     case 'crisis_drawn':
       return t('Crisis: {card}', { card: card(e.card) });

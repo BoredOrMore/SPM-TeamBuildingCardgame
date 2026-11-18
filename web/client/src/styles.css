@@ -482,6 +482,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 @media (max-width: 600px) { .spot-cards:has(> :nth-child(2)) .card { width: min(240px, 44vw); } }
 .spot-icon { font-size: 3.5rem; color: #fff; }
 .spot-cause { margin: 0 0 -4px; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); color: var(--ink); font-weight: 700; font-size: 0.85rem; }
+.spot-score { margin: 0; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; }
+.spot-score.down { color: var(--warn); }
+.spot-score.up { color: #2e8b57; }
 .spot-line { margin: 0; padding: 10px 16px; border-radius: 6px; background: var(--ink); box-shadow: 4px 4px 0 var(--pink); color: #fff; font-weight: 600; font-size: 1.05rem; text-align: center; }
 .seat-score { position: relative; display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-weight: 700; font-size: 0.9rem; }
 .score-delta { position: absolute; left: 100%; top: -4px; margin-left: 4px; font-size: 1rem; animation: score-rise 1400ms ease-out forwards; pointer-events: none; }
@@ -522,7 +525,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 @media (min-width: 601px) { .flip-row.single .flip-card { width: 300px; } }
 .flip-row.single .flip-front .card .card-text { display: block; }
 /* the scores after a round, and the per-round table on the results screen */
-.standings { display: flex; flex-direction: column; gap: 12px; min-width: min(320px, 88vw); padding: 16px; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); box-shadow: 6px 6px 0 var(--pink); cursor: default; }
+.standings { display: flex; flex-direction: column; gap: 12px; min-width: min(320px, 88vw); padding: 16px; border: 2px solid var(--ink); border-radius: 8px; background: var(--panel); box-shadow: 6px 6px 0 var(--pink); cursor: default; max-height: calc(100dvh - 32px); overflow-y: auto; }
+.standings h3 { margin: 4px 0 0; font-size: 0.9rem; }
+.standings .breakdown { margin: 0; padding: 0; }
 .standings table, .standings-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .standings th, .standings td, .standings-table th, .standings-table td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); }
 .standings th:first-child, .standings td:first-child, .standings-table th:first-child, .standings-table td:first-child { text-align: left; }
