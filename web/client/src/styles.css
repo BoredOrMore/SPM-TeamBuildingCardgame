@@ -442,6 +442,9 @@ button.picker-tile.picked { border-color: var(--accent); }
 /* the held card is on top of everything, the rules panel included, and never squeezed: on a short screen the whole card
    gets smaller (its height leaves --preview-room for the keyword boxes), so its text always shows */
 .preview, .card-tooltip { --preview-room: 220px; }
+/* opened by a tap on a phone: it stays and takes taps, with room under the card for the Play button */
+.preview.tappable { pointer-events: auto; --preview-room: 300px; }
+.preview-hint { color: #fff; font-size: 0.85rem; font-weight: 600; text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); }
 .card.preview-card { flex: none; width: min(240px, calc((100dvh - var(--preview-room)) * 548 / 768)); }
 @media (min-width: 601px) { .card.preview-card { width: min(300px, calc((100dvh - var(--preview-room)) * 548 / 768)); } }
 .preview-card { min-height: 0; box-shadow: 0 16px 40px rgb(0 0 0 / 0.35); }

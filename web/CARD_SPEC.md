@@ -68,7 +68,7 @@ Every card keeps the timing badge top right (AGENTS.md card text rule 9). The ic
 ## Behaviour
 
 - Hidden cards always show the back of their deck (Main, Crisis, Meta), never their type.
-- Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it, on top of everything (the rules panel and playback included) and whole inside the window, 12 px from the card and the window edge; it shrinks to fit rather than being cut off. On touch, holding the card does the same.
+- Pointing at any face-up card with a mouse shows the full card and its keyword Tooltips beside it, on top of everything (the rules panel and playback included) and whole inside the window, 12 px from the card and the window edge; it shrinks to fit rather than being cut off. On touch, holding the card does the same. A tap on a hand card on touch opens the same view and keeps it open, with a Play button under it; tapping the card again plays it, tapping outside closes it (Bored, 2026-11-18).
 - A card being dragged keeps the size it has in the hand.
 - The table above your team (Crisis, Meta, opponents) never scrolls: on a short screen it shrinks as a whole to fit, down to 60%, and the play log opens from a topbar button. Sizes in the table are before that shrink.
 - Your decision opens as a sheet at the bottom of the screen (above the rules panel when it is open), always whole on screen; it is not part of the table, so the table's shrink never moves or scales it.

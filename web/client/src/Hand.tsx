@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { GameView } from '../../shared/protocol.js';
-import { Card, HOLD_MS, STILL_PX, cardName, usePreview } from './cards.js';
+import { Card, CardPreview, HOLD_MS, STILL_PX, cardName, usePreview } from './cards.js';
 import { t } from './i18n.js';
 import { sfx } from './sound.js';
 
@@ -37,13 +37,20 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
   const dragRef = useRef<Drag>(undefined);
   const zoneRef = useRef<HTMLDivElement>(null);
   const suppressClick = useRef(false);
+  /** whether the last press was a finger, so its tap opens the card large first (Bored's choice, 2026-11-18) */
+  const touchPress = useRef(false);
+  /** the hand card opened large by a tap: tapping it again plays it */
+  const [peek, setPeek] = useState<{ uid: string; id: string }>();
 
   const need = Math.min(view.picksRequired, view.hand.length);
   const picking = view.stage === 'pick' && !view.picked;
 
   // a new turn or a new hand clears anything half-staged
   const handKey = view.hand.map((c) => c.uid).join();
-  useEffect(() => setStaged([]), [handKey, view.turn]);
+  useEffect(() => {
+    setStaged([]);
+    setPeek(undefined);
+  }, [handKey, view.turn]);
 
   /** Adds a card to the zone and plays as soon as the zone is full. */
   const stage = (uid: string) => {
@@ -131,6 +138,7 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
   const press = (uid: string, id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     suppressClick.current = false;
+    touchPress.current = e.pointerType !== 'mouse';
     const d: Drag = {
       uid,
       id,
@@ -159,10 +167,18 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
     update(d);
   };
 
-  /** Tap on a hand card, ignored right after a hold or a drag. */
-  const tap = (uid: string) => () => {
+  /** Tap on a hand card, ignored right after a hold or a drag. A finger's tap opens the card large; a mouse click picks it. */
+  const tap = (uid: string, id: string) => () => {
     if (suppressClick.current) return void (suppressClick.current = false);
-    if (picking) toggle(uid);
+    if (touchPress.current) setPeek({ uid, id });
+    else if (picking) toggle(uid);
+  };
+
+  /** The tapped card goes to the play zone, and is played once the zone is full. */
+  const playPeeked = () => {
+    if (!peek) return;
+    setPeek(undefined);
+    if (picking && !staged.includes(peek.uid)) stage(peek.uid);
   };
 
   const inZone = view.hand.filter((c) => staged.includes(c.uid));
@@ -206,7 +222,7 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
             metaPoints={picking ? view.metaGains[c.uid] : undefined}
             lifted={drag?.uid === c.uid && drag.held && !drag.dragging}
             onPointerDown={press(c.uid, c.id)}
-            onClick={tap(c.uid)}
+            onClick={tap(c.uid, c.id)}
           />
         ))}
       </div>
@@ -215,6 +231,16 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
         <button className="primary play" onClick={() => play(staged)}>
           {need === 1 ? t('Play {card}', { card: cardName(view.hand.find((c) => c.uid === staged[0])?.id ?? '') }) : t('Play {n} cards', { n: need })}
         </button>
+      )}
+      {peek && (
+        <CardPreview id={peek.id} onClose={() => setPeek(undefined)} onCard={picking ? playPeeked : undefined}>
+          {picking && !staged.includes(peek.uid) && (
+            <button className="primary" onClick={(e) => (e.stopPropagation(), playPeeked())}>
+              {need - staged.length === 1 ? t('Play {card}', { card: cardName(peek.id) }) : t('Add {card} ({n} more to go)', { card: cardName(peek.id), n: need - staged.length - 1 })}
+            </button>
+          )}
+          <span className="preview-hint">{picking ? t('Tap the card again to play it · tap outside to close') : t('Tap anywhere to close')}</span>
+        </CardPreview>
       )}
       {dragging && (
         <div className="drag-ghost" style={{ left: dragging.x, top: dragging.y, width: dragging.width, height: dragging.height }}>

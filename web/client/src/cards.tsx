@@ -350,15 +350,22 @@ function FullCard({ id }: { id: string }) {
 }
 
 /** The big card and its keyword boxes, shown while a card is held on a touch screen. */
-function CardPreview({ id }: { id: string }) {
+/**
+ * A card shown large with its keywords explained. Held, it closes when the finger lifts; opened by a tap (`onClose` set),
+ * it stays and takes taps: on the card for `onCard`, anywhere else to close, plus any `children` buttons under it.
+ */
+export function CardPreview({ id, onClose, onCard, children }: { id: string; onClose?: () => void; onCard?: () => void; children?: ReactNode }) {
   return (
-    <div className="preview" aria-live="polite">
-      <FullCard id={id} />
+    <div className={`preview ${onClose ? 'tappable' : ''}`} aria-live="polite" onClick={onClose}>
+      <div onClick={onCard && ((e) => (e.stopPropagation(), onCard()))}>
+        <FullCard id={id} />
+      </div>
       {codesOf(id).length > 0 && (
         <div className="preview-keywords">
           <KeywordBoxes codes={codesOf(id)} />
         </div>
       )}
+      {children}
     </div>
   );
 }
