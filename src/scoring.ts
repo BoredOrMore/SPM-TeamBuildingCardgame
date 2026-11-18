@@ -116,7 +116,7 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   }
   const fixed = pairs > 0 ? ` · fixed ${pairs} {BUG}` : '';
   add('QA Tester', n(c, 'qa_tester') * (qaEff.points as number), `${n(c, 'qa_tester')} × ${qaEff.points as number}${fixed}`);
-  add('Bug (unpaired)', leftoverBug * bugValue, `${leftoverBug} × ${bugValue}${bugRule ? ` (${bugRule})` : ''}`);
+  add('Bug (no QA to fix it)', leftoverBug * bugValue, `${leftoverBug} × ${bugValue}${bugRule ? ` (${bugRule})` : ''}`);
 
   const effective: Counts = new Map(c);
   effective.set('bug', leftoverBug);

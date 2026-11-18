@@ -1,6 +1,7 @@
 {
   "junior_dev": ["มี {PM}: +1 เพิ่มต่อใบ"],
-  "senior_dev": ["ไม่มี {JUNIOR}: +1 ต่อใบ"],
+  "senior_dev": ["ไม่มี {JUNIOR}: +1 ต่อ {SENIOR}"],
+  "designer": ["1 = +2 · 2 = +5", "3 ขึ้นไป = +12"],
   "project_manager": ["2 {PM}: {JUNIOR} = 0"],
   "investors": ["ครบ 4 ประเภท role: เพิ่มอีก +1"],
   "refactor": ["{BUG} 1 ใบ กลายเป็น {QA}", "{JUNIOR} 2 ใบ กลายเป็น {SENIOR} 1 ใบ", "ทำไม่ได้ทั้งคู่: +3"],

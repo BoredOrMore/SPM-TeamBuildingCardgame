@@ -35,8 +35,8 @@
         "type": "role",
         "quantity": 10,
         "text": "3 points each, but only 1 point if no Junior Developer present.",
-        "cardText": "with {JUNIOR}: +3 each",
-        "cardTextMore": ["no {JUNIOR}: +1 each"],
+        "cardText": "with {JUNIOR}: +3 per {SENIOR}",
+        "cardTextMore": ["no {JUNIOR}: +1 per {SENIOR}"],
         "effect": {
           "kind": "per_card",
           "points": 3,
@@ -60,7 +60,8 @@
         "type": "role",
         "quantity": 8,
         "text": "Score 2/5/12 points based on quantity.",
-        "cardText": "{DESIGNER} 1/2/3+ = 2/5/12",
+        "cardText": "All your {DESIGNER} together:",
+        "cardTextMore": ["1 = +2 · 2 = +5", "3 or more = +12"],
         "effect": { "kind": "tiered_count", "tiers": [2, 5, 12] }
       },
       {
@@ -194,8 +195,8 @@
         "name": "Upskill",
         "type": "boost",
         "quantity": 2,
-        "text": "+1 point for all card of chosen role type.",
-        "cardText": "+1 per {EMPLOYEE} of 1 role you choose",
+        "text": "+1 point per card of your most common role type.",
+        "cardText": "+1 per {EMPLOYEE} of your most common role",
         "timing": "scoring",
         "effect": { "kind": "per_card_of_chosen_role", "points": 1, "applyAfterMultipliers": true },
         "placeholders": ["P8", "P19"]
