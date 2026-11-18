@@ -4,6 +4,7 @@
   "designer": ["1 = +2 · 2 = +5", "3 ขึ้นไป = +12"],
   "project_manager": ["2 {PM}: {JUNIOR} = 0"],
   "phone_screen": ["ทิ้งการ์ด 1 ใบจากมือนั้น หรือ +2"],
+  "freelance": ["Layoff หรือ Burnout: ทิ้งใบนี้แทนได้"],
   "investors": ["ครบ 4 ประเภท role: เพิ่มอีก +1"],
   "refactor": ["{BUG} 1 ใบ กลายเป็น {QA}", "{JUNIOR} 2 ใบ กลายเป็น {SENIOR} 1 ใบ", "ทำไม่ได้ทั้งคู่: +3"],
   "layoff": ["ไม่มี {JUNIOR}: ทิ้ง {EMPLOYEE} 1 ใบ"],

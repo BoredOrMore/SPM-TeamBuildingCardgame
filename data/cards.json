@@ -96,9 +96,10 @@
         "name": "Freelance",
         "type": "event",
         "quantity": 5,
-        "text": "+2 points.",
+        "text": "+2 points. When Layoff or Burnout makes you discard, you may discard this card instead.",
         "cardText": "+2",
-        "effect": { "kind": "per_card", "points": 2, "disabledBy": ["scope_creep"] },
+        "cardTextMore": ["Layoff or Burnout: may discard this instead"],
+        "effect": { "kind": "per_card", "points": 2, "disabledBy": ["scope_creep"], "shieldsFrom": ["layoff", "burnout"] },
         "placeholders": ["P40"]
       },
       {

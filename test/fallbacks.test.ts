@@ -42,6 +42,21 @@ describe('every card has an effect when it comes into play', () => {
     expect([d.kind, d.player, d.options!.length]).toEqual(['layoff', 0, 1]);
   });
 
+  it('Freelance can go instead of the Junior that Layoff takes', () => {
+    const state = revealCrisis('layoff', [['junior_dev', 'freelance'], [], []]);
+    const d = currentDecision(state)!;
+    expect(d.options!.map((o) => o.kind === 'discard' && state.players[0]!.team.find((c) => c.uid === o.uid)!.id)).toEqual(['junior_dev', 'freelance']);
+  });
+
+  it('Freelance is not offered when the Crisis would take nothing', () => {
+    const state = revealCrisis('burnout', [['freelance', 'coffee'], ['designer'], ['designer']]);
+    for (let d = currentDecision(state); d; d = currentDecision(state)) {
+      expect(d.player).not.toBe(0);
+      applyActionInPlace(crisisAfterTurn1, state, { type: 'choose', player: d.player, decisionId: d.id, option: 0 });
+    }
+    expect(ids(state, 0)).toEqual(['coffee', 'coffee', 'freelance']);
+  });
+
   it('Poaching lets the player with the most role cards take a card, Senior or not', () => {
     const state = revealCrisis('poaching', [['designer', 'qa_tester'], ['coffee'], ['bug']]);
     const d = currentDecision(state)!;

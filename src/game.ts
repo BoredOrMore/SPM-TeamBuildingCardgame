@@ -521,11 +521,11 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     case 'layoff': {
       // A Junior goes if there is one; with no Junior, any role card instead.
       const junior = unprotected(me).find((c) => c.id === 'junior_dev');
-      if (junior) return [{ kind: 'discard' as const, uid: junior.uid }];
-      return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
+      if (junior) return withShields(data, me, d.kind, [{ kind: 'discard' as const, uid: junior.uid }]);
+      return withShields(data, me, d.kind, distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid })));
     }
     case 'burnout':
-      return distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid }));
+      return withShields(data, me, d.kind, distinctById(unprotected(me).filter((c) => data.byId.get(c.id)?.type === 'role')).map((c) => ({ kind: 'discard' as const, uid: c.uid })));
     case 'poaching':
       return opponents(state, d.player).flatMap((o) => distinctById(unprotected(o)).map((c) => ({ kind: 'take' as const, opponent: o.seat, uid: c.uid })));
     case 'hostile_takeover': {
@@ -558,6 +558,13 @@ function optionsFor(data: GameData, state: GameState, d: Decision): Choice[] {
     case 'merger_respond':
       return [{ kind: 'merger_accept' }, { kind: 'merger_reject' }];
   }
+}
+
+/** Discard options plus a card that can go instead (Freelance), only when the Crisis takes something at all. */
+function withShields(data: GameData, me: PlayerState, kind: DecisionKind, options: Choice[]): Choice[] {
+  if (options.length === 0) return options;
+  const shields = distinctById(unprotected(me).filter((c) => (data.byId.get(c.id)?.effect?.shieldsFrom as string[] | undefined)?.includes(kind)));
+  return [...options, ...shields.map((c) => ({ kind: 'discard' as const, uid: c.uid }))];
 }
 
 /** Card combinations with duplicates by card id removed, as uid lists. */
