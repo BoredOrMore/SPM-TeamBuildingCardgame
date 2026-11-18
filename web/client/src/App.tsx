@@ -581,6 +581,8 @@ function pickPlan(view: GameView, c: Choice): { uids: string[]; prompts: string[
       return { uids: [c.give, c.take], prompts: [t('Pick a card from your team to give'), t('Pick a card to take')], ordered: true };
     case 'merger_offer':
       return { uids: [c.give, c.take], prompts: [t('Pick a card from your team to offer'), t('Pick a card you want in return')], ordered: true };
+    case 'hand_discard':
+      return { uids: [c.uid], prompts: [t('Pick 1 card to discard from {who}’s hand', { who: who(c.opponent) })], ordered: true };
     case 'give':
       return { uids: c.uids, prompts: [c.uids.length === 1 ? t('Pick 1 card to give to {who}', { who: who(c.to) }) : t('Pick {n} cards to give to {who}', { n: c.uids.length, who: who(c.to) })], ordered: false };
     case 'pivot':

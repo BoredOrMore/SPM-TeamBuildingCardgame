@@ -161,6 +161,8 @@
   "Turn a Bug into a QA Tester": "เปลี่ยน Bug เป็น QA Tester",
   "Turn Juniors into a Senior": "เปลี่ยน Junior เป็น Senior",
   "Take the points": "รับคะแนน",
+  "Take +{n}": "รับ +{n}",
+  "Pick 1 card to discard from {who}’s hand": "เลือกการ์ด 1 ใบที่จะทิ้งจากมือของ {who}",
   "Protect {card}": "ป้องกัน {card}",
   "Discard {card}": "ทิ้ง {card}",
   "Take {card} from {who}": "เอา {card} จาก {who}",

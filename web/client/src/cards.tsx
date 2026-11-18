@@ -649,7 +649,7 @@ export function choiceLabel(view: GameView, c: Choice): string {
     case 'hand_discard':
       return t('Discard {card} from {who}’s hand', { card: name(c.uid), who: who(c.opponent) });
     case 'phone_screen_points':
-      return t('Take the points');
+      return t('Take +{n}', { n: String(CARD_DEFS.get('phone_screen')!.effect!.fallbackPoints) });
     case 'refactor':
       return { bug_to_qa: () => t('Turn a Bug into a QA Tester'), juniors_to_senior: () => t('Turn Juniors into a Senior'), points: () => t('Take the points') }[c.mode]();
     case 'nda':
