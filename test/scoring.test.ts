@@ -107,6 +107,14 @@ describe('meta cards', () => {
     expect(score({ junior_dev: 3 }, { meta: ['developer_shortage'] }).total).toBe(6 + 3);
   });
 
+  it('every 3 Bugs left after QA fixes become a Feature worth +5 that is no longer a Bug', () => {
+    expect(score({ bug: 3 }).total).toBe(5);
+    expect(score({ bug: 7 }).total).toBe(10 - 3);
+    expect(score({ bug: 4, qa_tester: 1 }).total).toBe(3 + 5);
+    expect(score({ bug: 2, qa_tester: 1 }).total).toBe(3 - 3);
+    expect(score({ bug: 3, junior_dev: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(5 + 2 + 4);
+  });
+
   it('Zero Defect Premium: +4 clean, -5 per Bug otherwise', () => {
     expect(score({ junior_dev: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(2 + 4);
     expect(score({ bug: 1 }, { meta: ['zero_defect_premium'] }).total).toBe(-5);

@@ -87,9 +87,10 @@
         "name": "Bug",
         "type": "event",
         "quantity": 10,
-        "text": "-3 points each. Can be fixed by QA Tester.",
+        "text": "-3 points each. Can be fixed by QA Tester. Every 3 Bugs left after fixing become a Feature worth +5 and no longer count as Bugs.",
         "cardText": "-3 · {QA} can fix it",
-        "effect": { "kind": "per_card", "points": -3, "pairsWith": "qa_tester", "pairResult": "bug_removed" }
+        "cardTextMore": ["3 {BUG} become a Feature: +5"],
+        "effect": { "kind": "per_card", "points": -3, "pairsWith": "qa_tester", "pairResult": "bug_removed", "feature": { "setSize": 3, "points": 5 } }
       },
       {
         "id": "freelance",

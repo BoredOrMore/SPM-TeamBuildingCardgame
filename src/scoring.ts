@@ -103,7 +103,10 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   const qaEff = effectOf(data, 'qa_tester');
   const bugEff = effectOf(data, 'bug');
   const pairs = Math.min(n(c, 'qa_tester'), n(c, 'bug'));
-  const leftoverBug = n(c, 'bug') - pairs;
+  // Every full set of unfixed Bugs becomes a Feature, which is no longer a Bug for Meta or {CLEAN}.
+  const featureRule = bugEff.feature as { setSize: number; points: number };
+  const features = Math.floor((n(c, 'bug') - pairs) / featureRule.setSize);
+  const leftoverBug = n(c, 'bug') - pairs - features * featureRule.setSize;
   // Bug overrides from Meta apply to everyone, the harshest wins [P31].
   let bugValue = bugEff.points as number;
   let bugRule: string | undefined;
@@ -116,6 +119,7 @@ function scoreWithCancellation(input: ScoringInput, cancelled: Set<string>): Sco
   }
   const fixed = pairs > 0 ? ` · fixed ${pairs} {BUG}` : '';
   add('QA Tester', n(c, 'qa_tester') * (qaEff.points as number), `${n(c, 'qa_tester')} × ${qaEff.points as number}${fixed}`);
+  add('Feature', features * featureRule.points, `${features * featureRule.setSize} {BUG} = ${features} × ${featureRule.points}`);
   add('Bug (no QA to fix it)', leftoverBug * bugValue, `${leftoverBug} × ${bugValue}${bugRule ? ` (${bugRule})` : ''}`);
 
   const effective: Counts = new Map(c);
