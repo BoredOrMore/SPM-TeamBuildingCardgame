@@ -181,15 +181,17 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
     if (picking && !staged.includes(peek.uid)) stage(peek.uid);
   };
 
-  const inZone = view.hand.filter((c) => staged.includes(c.uid));
+  // a played card leaves the hand at once and waits in the zone until everyone reveals
+  const inZone = view.hand.filter((c) => (view.picked ?? staged).includes(c.uid));
+  const inHand = view.hand.filter((c) => !view.picked?.includes(c.uid));
   const dragging = drag?.dragging ? drag : undefined;
 
   return (
     <section className="hand">
-      {picking && (
+      {(picking || (view.stage === 'pick' && !!view.picked)) && (
         <div ref={zoneRef} className={`play-zone ${dragging ? 'armed' : ''} ${overZone ? 'over' : ''} ${!dragging && !inZone.length ? 'waiting' : ''}`}>
           {inZone.length ? (
-            inZone.map((c) => <Card key={c.uid} id={c.id} small onClick={() => toggle(c.uid)} />)
+            inZone.map((c) => <Card key={c.uid} id={c.id} small onClick={picking ? () => toggle(c.uid) : undefined} />)
           ) : (
             <span className="muted">
               {window.matchMedia('(pointer: coarse)').matches ? (
@@ -203,7 +205,7 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
               )}
             </span>
           )}
-          {need > 1 && (
+          {picking && need > 1 && (
             <span className="zone-count">
               {inZone.length}/{need}
             </span>
@@ -217,15 +219,15 @@ export function Hand({ view, showCombos, onPlay }: { view: GameView; showCombos:
         key={`${view.round}-${view.turn}`}
         className={`hand-cards ${view.turn > 1 ? `from-${view.passDirection === 'left' ? 'right' : 'left'}` : ''}`}
         data-zone="hand"
-        style={{ '--n': Math.max(view.hand.length, 1) } as React.CSSProperties}
+        style={{ '--n': Math.max(inHand.length, 1) } as React.CSSProperties}
       >
-        {view.hand.map((c) => (
+        {inHand.map((c) => (
           <Card
             key={c.uid}
             uid={c.uid}
             id={c.id}
-            selected={staged.includes(c.uid) || !!view.picked?.includes(c.uid)}
-            dim={(!picking && !view.picked?.includes(c.uid)) || dragging?.uid === c.uid}
+            selected={staged.includes(c.uid)}
+            dim={!picking || dragging?.uid === c.uid}
             combo={showCombos && picking && view.comboCards.includes(c.uid)}
             metaPoints={picking ? view.metaGains[c.uid] : undefined}
             lifted={drag?.uid === c.uid && drag.held && !drag.dragging}
