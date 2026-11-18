@@ -513,7 +513,7 @@ export function Card(props: {
       <CardFace id={props.id} small={props.small} chip={props.chip} shield={props.shield} />
       {(props.combo || props.metaPoints) && (
         <span className="card-marks">
-          {props.combo && <i className="ri-links-line combo-mark" aria-label={t('Combo with your team')} />}
+          {props.combo && <i className="ri-links-line combo-mark" aria-label={t('Combo with your team')} title={t('Combo with your team')} />}
           {!!props.metaPoints && (
             <b className="meta-mark" title={t('Points from Meta if you play this')}>
               <i className="ri-global-line" />

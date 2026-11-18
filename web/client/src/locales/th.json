@@ -224,5 +224,7 @@
   "Your points this round": "คะแนนของคุณใน round นี้",
   "Add {card} ({n} more to go)": "เพิ่ม {card} (อีก {n} ใบ)",
   "Tap the card again to play it · tap outside to close": "แตะการ์ดอีกครั้งเพื่อเล่น · แตะที่อื่นเพื่อปิด",
-  "Tap anywhere to close": "แตะที่ไหนก็ได้เพื่อปิด"
+  "Tap anywhere to close": "แตะที่ไหนก็ได้เพื่อปิด",
+  "On a card in your hand: it scores more with the cards already in your team.": "บนการ์ดในมือ: ได้คะแนนมากขึ้นเมื่ออยู่กับการ์ดในทีมของคุณ",
+  "+N on a card in your hand: the points it adds from this round’s Meta.": "+N บนการ์ดในมือ: คะแนนที่จะได้เพิ่มจาก Meta ของ round นี้"
 }
